@@ -1,0 +1,42 @@
+plugins {
+    id "java-library"
+    id "com.google.protobuf"
+    id "maven-publish"
+}
+
+dependencies {
+    api "com.google.protobuf:protobuf-java:${providers.gradleProperty("protobufVersion").get()}"
+    api "io.grpc:grpc-stub:${providers.gradleProperty("grpcVersion").get()}"
+    api "io.grpc:grpc-protobuf:${providers.gradleProperty("grpcVersion").get()}"
+
+    // suppress javax.annotation.Generated issues for some toolchains
+    compileOnly "org.apache.tomcat:annotations-api:6.0.53"
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:${providers.gradleProperty("protobufVersion").get()}"
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:${providers.gradleProperty("grpcVersion").get()}"
+        }
+    }
+    generateProtoTasks {
+        all().configureEach { task ->
+            task.plugins { grpc {} }
+        }
+    }
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) { from components.java }
+    }
+    repositories { mavenLocal() }
+}

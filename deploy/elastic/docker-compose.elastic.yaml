@@ -1,0 +1,21 @@
+version: "latest"
+
+services:
+  elasticsearch:
+    image: bitnami/elasticsearch:8.7.1
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=project123!@#
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - elastic_network
+
+volumes:
+  esdata:
+
+networks:
+  elastic_network:

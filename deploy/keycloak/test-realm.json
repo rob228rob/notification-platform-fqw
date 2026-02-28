@@ -1,0 +1,56 @@
+{
+  "realm": "test-realm",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "user_dev_RW",
+        "description": "Role for development read and write access"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "test-client",
+      "publicClient": false,
+      "secret": "test-client-secret",
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"]
+    }
+  ],
+  "users": [
+    {
+      "username": "rob228",
+      "enabled": true,
+      "email": "rob@example.com",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password"
+        }
+      ],
+      "realmRoles": [
+        "user_dev_RW"
+      ],
+      "firstName": "robF",
+      "lastName": "robL"
+    },
+    {
+      "username": "test-user",
+      "enabled": true,
+      "email": "testuser@example.com",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password"
+        }
+      ],
+      "realmRoles": [
+        "user_dev_RW"
+      ]
+    }
+  ]
+}

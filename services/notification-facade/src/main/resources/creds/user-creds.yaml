@@ -1,0 +1,14 @@
+kafka:
+  bootstrap:
+    servers: 176.108.255.79:9093
+  user:
+    # креды нужно уточнять для remote kafka
+    username: mai_client
+    password: FIXME
+
+# бд разворачивается локально в докере
+postgresql:
+  url: jdbc:postgresql://localhost:25432/main_db?currentSchema=nf
+  user:
+    username: user
+    password: password

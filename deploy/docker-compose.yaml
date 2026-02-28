@@ -1,0 +1,11 @@
+﻿include:
+#  - './grafana/docker-compose.grafana.yml'
+  - './postgres/docker-compose.postgres.yml'
+#  - './minio/docker-compose.s3.yml'
+#    кафка развернута в облаке
+#  - './kafka/docker-compose.kafka.yml'
+  - './networks/docker-compose.networks.yml'
+#  - './app/docker-compose.app.yaml'
+#  - './redis/docker-compose.redis.yaml'
+# кейклок развернут в облаке
+#  - './keycloak/docker-compose.keycloak.yaml'

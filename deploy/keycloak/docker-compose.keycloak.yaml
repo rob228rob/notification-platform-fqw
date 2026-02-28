@@ -1,0 +1,30 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.0
+    container_name: keycloak-svc
+    command: ["start", "--import-realm"]
+    env_file:
+      - .keycloak-envs
+    ports:
+      - "80:8080"
+    volumes:
+      - ./test-realm.json:/opt/keycloak/data/import/test-realm.json:ro
+    depends_on:
+      - postgres-keycloak
+    networks:
+      - shared
+
+  postgres-keycloak:
+    image: postgres:16
+    container_name: postgres-keycloak
+    env_file:
+      - .keycloak-envs
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "65432:5432"
+    networks:
+      - shared
+
+volumes:
+  postgres_data:

@@ -1,0 +1,193 @@
+syntax = "proto3";
+
+package notification.facade.v1;
+
+option java_multiple_files = true;
+option java_package = "ru.notification.facade.proto.v1";
+option java_outer_classname = "NotificationFacadeProto";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/field_mask.proto";
+import "notification/common/v1/common.proto";
+
+service NotificationFacade {
+  rpc CreateNotificationEvent (CreateEventRequest) returns (CreateEventResponse);
+  rpc UpdateNotificationEvent (UpdateEventRequest) returns (UpdateEventResponse);
+  rpc CancelNotificationEvent (CancelEventRequest) returns (CancelEventResponse);
+
+  rpc GetNotificationEvent    (GetEventRequest)    returns (GetEventResponse);
+  rpc ListNotificationEvents  (ListEventsRequest)  returns (ListEventsResponse);
+
+  rpc SetAudience      (SetAudienceRequest)      returns (SetAudienceResponse);
+  rpc AddRecipients    (AddRecipientsRequest)    returns (AddRecipientsResponse);
+  rpc RemoveRecipients (RemoveRecipientsRequest) returns (RemoveRecipientsResponse);
+  rpc GetAudience      (GetAudienceRequest)      returns (GetAudienceResponse);
+
+  rpc TriggerDispatch  (TriggerDispatchRequest)  returns (TriggerDispatchResponse);
+  rpc GetDispatch      (GetDispatchRequest)      returns (GetDispatchResponse);
+  rpc ListDispatches   (ListDispatchesRequest)   returns (ListDispatchesResponse);
+}
+
+enum EventStatus {
+  EVENT_STATUS_UNSPECIFIED = 0;
+  EVENT_STATUS_DRAFT = 1;
+  EVENT_STATUS_READY = 2;
+  EVENT_STATUS_SCHEDULED = 3;
+  EVENT_STATUS_DISPATCHING = 4;
+  EVENT_STATUS_COMPLETED = 5;
+  EVENT_STATUS_FAILED = 6;
+  EVENT_STATUS_CANCELLED = 7;
+}
+
+enum DispatchStatus {
+  DISPATCH_STATUS_UNSPECIFIED = 0;
+  DISPATCH_STATUS_PENDING = 1;
+  DISPATCH_STATUS_RUNNING = 2;
+  DISPATCH_STATUS_COMPLETED = 3;
+  DISPATCH_STATUS_FAILED = 4;
+  DISPATCH_STATUS_CANCELLED = 5;
+}
+
+enum AudienceKind {
+  AUDIENCE_KIND_UNSPECIFIED = 0;
+  AUDIENCE_KIND_EXPLICIT = 1;
+  AUDIENCE_KIND_GROUPS = 2;
+  AUDIENCE_KIND_SEGMENT = 3;
+}
+
+enum StrategyKind {
+  STRATEGY_KIND_UNSPECIFIED = 0;
+  STRATEGY_KIND_IMMEDIATE = 1;
+  STRATEGY_KIND_SCHEDULED = 2;
+  STRATEGY_KIND_MANUAL = 3;
+}
+
+message DeliveryStrategy {
+  StrategyKind kind = 1;
+  google.protobuf.Timestamp send_at = 2; // only for SCHEDULED
+}
+
+message Audience {
+  AudienceKind kind = 1;
+  bool snapshot_on_dispatch = 2;
+  repeated string recipient_id = 10;
+  repeated string group_id = 11;
+  string segment_id = 12;
+}
+
+message CreateEventRequest {
+  string idempotency_key = 1;
+
+  string template_id = 2;
+  int32 template_version = 3;
+
+  notification.common.v1.DeliveryPriority priority = 4;
+  notification.common.v1.Channel preferred_channel = 5;
+
+  DeliveryStrategy strategy = 6;
+  map<string, string> payload = 7;
+
+  Audience audience = 8;
+}
+
+message CreateEventResponse {
+  string event_id = 1;
+  EventStatus status = 2;
+  bool deduplicated = 3;
+  google.protobuf.Timestamp created_at = 4;
+}
+
+message UpdateEventRequest {
+  string event_id = 1;
+  google.protobuf.FieldMask update_mask = 2;
+
+  int32 template_version = 3;
+  notification.common.v1.DeliveryPriority priority = 4;
+  notification.common.v1.Channel preferred_channel = 5;
+
+  DeliveryStrategy strategy = 6;
+  map<string, string> payload = 7;
+}
+
+message UpdateEventResponse {
+  string event_id = 1;
+  EventStatus status = 2;
+  google.protobuf.Timestamp updated_at = 3;
+}
+
+message CancelEventRequest {string event_id = 1; string reason = 2;}
+message CancelEventResponse {string event_id = 1; EventStatus status = 2; google.protobuf.Timestamp cancelled_at = 3;}
+
+message SetAudienceRequest {string event_id = 1; Audience audience = 2;}
+message SetAudienceResponse {string event_id = 1; EventStatus status = 2; google.protobuf.Timestamp updated_at = 3;}
+
+message AddRecipientsRequest {string event_id = 1; string idempotency_key = 2; repeated string recipient_id = 3;}
+message AddRecipientsResponse {string event_id = 1; int32 added = 2;}
+
+message RemoveRecipientsRequest {string event_id = 1; repeated string recipient_id = 2;}
+message RemoveRecipientsResponse {string event_id = 1; int32 removed = 2;}
+
+message GetAudienceRequest {string event_id = 1;}
+message GetAudienceResponse {string event_id = 1; Audience audience = 2;}
+
+message TriggerDispatchRequest {string event_id = 1; string idempotency_key = 2; google.protobuf.Timestamp override_send_at = 3;}
+message TriggerDispatchResponse {string dispatch_id = 1; DispatchStatus status = 2;}
+
+message GetDispatchRequest {string dispatch_id = 1;}
+
+message DispatchView {
+  string dispatch_id = 1;
+  string event_id = 2;
+  DispatchStatus status = 3;
+
+  google.protobuf.Timestamp planned_send_at = 4;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Timestamp finished_at = 6;
+
+  int64 total_targets = 7;
+  int64 enqueued = 8;
+}
+message GetDispatchResponse {DispatchView dispatch = 1;}
+
+message ListDispatchesRequest {string event_id = 1; int32 page = 2; int32 size = 3;}
+message ListDispatchesResponse {repeated DispatchView dispatches = 1; int64 total = 2; int32 page = 3; int32 size = 4;}
+
+message GetEventRequest {string event_id = 1;}
+
+message EventView {
+  string event_id = 1;
+  string idempotency_key = 2;
+  string client_id = 3;
+
+  string template_id = 4;
+  int32 template_version = 5;
+
+  notification.common.v1.DeliveryPriority priority = 6;
+  notification.common.v1.Channel preferred_channel = 7;
+
+  DeliveryStrategy strategy = 8;
+  EventStatus status = 9;
+
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+
+  google.protobuf.Timestamp cancelled_at = 12;
+  string cancel_reason = 13;
+
+  map<string, string> payload = 14;
+}
+
+message GetEventResponse {EventView event = 1;}
+
+message ListEventsRequest {
+  int32 page = 1;
+  int32 size = 2;
+  EventStatus status_filter = 3;
+}
+
+message ListEventsResponse {
+  repeated EventView events = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 size = 4;
+}

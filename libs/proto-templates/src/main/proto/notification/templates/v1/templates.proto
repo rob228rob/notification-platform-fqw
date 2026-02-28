@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package notification.templates.v1;
+
+option java_multiple_files  = true;
+option java_package         = "ru.notification.templates.proto.v1";
+option java_outer_classname = "TemplateRegistryProto";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/field_mask.proto";
+import "notification/common/v1/common.proto";
+
+service TemplateRegistry {
+  rpc CreateTemplate  (CreateTemplateRequest) returns (CreateTemplateResponse);
+  rpc UpdateTemplate  (UpdateTemplateRequest) returns (UpdateTemplateResponse);
+  rpc PublishTemplate (PublishTemplateRequest) returns (PublishTemplateResponse);
+  rpc GetTemplate     (GetTemplateRequest) returns (GetTemplateResponse);
+  rpc ListTemplates   (ListTemplatesRequest) returns (ListTemplatesResponse);
+  rpc ArchiveTemplate (ArchiveTemplateRequest) returns (ArchiveTemplateResponse);
+  rpc RenderPreview   (RenderPreviewRequest) returns (RenderPreviewResponse);
+}
+
+enum TemplateStatus {
+  TEMPLATE_STATUS_UNSPECIFIED = 0;
+  TEMPLATE_STATUS_DRAFT       = 1;
+  TEMPLATE_STATUS_PUBLISHED   = 2;
+  TEMPLATE_STATUS_ARCHIVED    = 3;
+}
+
+enum TemplateEngine {
+  TEMPLATE_ENGINE_UNSPECIFIED = 0;
+  TEMPLATE_ENGINE_HANDLEBARS  = 1;
+  TEMPLATE_ENGINE_FREEMARKER  = 2;
+}
+
+message TemplateChannelContent {
+  notification.common.v1.Channel channel = 1;
+  string subject = 2;
+  string body = 3;
+}
+
+message TemplateView {
+  string template_id = 1;
+  string client_id = 2;
+  string name = 3;
+  string description = 4;
+  TemplateStatus status = 5;
+  int32 active_version = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message TemplateVersionView {
+  string template_id = 1;
+  int32 version = 2;
+  TemplateEngine engine = 3;
+  repeated TemplateChannelContent contents = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message CreateTemplateRequest {
+  string idempotency_key = 1;
+  string name = 2;
+  string description = 3;
+  TemplateEngine engine = 4;
+  repeated TemplateChannelContent contents = 5;
+}
+message CreateTemplateResponse { string template_id = 1; int32 created_version = 2; TemplateStatus status = 3; }
+
+message UpdateTemplateRequest {
+  string template_id = 1;
+  google.protobuf.FieldMask update_mask = 2;
+  TemplateEngine engine = 3;
+  repeated TemplateChannelContent contents = 4;
+  string description = 5;
+}
+message UpdateTemplateResponse { string template_id = 1; int32 new_version = 2; TemplateStatus status = 3; }
+
+message PublishTemplateRequest { string template_id = 1; int32 version = 2; }
+message PublishTemplateResponse { string template_id = 1; int32 active_version = 2; TemplateStatus status = 3; }
+
+message GetTemplateRequest { string template_id = 1; int32 version = 2; }
+message GetTemplateResponse { TemplateView template = 1; TemplateVersionView version = 2; }
+
+message ListTemplatesRequest { int32 page = 1; int32 size = 2; TemplateStatus status_filter = 3; }
+message ListTemplatesResponse { repeated TemplateView templates = 1; int64 total = 2; int32 page = 3; int32 size = 4; }
+
+message ArchiveTemplateRequest { string template_id = 1; string reason = 2; }
+message ArchiveTemplateResponse { string template_id = 1; TemplateStatus status = 2; }
+
+message RenderPreviewRequest {
+  string template_id = 1;
+  int32 version = 2;
+  notification.common.v1.Channel channel = 3;
+  map<string, string> payload = 4;
+}
+message RenderPreviewResponse { string subject = 1; string body = 2; }

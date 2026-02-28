@@ -1,0 +1,857 @@
+package ru.batoyan.vkr.usecase;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.FieldMask;
+import com.google.protobuf.Timestamp;
+import io.grpc.Status;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.*;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.notification.common.proto.v1.Channel;
+import ru.notification.common.proto.v1.DeliveryPriority;
+import ru.notification.facade.proto.v1.*;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.*;
+
+@Service
+public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase {
+
+    private static final Logger LOG = LogManager.getLogger();
+
+    private final NamedParameterJdbcTemplate jdbc;
+    private final ObjectMapper objectMapper;
+
+    public JdbcNotificationFacadeUseCase(NamedParameterJdbcTemplate jdbc, ObjectMapper objectMapper) {
+        this.jdbc = jdbc;
+        this.objectMapper = objectMapper;
+    }
+
+    @Override
+    @Transactional
+    public CreateEventResponse create(CreateEventRequest req, String clientId) {
+        var clientUuid = parseClientId(clientId);
+
+        var existing = findEventByClientAndIdem(clientUuid, req.getIdempotencyKey());
+        if (existing.isPresent()) {
+            var row = existing.get();
+            return CreateEventResponse.newBuilder()
+                    .setEventId(row.eventId.toString())
+                    .setStatus(EventStatus.valueOf(row.status))
+                    .setDeduplicated(true)
+                    .setCreatedAt(toTs(row.createdAt))
+                    .build();
+        }
+
+        var eventId = UUID.randomUUID();
+        var now = Instant.now();
+
+        var sk = req.getStrategy().getKind();
+        var scheduledAt = (sk == StrategyKind.STRATEGY_KIND_SCHEDULED)
+                ? OffsetDateTime.ofInstant(toInstant(req.getStrategy().getSendAt()), ZoneOffset.UTC)
+                : null;
+
+        var status = (sk == StrategyKind.STRATEGY_KIND_SCHEDULED) ? EventStatus.EVENT_STATUS_SCHEDULED.name()
+                : EventStatus.EVENT_STATUS_DRAFT.name();
+
+        var payloadJson = toJson(req.getPayloadMap());
+
+        var sql = """
+                insert into notification_event(
+                  event_id, client_id, idempotency_key,
+                  template_id, template_version,
+                  priority, preferred_channel,
+                  strategy_kind, scheduled_at,
+                  status, payload,
+                  created_at, updated_at
+                ) values (
+                  :event_id, :client_id, :idempotency_key,
+                  :template_id, :template_version,
+                  :priority, :preferred_channel,
+                  :strategy_kind, :scheduled_at,
+                  :status, cast(:payload as jsonb),
+                  now(), now()
+                ) on conflict (idempotency_key, client_id) do nothing
+                """;
+
+        var params = new HashMap<String, Object>();
+        params.put("event_id", eventId);
+        params.put("client_id", clientUuid);
+        params.put("idempotency_key", req.getIdempotencyKey());
+        params.put("template_id", req.getTemplateId());
+        params.put("template_version", req.getTemplateVersion());
+        params.put("priority", req.getPriority().name());
+        params.put("preferred_channel", req.getPreferredChannel().name());
+        params.put("strategy_kind", sk.name());
+        params.put("scheduled_at", scheduledAt);
+        params.put("status", status);
+        params.put("payload", payloadJson);
+
+        try {
+            jdbc.update(sql, params);
+        } catch (Exception e) {
+            // если гонка — второй поток мог вставить. Тогда читаем и возвращаем dedup
+            var race = findEventByClientAndIdem(clientUuid, req.getIdempotencyKey());
+            if (race.isPresent()) {
+                var row = race.get();
+                return CreateEventResponse.newBuilder()
+                        .setEventId(row.eventId.toString())
+                        .setStatus(EventStatus.valueOf(row.status))
+                        .setDeduplicated(true)
+                        .setCreatedAt(toTs(row.createdAt))
+                        .build();
+            }
+            throw Status.INTERNAL.withDescription("Failed to create event").withCause(e).asRuntimeException();
+        }
+
+        // 3) Audience (optional)
+        if (req.hasAudience()) {
+            upsertAudience(eventId, req.getAudience());
+        } else {
+            // по умолчанию аудитория EXPLICIT пустая (можно добавить потом батчами)
+            upsertAudience(eventId, Audience.newBuilder()
+                    .setKind(AudienceKind.AUDIENCE_KIND_EXPLICIT)
+                    .setSnapshotOnDispatch(true)
+                    .build());
+        }
+
+        return CreateEventResponse.newBuilder()
+                .setEventId(eventId.toString())
+                .setStatus(EventStatus.valueOf(status))
+                .setDeduplicated(false)
+                .setCreatedAt(toTs(now))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public UpdateEventResponse update(UpdateEventRequest req, String clientId) {
+        UUID clientUuid = parseClientId(clientId);
+        UUID eventId = parseUuid(req.getEventId(), "event_id");
+
+        var row = findEventByIdAndClient(eventId, clientUuid)
+                .orElseThrow(() -> Status.NOT_FOUND.withDescription("event not found").asRuntimeException());
+
+        if (!isMutableStatus(row.status)) {
+            throw Status.FAILED_PRECONDITION.withDescription("event status is not mutable: " + row.status).asRuntimeException();
+        }
+
+        FieldMask mask = req.getUpdateMask();
+        if (mask == null || mask.getPathsCount() == 0) {
+            throw Status.INVALID_ARGUMENT.withDescription("update_mask.paths must not be empty").asRuntimeException();
+        }
+
+        Map<String, Object> patch = new LinkedHashMap<>();
+
+        for (String path : mask.getPathsList()) {
+            switch (path) {
+                case "template_version" -> patch.put("template_version", req.getTemplateVersion());
+                case "priority" -> patch.put("priority", req.getPriority().name());
+                case "preferred_channel" -> patch.put("preferred_channel", req.getPreferredChannel().name());
+                case "strategy" -> {
+                    StrategyKind sk = req.getStrategy().getKind();
+                    patch.put("strategy_kind", sk.name());
+                    Instant scheduledAt = (sk == StrategyKind.STRATEGY_KIND_SCHEDULED)
+                            ? toInstant(req.getStrategy().getSendAt())
+                            : null;
+                    patch.put("scheduled_at", scheduledAt);
+
+                    // статусы: если ставим scheduled -> SCHEDULED, если убираем -> DRAFT/READY оставляем как есть
+                    if (sk == StrategyKind.STRATEGY_KIND_SCHEDULED) {
+                        patch.put("status", EventStatus.EVENT_STATUS_SCHEDULED.name());
+                    }
+                }
+                case "payload" -> patch.put("payload", toJson(req.getPayloadMap()));
+                default ->
+                        throw Status.INVALID_ARGUMENT.withDescription("forbidden update_mask path: " + path).asRuntimeException();
+            }
+        }
+
+        // dynamic SQL update
+        var sets = new ArrayList<String>();
+        var params = new HashMap<String, Object>();
+        params.put("event_id", eventId);
+        params.put("client_id", clientUuid);
+        params.put("updated_at", Instant.now());
+        sets.add("updated_at = :updated_at");
+
+        for (var e : patch.entrySet()) {
+            if (e.getKey().equals("payload")) {
+                sets.add("payload = cast(:payload as jsonb)");
+                params.put("payload", e.getValue());
+            } else {
+                sets.add(e.getKey() + " = :" + e.getKey());
+                params.put(e.getKey(), e.getValue());
+            }
+        }
+
+        var sql = "update notification_event set " + String.join(", ", sets)
+                + " where event_id = :event_id and client_id = :client_id"
+                + " and status in ('EVENT_STATUS_DRAFT','EVENT_STATUS_READY','EVENT_STATUS_SCHEDULED')";
+
+        int updated = jdbc.update(sql, params);
+        if (updated == 0) {
+            throw Status.FAILED_PRECONDITION.withDescription("event not updated (status changed?)").asRuntimeException();
+        }
+
+        var updatedRow = findEventByIdAndClient(eventId, clientUuid)
+                .orElseThrow(() -> Status.INTERNAL.withDescription("event disappeared after update").asRuntimeException());
+
+        return UpdateEventResponse.newBuilder()
+                .setEventId(updatedRow.eventId.toString())
+                .setStatus(EventStatus.valueOf(updatedRow.status))
+                .setUpdatedAt(toTs(updatedRow.updatedAt))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public CancelEventResponse cancel(CancelEventRequest req, String clientId) {
+        UUID clientUuid = parseClientId(clientId);
+        UUID eventId = parseUuid(req.getEventId(), "event_id");
+        Instant now = Instant.now();
+
+        var sql = """
+                update notification_event
+                set status = 'EVENT_STATUS_CANCELLED',
+                    cancelled_at = :ts,
+                    cancel_reason = :reason,
+                    updated_at = :ts
+                where event_id = :event_id and client_id = :client_id
+                  and status in ('EVENT_STATUS_DRAFT','EVENT_STATUS_READY','EVENT_STATUS_SCHEDULED')
+                """;
+
+        int updated = jdbc.update(sql, Map.of(
+                "ts", now,
+                "reason", req.getReason(),
+                "event_id", eventId,
+                "client_id", clientUuid
+        ));
+
+        if (updated == 0) {
+            // если события нет — NOT_FOUND; если статус не тот — FAILED_PRECONDITION
+            var exists = findEventByIdAndClient(eventId, clientUuid);
+            if (exists.isEmpty()) {
+                throw Status.NOT_FOUND.withDescription("event not found").asRuntimeException();
+            }
+            throw Status.FAILED_PRECONDITION.withDescription("cannot cancel in status: " + exists.get().status).asRuntimeException();
+        }
+
+        return CancelEventResponse.newBuilder()
+                .setEventId(eventId.toString())
+                .setStatus(EventStatus.EVENT_STATUS_CANCELLED)
+                .setCancelledAt(toTs(now))
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public GetEventResponse getEvent(GetEventRequest req, String clientId) {
+        UUID clientUuid = parseClientId(clientId);
+        UUID eventId = parseUuid(req.getEventId(), "event_id");
+
+        var row = findEventByIdAndClient(eventId, clientUuid)
+                .orElseThrow(() -> Status.NOT_FOUND.withDescription("event not found").asRuntimeException());
+
+        return GetEventResponse.newBuilder()
+                .setEvent(toEventView(row))
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ListEventsResponse listEvents(ListEventsRequest req, String clientId) {
+        UUID clientUuid = parseClientId(clientId);
+
+        int page = req.getPage();
+        int size = req.getSize();
+        int offset = page * size;
+
+        String status = req.getStatusFilter().name();
+
+        var where = new StringBuilder(" where client_id = :client_id ");
+        var params = new HashMap<String, Object>();
+        params.put("client_id", clientUuid);
+
+        if (req.getStatusFilter() != EventStatus.EVENT_STATUS_UNSPECIFIED) {
+            where.append(" and status = :status ");
+            params.put("status", status);
+        }
+
+        long total = jdbc.queryForObject("select count(*) from notification_event" + where, params, Long.class);
+
+        var sql = """
+                select * from notification_event
+                """ + where + """
+                order by created_at desc
+                limit :limit offset :offset
+                """;
+        params.put("limit", size);
+        params.put("offset", offset);
+
+        var rows = jdbc.query(sql, params, EVENT_ROW_MAPPER);
+
+        var resp = ListEventsResponse.newBuilder()
+                .setTotal(total)
+                .setPage(page)
+                .setSize(size);
+
+        for (var r : rows) resp.addEvents(toEventView(r));
+        return resp.build();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────────
+    // Audience
+    // ──────────────────────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public SetAudienceResponse setAudience(SetAudienceRequest req, String clientId) {
+        var clientUuid = parseClientId(clientId);
+        var eventId = parseUuid(req.getEventId(), "event_id");
+
+        var ev = findEventByIdAndClient(eventId, clientUuid)
+                .orElseThrow(() -> Status.NOT_FOUND.withDescription("event not found").asRuntimeException());
+
+        if (!isMutableStatus(ev.status)) {
+            throw Status.FAILED_PRECONDITION.withDescription("event status is not mutable: " + ev.status).asRuntimeException();
+        }
+
+        upsertAudience(eventId, req.getAudience());
+
+        // для EXPLICIT: если передали recipient_id прямо в Audience — заменим список
+        if (req.getAudience().getKind() == AudienceKind.AUDIENCE_KIND_EXPLICIT
+                && req.getAudience().getRecipientIdCount() > 0) {
+            replaceRecipients(eventId, req.getAudience().getRecipientIdList());
+        } else if (req.getAudience().getKind() != AudienceKind.AUDIENCE_KIND_EXPLICIT) {
+            // если переключили на GROUPS/SEGMENT — очищаем explicit recipients (чтобы не мешались)
+            jdbc.update("delete from event_recipient where event_id = :event_id", Map.of("event_id", eventId));
+        }
+
+        var now = Instant.now();
+        jdbc.update("update notification_event set updated_at = :ts where event_id = :event_id",
+                Map.of("ts", now, "event_id", eventId));
+
+        // статус не меняем (его меняет стратегия/dispatch), но можем вернуть текущий
+        var updated = findEventByIdAndClient(eventId, clientUuid).orElseThrow();
+        return SetAudienceResponse.newBuilder()
+                .setEventId(eventId.toString())
+                .setStatus(EventStatus.valueOf(updated.status))
+                .setUpdatedAt(toTs(now))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public AddRecipientsResponse addRecipients(AddRecipientsRequest req, String clientId) {
+        var clientUuid = parseClientId(clientId);
+        var eventId = parseUuid(req.getEventId(), "event_id");
+
+        var ev = findEventByIdAndClient(eventId, clientUuid)
+                .orElseThrow(() -> Status.NOT_FOUND.withDescription("event not found").asRuntimeException());
+
+        if (!isMutableStatus(ev.status)) {
+            throw Status.FAILED_PRECONDITION.withDescription("event status is not mutable: " + ev.status).asRuntimeException();
+        }
+
+        var aud = getAudienceRow(eventId)
+                .orElseThrow(() -> Status.FAILED_PRECONDITION.withDescription("audience not set").asRuntimeException());
+
+        if (!aud.kind.equals(AudienceKind.AUDIENCE_KIND_EXPLICIT.name())) {
+            throw Status.FAILED_PRECONDITION.withDescription("addRecipients allowed only for EXPLICIT audience").asRuntimeException();
+        }
+
+        // идемпотентность батча: можно хранить ключи в отдельной таблице event_recipient_batch
+        // Для диплома упростим: идемпотентность обеспечиваем PK(event_id, recipient_id) + ON CONFLICT DO NOTHING.
+
+        int added = insertRecipientsIgnoreDuplicates(eventId, req.getRecipientIdList());
+
+        return AddRecipientsResponse.newBuilder()
+                .setEventId(eventId.toString())
+                .setAdded(added)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public RemoveRecipientsResponse removeRecipients(RemoveRecipientsRequest req, String clientId) {
+        var clientUuid = parseClientId(clientId);
+        var eventId = parseUuid(req.getEventId(), "event_id");
+
+        var ev = findEventByIdAndClient(eventId, clientUuid)
+                .orElseThrow(() -> Status.NOT_FOUND.withDescription("event not found").asRuntimeException());
+
+        if (!isMutableStatus(ev.status)) {
+            throw Status.FAILED_PRECONDITION.withDescription("event status is not mutable: " + ev.status).asRuntimeException();
+        }
+
+        var sql = "delete from event_recipient where event_id = :event_id and recipient_id = :rid";
+        int removed = 0;
+        for (String rid : req.getRecipientIdList()) {
+            removed += jdbc.update(sql, Map.of("event_id", eventId, "rid", rid));
+        }
+
+        return RemoveRecipientsResponse.newBuilder()
+                .setEventId(eventId.toString())
+                .setRemoved(removed)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public GetAudienceResponse getAudience(GetAudienceRequest req, String clientId) {
+        UUID clientUuid = parseClientId(clientId);
+        UUID eventId = parseUuid(req.getEventId(), "event_id");
+
+        // ownership check
+        findEventByIdAndClient(eventId, clientUuid)
+                .orElseThrow(() -> Status.NOT_FOUND.withDescription("event not found").asRuntimeException());
+
+        var aud = getAudienceRow(eventId)
+                .orElseThrow(() -> Status.NOT_FOUND.withDescription("audience not found").asRuntimeException());
+
+        Audience.Builder b = Audience.newBuilder()
+                .setKind(AudienceKind.valueOf(aud.kind))
+                .setSnapshotOnDispatch(aud.snapshotOnDispatch);
+
+        if (aud.kind.equals(AudienceKind.AUDIENCE_KIND_EXPLICIT.name())) {
+            var rec = jdbc.queryForList(
+                    "select recipient_id from event_recipient where event_id = :event_id order by recipient_id",
+                    Map.of("event_id", eventId),
+                    String.class
+            );
+            b.addAllRecipientId(rec);
+        }
+
+        if (aud.segmentId != null) b.setSegmentId(aud.segmentId);
+
+        return GetAudienceResponse.newBuilder()
+                .setEventId(eventId.toString())
+                .setAudience(b.build())
+                .build();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────────
+    // Dispatch
+    // ──────────────────────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public TriggerDispatchResponse triggerDispatch(TriggerDispatchRequest req, String clientId) {
+        UUID clientUuid = parseClientId(clientId);
+        UUID eventId = parseUuid(req.getEventId(), "event_id");
+
+        var ev = findEventByIdAndClient(eventId, clientUuid)
+                .orElseThrow(() -> Status.NOT_FOUND.withDescription("event not found").asRuntimeException());
+
+        if (ev.status.equals(EventStatus.EVENT_STATUS_CANCELLED.name())) {
+            throw Status.FAILED_PRECONDITION.withDescription("event is cancelled").asRuntimeException();
+        }
+
+        var aud = getAudienceRow(eventId)
+                .orElseThrow(() -> Status.FAILED_PRECONDITION.withDescription("audience not set").asRuntimeException());
+
+        Instant planned = req.hasOverrideSendAt() ? toInstant(req.getOverrideSendAt())
+                : (ev.scheduledAt != null ? ev.scheduledAt : Instant.now());
+
+        // idempotent dispatch by (event_id, idempotency_key)
+        UUID dispatchId = UUID.randomUUID();
+        Instant now = Instant.now();
+
+        try {
+            jdbc.update("""
+                    insert into dispatch(dispatch_id, event_id, idempotency_key, status, planned_send_at, total_targets, enqueued, created_at)
+                    values(:dispatch_id, :event_id, :idem, 'DISPATCH_STATUS_PENDING', :planned, 0, 0, :created_at)
+                    """, Map.of(
+                    "dispatch_id", dispatchId,
+                    "event_id", eventId,
+                    "idem", req.getIdempotencyKey(),
+                    "planned", planned,
+                    "created_at", now
+            ));
+        } catch (Exception e) {
+            // дубль -> достаём существующий
+            var existed = jdbc.query("""
+                            select dispatch_id, status from dispatch where event_id = :event_id and idempotency_key = :idem
+                            """, Map.of("event_id", eventId, "idem", req.getIdempotencyKey()),
+                    (rs) -> rs.next() ? Map.entry(UUID.fromString(rs.getString("dispatch_id")), rs.getString("status")) : null
+            );
+            if (existed != null) {
+                return TriggerDispatchResponse.newBuilder()
+                        .setDispatchId(existed.getKey().toString())
+                        .setStatus(DispatchStatus.valueOf(existed.getValue()))
+                        .build();
+            }
+            throw Status.INTERNAL.withDescription("Failed to create dispatch").withCause(e).asRuntimeException();
+        }
+
+        // snapshot targets (только explicit для MVP)
+        if (aud.snapshotOnDispatch) {
+            if (!aud.kind.equals(AudienceKind.AUDIENCE_KIND_EXPLICIT.name())) {
+                // Для GROUPS/SEGMENT тебе нужен resolver из реплицированной БД групп/сегментов.
+                throw Status.UNIMPLEMENTED.withDescription("snapshot for audience kind not implemented: " + aud.kind).asRuntimeException();
+            }
+            var recipients = jdbc.queryForList(
+                    "select recipient_id from event_recipient where event_id = :event_id",
+                    Map.of("event_id", eventId),
+                    String.class
+            );
+            insertDispatchTargets(dispatchId, recipients);
+
+            jdbc.update("""
+                            update dispatch set total_targets = :total, updated_at = now()
+                            where dispatch_id = :dispatch_id
+                            """.replace("updated_at = now()", ""), // если поля updated_at нет — убери, тут заглушка
+                    Map.of("total", (long) recipients.size(), "dispatch_id", dispatchId)
+            );
+        }
+
+        // отметим event как DISPATCHING (для диплома)
+        jdbc.update("""
+                update notification_event set status = 'EVENT_STATUS_DISPATCHING', updated_at = :ts
+                where event_id = :event_id and client_id = :client_id
+                """, Map.of("ts", now, "event_id", eventId, "client_id", clientUuid));
+
+        return TriggerDispatchResponse.newBuilder()
+                .setDispatchId(dispatchId.toString())
+                .setStatus(DispatchStatus.DISPATCH_STATUS_PENDING)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public GetDispatchResponse getDispatch(GetDispatchRequest req, String clientId) {
+        UUID clientUuid = parseClientId(clientId);
+        UUID dispatchId = parseUuid(req.getDispatchId(), "dispatch_id");
+
+        // join to verify client ownership via event
+        var sql = """
+                select d.*, e.client_id
+                from dispatch d
+                join notification_event e on e.event_id = d.event_id
+                where d.dispatch_id = :dispatch_id
+                """;
+
+        var rows = jdbc.query(sql, Map.of("dispatch_id", dispatchId), DISPATCH_ROW_MAPPER);
+        if (rows.isEmpty()) throw Status.NOT_FOUND.withDescription("dispatch not found").asRuntimeException();
+
+        var d = rows.get(0);
+        if (!d.clientId.equals(clientUuid))
+            throw Status.NOT_FOUND.withDescription("dispatch not found").asRuntimeException();
+
+        return GetDispatchResponse.newBuilder()
+                .setDispatch(toDispatchView(d))
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ListDispatchesResponse listDispatches(ListDispatchesRequest req, String clientId) {
+        UUID clientUuid = parseClientId(clientId);
+        UUID eventId = parseUuid(req.getEventId(), "event_id");
+
+        // ensure event belongs to client
+        findEventByIdAndClient(eventId, clientUuid)
+                .orElseThrow(() -> Status.NOT_FOUND.withDescription("event not found").asRuntimeException());
+
+        int page = req.getPage();
+        int size = req.getSize();
+        int offset = page * size;
+
+        long total = jdbc.queryForObject(
+                "select count(*) from dispatch where event_id = :event_id",
+                Map.of("event_id", eventId),
+                Long.class
+        );
+
+        var sql = """
+                select d.*, e.client_id
+                from dispatch d
+                join notification_event e on e.event_id = d.event_id
+                where d.event_id = :event_id
+                order by d.created_at desc
+                limit :limit offset :offset
+                """;
+
+        var params = new HashMap<String, Object>();
+        params.put("event_id", eventId);
+        params.put("limit", size);
+        params.put("offset", offset);
+
+        var rows = jdbc.query(sql, params, DISPATCH_ROW_MAPPER);
+
+        var resp = ListDispatchesResponse.newBuilder()
+                .setTotal(total)
+                .setPage(page)
+                .setSize(size);
+
+        for (var r : rows) resp.addDispatches(toDispatchView(r));
+        return resp.build();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────────
+    // Helpers: Audience persistence
+    // ──────────────────────────────────────────────────────────────────────────────
+
+    private void upsertAudience(UUID eventId, Audience a) {
+        var sql = """
+                insert into event_audience(event_id, kind, snapshot_on_dispatch, segment_id)
+                values(:event_id, :kind, :snapshot, :segment_id)
+                on conflict (event_id) do update set
+                  kind = excluded.kind,
+                  snapshot_on_dispatch = excluded.snapshot_on_dispatch,
+                  segment_id = excluded.segment_id
+                """;
+
+        jdbc.update(sql, Map.of(
+                "event_id", eventId,
+                "kind", a.getKind().name(),
+                "snapshot", a.getSnapshotOnDispatch(),
+                "segment_id", a.getSegmentId().isBlank() ? null : a.getSegmentId()
+        ));
+    }
+
+    private void replaceRecipients(UUID eventId, List<String> recipients) {
+        jdbc.update("delete from event_recipient where event_id = :event_id", Map.of("event_id", eventId));
+        insertRecipientsIgnoreDuplicates(eventId, recipients);
+    }
+
+    private int insertRecipientsIgnoreDuplicates(UUID eventId, List<String> recipients) {
+        // batch insert with named params; Spring recommends batchUpdate on NamedParameterJdbcTemplate. :contentReference[oaicite:1]{index=1}
+        var sql = """
+                insert into event_recipient(event_id, recipient_id)
+                values(:event_id, :recipient_id)
+                on conflict do nothing
+                """;
+
+        var batch = recipients.stream()
+                .map(rid -> new MapSqlParameterSource()
+                        .addValue("event_id", eventId)
+                        .addValue("recipient_id", rid))
+                .toArray(SqlParameterSource[]::new);
+
+        int[] res = jdbc.batchUpdate(sql, batch);
+        // Postgres returns 1 for inserted, 0 for do nothing
+        int added = 0;
+        for (int r : res) added += r;
+        return added;
+    }
+
+    private void insertDispatchTargets(UUID dispatchId, List<String> recipients) {
+        var sql = """
+                insert into dispatch_target(dispatch_id, recipient_id)
+                values(:dispatch_id, :recipient_id)
+                on conflict do nothing
+                """;
+
+        var batch = recipients.stream()
+                .map(rid -> new MapSqlParameterSource()
+                        .addValue("dispatch_id", dispatchId)
+                        .addValue("recipient_id", rid))
+                .toArray(SqlParameterSource[]::new);
+
+        jdbc.batchUpdate(sql, batch);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────────
+    // Row mappers + finders
+    // ──────────────────────────────────────────────────────────────────────────────
+
+    private Optional<EventRow> findEventByClientAndIdem(UUID clientId, String idemKey) {
+        var rows = jdbc.query("""
+                select * from notification_event
+                where client_id = :client_id and idempotency_key = :idem
+                """, Map.of("client_id", clientId, "idem", idemKey), EVENT_ROW_MAPPER);
+        return rows.stream().findFirst();
+    }
+
+    private Optional<EventRow> findEventByIdAndClient(UUID eventId, UUID clientId) {
+        var rows = jdbc.query("""
+                select * from notification_event
+                where event_id = :event_id and client_id = :client_id
+                """, Map.of("event_id", eventId, "client_id", clientId), EVENT_ROW_MAPPER);
+        return rows.stream().findFirst();
+    }
+
+    private Optional<AudienceRow> getAudienceRow(UUID eventId) {
+        var rows = jdbc.query("""
+                select event_id, kind, snapshot_on_dispatch, segment_id
+                from event_audience
+                where event_id = :event_id
+                """, Map.of("event_id", eventId), AUDIENCE_ROW_MAPPER);
+        return rows.stream().findFirst();
+    }
+
+    private static boolean isMutableStatus(String status) {
+        return status.equals(EventStatus.EVENT_STATUS_DRAFT.name())
+                || status.equals(EventStatus.EVENT_STATUS_READY.name())
+                || status.equals(EventStatus.EVENT_STATUS_SCHEDULED.name());
+    }
+
+    private EventView toEventView(EventRow r) {
+        var b = EventView.newBuilder()
+                .setEventId(r.eventId.toString())
+                .setIdempotencyKey(r.idempotencyKey)
+                .setClientId(r.clientId.toString())
+                .setTemplateId(r.templateId)
+                .setTemplateVersion(r.templateVersion)
+                .setPriority(DeliveryPriority.valueOf(r.priority))
+                .setPreferredChannel(Channel.valueOf(r.preferredChannel))
+                .setStatus(EventStatus.valueOf(r.status))
+                .setCreatedAt(toTs(r.createdAt))
+                .setUpdatedAt(toTs(r.updatedAt));
+
+        if (r.cancelledAt != null) b.setCancelledAt(toTs(r.cancelledAt));
+        if (r.cancelReason != null) b.setCancelReason(r.cancelReason);
+
+        // strategy
+        var sb = DeliveryStrategy.newBuilder()
+                .setKind(StrategyKind.valueOf(r.strategyKind));
+        if (r.scheduledAt != null) sb.setSendAt(toTs(r.scheduledAt));
+        b.setStrategy(sb.build());
+
+        // payload json -> map
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, String> m = objectMapper.readValue(r.payloadJson, Map.class);
+            b.putAllPayload(m);
+        } catch (Exception ignore) {
+            // если payload повреждён — лучше не валить чтение события
+        }
+
+        return b.build();
+    }
+
+    private DispatchView toDispatchView(DispatchRow r) {
+        var b = DispatchView.newBuilder()
+                .setDispatchId(r.dispatchId.toString())
+                .setEventId(r.eventId.toString())
+                .setStatus(DispatchStatus.valueOf(r.status))
+                .setTotalTargets(r.totalTargets)
+                .setEnqueued(r.enqueued);
+
+        if (r.plannedSendAt != null) b.setPlannedSendAt(toTs(r.plannedSendAt));
+        if (r.startedAt != null) b.setStartedAt(toTs(r.startedAt));
+        if (r.finishedAt != null) b.setFinishedAt(toTs(r.finishedAt));
+        return b.build();
+    }
+
+    private String toJson(Map<String, String> map) {
+        try {
+            return objectMapper.writeValueAsString(map == null ? Map.of() : map);
+        } catch (JsonProcessingException e) {
+            throw Status.INVALID_ARGUMENT.withDescription("payload is not serializable").withCause(e).asRuntimeException();
+        }
+    }
+
+    private static Instant toInstant(Timestamp ts) {
+        return Instant.ofEpochSecond(ts.getSeconds(), ts.getNanos());
+    }
+
+    private static Timestamp toTs(Instant i) {
+        return Timestamp.newBuilder().setSeconds(i.getEpochSecond()).setNanos(i.getNano()).build();
+    }
+
+    private static UUID parseClientId(String clientId) {
+        try {
+            return UUID.fromString(clientId);
+        } catch (Exception e) {
+            throw Status.UNAUTHENTICATED.withDescription("invalid client_id").asRuntimeException();
+        }
+    }
+
+    private static UUID parseUuid(String v, String field) {
+        try {
+            return UUID.fromString(v);
+        } catch (Exception e) {
+            throw Status.INVALID_ARGUMENT.withDescription(field + " must be UUID").asRuntimeException();
+        }
+    }
+
+    private static final RowMapper<EventRow> EVENT_ROW_MAPPER = (rs, rowNum) -> new EventRow(rs);
+    private static final RowMapper<AudienceRow> AUDIENCE_ROW_MAPPER = (rs, rowNum) -> new AudienceRow(rs);
+    private static final RowMapper<DispatchRow> DISPATCH_ROW_MAPPER = (rs, rowNum) -> new DispatchRow(rs);
+
+    private static final class EventRow {
+        final UUID eventId;
+        final UUID clientId;
+        final String idempotencyKey;
+        final String templateId;
+        final int templateVersion;
+        final String priority;
+        final String preferredChannel;
+        final String strategyKind;
+        final Instant scheduledAt;
+        final String status;
+        final String payloadJson;
+        final Instant createdAt;
+        final Instant updatedAt;
+        final Instant cancelledAt;
+        final String cancelReason;
+
+        EventRow(ResultSet rs) throws SQLException {
+            this.eventId = UUID.fromString(rs.getString("event_id"));
+            this.clientId = UUID.fromString(rs.getString("client_id"));
+            this.idempotencyKey = rs.getString("idempotency_key");
+            this.templateId = rs.getString("template_id");
+            this.templateVersion = rs.getInt("template_version");
+            this.priority = rs.getString("priority");
+            this.preferredChannel = rs.getString("preferred_channel");
+            this.strategyKind = rs.getString("strategy_kind");
+            this.scheduledAt = rs.getObject("scheduled_at", Instant.class);
+            this.status = rs.getString("status");
+            this.payloadJson = rs.getString("payload");
+            this.createdAt = rs.getObject("created_at", Instant.class);
+            this.updatedAt = rs.getObject("updated_at", Instant.class);
+            this.cancelledAt = rs.getObject("cancelled_at", Instant.class);
+            this.cancelReason = rs.getString("cancel_reason");
+        }
+    }
+
+    private static final class AudienceRow {
+        final UUID eventId;
+        final String kind;
+        final boolean snapshotOnDispatch;
+        final String segmentId;
+
+        AudienceRow(ResultSet rs) throws SQLException {
+            this.eventId = UUID.fromString(rs.getString("event_id"));
+            this.kind = rs.getString("kind");
+            this.snapshotOnDispatch = rs.getBoolean("snapshot_on_dispatch");
+            this.segmentId = rs.getString("segment_id");
+        }
+    }
+
+    private static final class DispatchRow {
+        final UUID dispatchId;
+        final UUID eventId;
+        final UUID clientId;
+        final String status;
+        final Instant plannedSendAt;
+        final Instant startedAt;
+        final Instant finishedAt;
+        final long totalTargets;
+        final long enqueued;
+
+        DispatchRow(ResultSet rs) throws SQLException {
+            this.dispatchId = UUID.fromString(rs.getString("dispatch_id"));
+            this.eventId = UUID.fromString(rs.getString("event_id"));
+            this.clientId = UUID.fromString(rs.getString("client_id"));
+            this.status = rs.getString("status");
+            this.plannedSendAt = rs.getObject("planned_send_at", Instant.class);
+            this.startedAt = rs.getObject("started_at", Instant.class);
+            this.finishedAt = rs.getObject("finished_at", Instant.class);
+            this.totalTargets = rs.getLong("total_targets");
+            this.enqueued = rs.getLong("enqueued");
+        }
+    }
+}

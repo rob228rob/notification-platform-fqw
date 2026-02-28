@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package notification.common.v1;
+
+option java_multiple_files  = true;
+option java_package         = "ru.notification.common.proto.v1";
+option java_outer_classname = "CommonProto";
+
+import "google/protobuf/timestamp.proto";
+
+enum Channel {
+  CHANNEL_UNSPECIFIED = 0;
+  CHANNEL_EMAIL       = 1;
+  CHANNEL_SMS         = 2;
+  CHANNEL_PUSH        = 3;
+  CHANNEL_TELEGRAM    = 4;
+}
+
+enum DeliveryPriority {
+  DELIVERY_PRIORITY_UNSPECIFIED = 0;
+  DELIVERY_PRIORITY_HIGH        = 1;
+  DELIVERY_PRIORITY_NORMAL      = 2;
+  DELIVERY_PRIORITY_LOW         = 3;
+}
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED          = 0;
+  ERROR_CODE_INVALID_ARGUMENT     = 1;
+  ERROR_CODE_NOT_FOUND            = 2;
+  ERROR_CODE_ALREADY_EXISTS       = 3;
+  ERROR_CODE_FAILED_PRECONDITION  = 4;
+  ERROR_CODE_CONFLICT             = 5;
+  ERROR_CODE_RATE_LIMITED         = 6;
+  ERROR_CODE_INTERNAL             = 7;
+}
+
+message ErrorDetail {
+  ErrorCode code = 1;
+  string message = 2;
+  map<string, string> meta = 3;
+}
+
+message AuditStamp {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+}
