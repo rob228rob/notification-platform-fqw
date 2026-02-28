@@ -13,14 +13,14 @@ keycloak:
   certs-url: ${KEYCLOAK_CERTS_URL:http://176.108.255.79:80/realms/test-realm/protocol/openid-connect/certs}
   token-url: ${KEYCLOAK_TOKEN_URL:http://176.108.255.79:80/realms/test-realm/protocol/openid-connect/token}
   cert-algorithms: ${KEYCLOAK_CERT_ALGO:RS256,RS512}
-  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL:http://176.108.255.79:80}
-  realm: ${KEYCLOAK_REALM:test-realm}
+
+
   whitelist:
     filename: ${WHITELIST_FILENAME:whitelist.json}
   #  token-url: ${KEYCLOAK_TOKEN_URL:http://localhost:34001/realms/example/protocol/openid-connect/token}
   credentials:
-    client-id: ${KEYCLOAK_CLIENT_ID:java-client-id}
-    client-secret: ${KEYCLOAK_CLIENT_SECRET:FIXME}
+
+
 
 events:
   product:

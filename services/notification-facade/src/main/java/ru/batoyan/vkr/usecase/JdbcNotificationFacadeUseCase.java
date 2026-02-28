@@ -60,7 +60,8 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                 ? OffsetDateTime.ofInstant(toInstant(req.getStrategy().getSendAt()), ZoneOffset.UTC)
                 : null;
 
-        var status = (sk == StrategyKind.STRATEGY_KIND_SCHEDULED) ? EventStatus.EVENT_STATUS_SCHEDULED.name()
+        var status = (sk == StrategyKind.STRATEGY_KIND_SCHEDULED)
+                ? EventStatus.EVENT_STATUS_SCHEDULED.name()
                 : EventStatus.EVENT_STATUS_DRAFT.name();
 
         var payloadJson = toJson(req.getPayloadMap());
@@ -99,7 +100,7 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
         try {
             jdbc.update(sql, params);
         } catch (Exception e) {
-            // если гонка — второй поток мог вставить. Тогда читаем и возвращаем dedup
+            // если гонка — второй поток мог вставить, читаем и возвращаем dedup
             var race = findEventByClientAndIdem(clientUuid, req.getIdempotencyKey());
             if (race.isPresent()) {
                 var row = race.get();
@@ -113,11 +114,10 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
             throw Status.INTERNAL.withDescription("Failed to create event").withCause(e).asRuntimeException();
         }
 
-        // 3) Audience (optional)
         if (req.hasAudience()) {
             upsertAudience(eventId, req.getAudience());
         } else {
-            // по умолчанию аудитория EXPLICIT пустая (можно добавить потом батчами)
+            // по умолчанию аудитория EXPLICIT пустая (TODO(rbatoyan): можно добавить потом батчами)
             upsertAudience(eventId, Audience.newBuilder()
                     .setKind(AudienceKind.AUDIENCE_KIND_EXPLICIT)
                     .setSnapshotOnDispatch(true)
@@ -135,8 +135,8 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
     @Override
     @Transactional
     public UpdateEventResponse update(UpdateEventRequest req, String clientId) {
-        UUID clientUuid = parseClientId(clientId);
-        UUID eventId = parseUuid(req.getEventId(), "event_id");
+        var clientUuid = parseClientId(clientId);
+        var eventId = parseUuid(req.getEventId(), "event_id");
 
         var row = findEventByIdAndClient(eventId, clientUuid)
                 .orElseThrow(() -> Status.NOT_FOUND.withDescription("event not found").asRuntimeException());
@@ -145,27 +145,27 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
             throw Status.FAILED_PRECONDITION.withDescription("event status is not mutable: " + row.status).asRuntimeException();
         }
 
-        FieldMask mask = req.getUpdateMask();
+        var mask = req.getUpdateMask();
         if (mask == null || mask.getPathsCount() == 0) {
             throw Status.INVALID_ARGUMENT.withDescription("update_mask.paths must not be empty").asRuntimeException();
         }
 
-        Map<String, Object> patch = new LinkedHashMap<>();
+        var patch = new LinkedHashMap<String, Object>();
 
-        for (String path : mask.getPathsList()) {
+        for (var path : mask.getPathsList()) {
             switch (path) {
                 case "template_version" -> patch.put("template_version", req.getTemplateVersion());
                 case "priority" -> patch.put("priority", req.getPriority().name());
                 case "preferred_channel" -> patch.put("preferred_channel", req.getPreferredChannel().name());
                 case "strategy" -> {
-                    StrategyKind sk = req.getStrategy().getKind();
+                    var sk = req.getStrategy().getKind();
                     patch.put("strategy_kind", sk.name());
                     Instant scheduledAt = (sk == StrategyKind.STRATEGY_KIND_SCHEDULED)
                             ? toInstant(req.getStrategy().getSendAt())
                             : null;
                     patch.put("scheduled_at", scheduledAt);
 
-                    // статусы: если ставим scheduled -> SCHEDULED, если убираем -> DRAFT/READY оставляем как есть
+                    // если ставим scheduled -> SCHEDULED, если убираем -> DRAFT/READY оставляем как есть
                     if (sk == StrategyKind.STRATEGY_KIND_SCHEDULED) {
                         patch.put("status", EventStatus.EVENT_STATUS_SCHEDULED.name());
                     }
@@ -176,7 +176,6 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
             }
         }
 
-        // dynamic SQL update
         var sets = new ArrayList<String>();
         var params = new HashMap<String, Object>();
         params.put("event_id", eventId);
@@ -216,9 +215,9 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
     @Override
     @Transactional
     public CancelEventResponse cancel(CancelEventRequest req, String clientId) {
-        UUID clientUuid = parseClientId(clientId);
-        UUID eventId = parseUuid(req.getEventId(), "event_id");
-        Instant now = Instant.now();
+        var clientUuid = parseClientId(clientId);
+        var eventId = parseUuid(req.getEventId(), "event_id");
+        var now = Instant.now();
 
         var sql = """
                 update notification_event
@@ -238,7 +237,8 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
         ));
 
         if (updated == 0) {
-            // если события нет — NOT_FOUND; если статус не тот — FAILED_PRECONDITION
+            // если события нет — NOT_FOUND
+            // если статус не тот — FAILED_PRECONDITION
             var exists = findEventByIdAndClient(eventId, clientUuid);
             if (exists.isEmpty()) {
                 throw Status.NOT_FOUND.withDescription("event not found").asRuntimeException();
@@ -256,8 +256,8 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
     @Override
     @Transactional(readOnly = true)
     public GetEventResponse getEvent(GetEventRequest req, String clientId) {
-        UUID clientUuid = parseClientId(clientId);
-        UUID eventId = parseUuid(req.getEventId(), "event_id");
+        var clientUuid = parseClientId(clientId);
+        var eventId = parseUuid(req.getEventId(), "event_id");
 
         var row = findEventByIdAndClient(eventId, clientUuid)
                 .orElseThrow(() -> Status.NOT_FOUND.withDescription("event not found").asRuntimeException());
@@ -270,13 +270,13 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
     @Override
     @Transactional(readOnly = true)
     public ListEventsResponse listEvents(ListEventsRequest req, String clientId) {
-        UUID clientUuid = parseClientId(clientId);
+        var clientUuid = parseClientId(clientId);
 
         int page = req.getPage();
         int size = req.getSize();
         int offset = page * size;
 
-        String status = req.getStatusFilter().name();
+        var status = req.getStatusFilter().name();
 
         var where = new StringBuilder(" where client_id = :client_id ");
         var params = new HashMap<String, Object>();
@@ -328,12 +328,11 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
 
         upsertAudience(eventId, req.getAudience());
 
-        // для EXPLICIT: если передали recipient_id прямо в Audience — заменим список
+        // для EXPLICIT: если передали recipient_id прямо в Audience, заменим список
         if (req.getAudience().getKind() == AudienceKind.AUDIENCE_KIND_EXPLICIT
                 && req.getAudience().getRecipientIdCount() > 0) {
             replaceRecipients(eventId, req.getAudience().getRecipientIdList());
         } else if (req.getAudience().getKind() != AudienceKind.AUDIENCE_KIND_EXPLICIT) {
-            // если переключили на GROUPS/SEGMENT — очищаем explicit recipients (чтобы не мешались)
             jdbc.update("delete from event_recipient where event_id = :event_id", Map.of("event_id", eventId));
         }
 
@@ -341,7 +340,6 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
         jdbc.update("update notification_event set updated_at = :ts where event_id = :event_id",
                 Map.of("ts", now, "event_id", eventId));
 
-        // статус не меняем (его меняет стратегия/dispatch), но можем вернуть текущий
         var updated = findEventByIdAndClient(eventId, clientUuid).orElseThrow();
         return SetAudienceResponse.newBuilder()
                 .setEventId(eventId.toString())
@@ -370,9 +368,7 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
             throw Status.FAILED_PRECONDITION.withDescription("addRecipients allowed only for EXPLICIT audience").asRuntimeException();
         }
 
-        // идемпотентность батча: можно хранить ключи в отдельной таблице event_recipient_batch
-        // Для диплома упростим: идемпотентность обеспечиваем PK(event_id, recipient_id) + ON CONFLICT DO NOTHING.
-
+        // идемпотентность обеспечиваем PK(event_id, recipient_id) + ON CONFLICT DO NOTHING.
         int added = insertRecipientsIgnoreDuplicates(eventId, req.getRecipientIdList());
 
         return AddRecipientsResponse.newBuilder()
@@ -409,8 +405,8 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
     @Override
     @Transactional(readOnly = true)
     public GetAudienceResponse getAudience(GetAudienceRequest req, String clientId) {
-        UUID clientUuid = parseClientId(clientId);
-        UUID eventId = parseUuid(req.getEventId(), "event_id");
+        var  clientUuid = parseClientId(clientId);
+        var eventId = parseUuid(req.getEventId(), "event_id");
 
         // ownership check
         findEventByIdAndClient(eventId, clientUuid)
@@ -419,7 +415,7 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
         var aud = getAudienceRow(eventId)
                 .orElseThrow(() -> Status.NOT_FOUND.withDescription("audience not found").asRuntimeException());
 
-        Audience.Builder b = Audience.newBuilder()
+        var builder = Audience.newBuilder()
                 .setKind(AudienceKind.valueOf(aud.kind))
                 .setSnapshotOnDispatch(aud.snapshotOnDispatch);
 
@@ -429,14 +425,16 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                     Map.of("event_id", eventId),
                     String.class
             );
-            b.addAllRecipientId(rec);
+            builder.addAllRecipientId(rec);
         }
 
-        if (aud.segmentId != null) b.setSegmentId(aud.segmentId);
+        if (aud.segmentId != null) {
+            builder.setSegmentId(aud.segmentId);
+        }
 
         return GetAudienceResponse.newBuilder()
                 .setEventId(eventId.toString())
-                .setAudience(b.build())
+                .setAudience(builder.build())
                 .build();
     }
 
@@ -447,8 +445,8 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
     @Override
     @Transactional
     public TriggerDispatchResponse triggerDispatch(TriggerDispatchRequest req, String clientId) {
-        UUID clientUuid = parseClientId(clientId);
-        UUID eventId = parseUuid(req.getEventId(), "event_id");
+        var clientUuid = parseClientId(clientId);
+        var eventId = parseUuid(req.getEventId(), "event_id");
 
         var ev = findEventByIdAndClient(eventId, clientUuid)
                 .orElseThrow(() -> Status.NOT_FOUND.withDescription("event not found").asRuntimeException());
@@ -460,12 +458,12 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
         var aud = getAudienceRow(eventId)
                 .orElseThrow(() -> Status.FAILED_PRECONDITION.withDescription("audience not set").asRuntimeException());
 
-        Instant planned = req.hasOverrideSendAt() ? toInstant(req.getOverrideSendAt())
+        var planned = req.hasOverrideSendAt() ? toInstant(req.getOverrideSendAt())
                 : (ev.scheduledAt != null ? ev.scheduledAt : Instant.now());
 
         // idempotent dispatch by (event_id, idempotency_key)
-        UUID dispatchId = UUID.randomUUID();
-        Instant now = Instant.now();
+        var dispatchId = UUID.randomUUID();
+        var now = Instant.now();
 
         try {
             jdbc.update("""
@@ -479,7 +477,6 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                     "created_at", now
             ));
         } catch (Exception e) {
-            // дубль -> достаём существующий
             var existed = jdbc.query("""
                             select dispatch_id, status from dispatch where event_id = :event_id and idempotency_key = :idem
                             """, Map.of("event_id", eventId, "idem", req.getIdempotencyKey()),
@@ -497,7 +494,6 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
         // snapshot targets (только explicit для MVP)
         if (aud.snapshotOnDispatch) {
             if (!aud.kind.equals(AudienceKind.AUDIENCE_KIND_EXPLICIT.name())) {
-                // Для GROUPS/SEGMENT тебе нужен resolver из реплицированной БД групп/сегментов.
                 throw Status.UNIMPLEMENTED.withDescription("snapshot for audience kind not implemented: " + aud.kind).asRuntimeException();
             }
             var recipients = jdbc.queryForList(
@@ -510,12 +506,11 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
             jdbc.update("""
                             update dispatch set total_targets = :total, updated_at = now()
                             where dispatch_id = :dispatch_id
-                            """.replace("updated_at = now()", ""), // если поля updated_at нет — убери, тут заглушка
+                            """.replace("updated_at = now()", ""),
                     Map.of("total", (long) recipients.size(), "dispatch_id", dispatchId)
             );
         }
 
-        // отметим event как DISPATCHING (для диплома)
         jdbc.update("""
                 update notification_event set status = 'EVENT_STATUS_DISPATCHING', updated_at = :ts
                 where event_id = :event_id and client_id = :client_id
@@ -530,8 +525,8 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
     @Override
     @Transactional(readOnly = true)
     public GetDispatchResponse getDispatch(GetDispatchRequest req, String clientId) {
-        UUID clientUuid = parseClientId(clientId);
-        UUID dispatchId = parseUuid(req.getDispatchId(), "dispatch_id");
+        var clientUuid = parseClientId(clientId);
+        var dispatchId = parseUuid(req.getDispatchId(), "dispatch_id");
 
         // join to verify client ownership via event
         var sql = """
@@ -626,7 +621,7 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
     }
 
     private int insertRecipientsIgnoreDuplicates(UUID eventId, List<String> recipients) {
-        // batch insert with named params; Spring recommends batchUpdate on NamedParameterJdbcTemplate. :contentReference[oaicite:1]{index=1}
+        // batch insert with named params
         var sql = """
                 insert into event_recipient(event_id, recipient_id)
                 values(:event_id, :recipient_id)
@@ -642,7 +637,9 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
         int[] res = jdbc.batchUpdate(sql, batch);
         // Postgres returns 1 for inserted, 0 for do nothing
         int added = 0;
-        for (int r : res) added += r;
+        for (int r : res) {
+            added += r;
+        }
         return added;
     }
 
@@ -697,35 +694,41 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                 || status.equals(EventStatus.EVENT_STATUS_SCHEDULED.name());
     }
 
-    private EventView toEventView(EventRow r) {
+    private EventView toEventView(EventRow eventRow) {
         var b = EventView.newBuilder()
-                .setEventId(r.eventId.toString())
-                .setIdempotencyKey(r.idempotencyKey)
-                .setClientId(r.clientId.toString())
-                .setTemplateId(r.templateId)
-                .setTemplateVersion(r.templateVersion)
-                .setPriority(DeliveryPriority.valueOf(r.priority))
-                .setPreferredChannel(Channel.valueOf(r.preferredChannel))
-                .setStatus(EventStatus.valueOf(r.status))
-                .setCreatedAt(toTs(r.createdAt))
-                .setUpdatedAt(toTs(r.updatedAt));
+                .setEventId(eventRow.eventId.toString())
+                .setIdempotencyKey(eventRow.idempotencyKey)
+                .setClientId(eventRow.clientId.toString())
+                .setTemplateId(eventRow.templateId)
+                .setTemplateVersion(eventRow.templateVersion)
+                .setPriority(DeliveryPriority.valueOf(eventRow.priority))
+                .setPreferredChannel(Channel.valueOf(eventRow.preferredChannel))
+                .setStatus(EventStatus.valueOf(eventRow.status))
+                .setCreatedAt(toTs(eventRow.createdAt))
+                .setUpdatedAt(toTs(eventRow.updatedAt));
 
-        if (r.cancelledAt != null) b.setCancelledAt(toTs(r.cancelledAt));
-        if (r.cancelReason != null) b.setCancelReason(r.cancelReason);
+        if (eventRow.cancelledAt != null) {
+            b.setCancelledAt(toTs(eventRow.cancelledAt));
+        }
+        if (eventRow.cancelReason != null) {
+            b.setCancelReason(eventRow.cancelReason);
+        }
 
         // strategy
         var sb = DeliveryStrategy.newBuilder()
-                .setKind(StrategyKind.valueOf(r.strategyKind));
-        if (r.scheduledAt != null) sb.setSendAt(toTs(r.scheduledAt));
+                .setKind(StrategyKind.valueOf(eventRow.strategyKind));
+        if (eventRow.scheduledAt != null) {
+            sb.setSendAt(toTs(eventRow.scheduledAt));
+        }
         b.setStrategy(sb.build());
 
         // payload json -> map
         try {
             @SuppressWarnings("unchecked")
-            Map<String, String> m = objectMapper.readValue(r.payloadJson, Map.class);
+           var m = (Map<String, String>) objectMapper.readValue(eventRow.payloadJson, Map.class);
             b.putAllPayload(m);
-        } catch (Exception ignore) {
-            // если payload повреждён — лучше не валить чтение события
+        } catch (Exception e) {
+            LOG.warn("could not create event view: {}", e.getMessage(), e);
         }
 
         return b.build();
@@ -739,9 +742,15 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                 .setTotalTargets(r.totalTargets)
                 .setEnqueued(r.enqueued);
 
-        if (r.plannedSendAt != null) b.setPlannedSendAt(toTs(r.plannedSendAt));
-        if (r.startedAt != null) b.setStartedAt(toTs(r.startedAt));
-        if (r.finishedAt != null) b.setFinishedAt(toTs(r.finishedAt));
+        if (r.plannedSendAt != null) {
+            b.setPlannedSendAt(toTs(r.plannedSendAt));
+        }
+        if (r.startedAt != null) {
+            b.setStartedAt(toTs(r.startedAt));
+        }
+        if (r.finishedAt != null) {
+            b.setFinishedAt(toTs(r.finishedAt));
+        }
         return b.build();
     }
 

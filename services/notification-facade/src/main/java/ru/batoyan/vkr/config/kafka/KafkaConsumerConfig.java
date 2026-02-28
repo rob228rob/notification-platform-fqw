@@ -60,7 +60,7 @@ public class KafkaConsumerConfig {
         return new DefaultKafkaConsumerFactory<>(props);
     }
     /**
-     * Настройка конкурентных консьюмеров для использования @KafkaListener.
+     * Настройка конкурентных консьюмеров для использования `@KafkaListener`
      */
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory() {
