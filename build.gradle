@@ -2,7 +2,7 @@ plugins {
     id 'java'
 }
 
-group = 'ru.mai.vkr'
+group = 'ru.batoyan.vkr'
 version = '1.0-SNAPSHOT'
 
 repositories {

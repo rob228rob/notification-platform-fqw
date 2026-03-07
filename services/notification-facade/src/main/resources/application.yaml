@@ -30,6 +30,22 @@ security:
   grpc:
     client-id-claim: client_id
 
+outbox:
+  relay:
+    enabled: true
+    fixed-delay: 500ms
+    batch-size: 100
+    schema: nf
+    table: outbox_message
+    topics:
+      events: notification.facade.events
+      dispatches: notification.facade.dispatches
+    producer-retry:
+      max-attempts: 8
+      initial-backoff: 100ms
+      multiplier: 2.0
+      max-backoff: 5s
+
 spring:
   application:
     name: notification-facade
@@ -39,11 +55,11 @@ spring:
 
   flyway:
     locations: classpath:db/migration
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+#  autoconfigure:
+#    exclude:
+#      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
   kafka:
-    bootstrap-servers: ${kafka.bootstrap.servers:kafka:9092}
+    bootstrap-servers: ${kafka.bootstrap.servers:localhost:9093}
     consumer:
       group-id: ${KAFKA_CONSUMER_GROUP:group-id}
       auto-offset-reset: earliest
@@ -55,15 +71,21 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     properties:
+      enable.idempotence: true
+      max.in.flight.requests.per.connection: 1
+      delivery.timeout.ms: 120000
+      request.timeout.ms: 30000
+      linger.ms: 5
+      batch.size: 32768
       security:
-        protocol: ${KAFKA_SECURITY_PROTOCOL:SASL_PLAINTEXT}
-      sasl:
-        mechanism: ${KAFKA_SASL_MECHANISM:PLAIN}
-        jaas:
-          config: >
-            org.apache.kafka.common.security.plain.PlainLoginModule required
-            username="${kafka.user.username}"
-            password="${kafka.user.password}";
+        protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+#      sasl:
+#        mechanism: ${KAFKA_SASL_MECHANISM:PLAIN}
+#        jaas:
+#          config: >
+#            org.apache.kafka.common.security.plain.PlainLoginModule required
+#            username="${kafka.user.username}"
+#            password="${kafka.user.password}";
 
     admin:
       security:

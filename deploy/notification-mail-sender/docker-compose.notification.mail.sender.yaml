@@ -1,0 +1,33 @@
+services:
+#  mai-proj-app:
+#    build:
+#      context: ../../
+#      dockerfile: Dockerfile
+#    ports:
+#      - "8081:8081"
+#    depends_on:
+#      - main_db
+#      - kafka
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://main_db:5432/main_db
+#      SPRING_DATASOURCE_USERNAME: ${MAIN_DB_USERNAME:-postgres}
+#      SPRING_DATASOURCE_PASSWORD: ${MAIN_DB_PASSWD:-postgres}
+#    networks:
+#      - shared
+
+  mail-sender-pg:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: mail_sender_pg
+      POSTGRES_USER: ${MAIN_DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${MAIN_DB_PASSWD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - shared
+
+volumes:
+  pg_data:
+  #app_backups:

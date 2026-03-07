@@ -13,6 +13,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "notification-platform"
 include("services:notification-facade")
+include("services:notification-mail-sender")
 include("services:template-registry")
 include("libs:proto-common")
 include("libs:proto-facade")

@@ -1,9 +1,11 @@
 ﻿include:
 #  - './grafana/docker-compose.grafana.yml'
-  - './postgres/docker-compose.postgres.yml'
+#  - основная бд для notification facade
+#  - './postgres/docker-compose.postgres.yml'
+  - './notification-mail-sender/docker-compose.notification.mail.sender.yaml'
 #  - './minio/docker-compose.s3.yml'
 #    кафка развернута в облаке
-#  - './kafka/docker-compose.kafka.yml'
+  - './kafka/docker-compose.kafka.yml'
   - './networks/docker-compose.networks.yml'
 #  - './app/docker-compose.app.yaml'
 #  - './redis/docker-compose.redis.yaml'

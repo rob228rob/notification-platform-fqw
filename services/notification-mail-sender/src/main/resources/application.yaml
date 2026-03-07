@@ -1,0 +1,163 @@
+application:
+  version: 1.0
+  name: "base-template"
+  description: ""
+
+  # возможно deprecated
+  admin-data:
+    email: ${ADMIN_ACCOUNT_EMAIL:admin@gmail.com}
+    password: ${ADMIN_ACCOUNT_PSSWD:qweqweqwe}
+
+events:
+  product:
+    topic: ${EVENTS_PRODUCT_TOPIC:product-events}
+
+security:
+  grpc:
+    client-id-claim: client_id
+
+outbox:
+  relay:
+    enabled: true
+    fixed-delay: 500ms
+    batch-size: 100
+    schema: nf
+    table: outbox_message
+    topics:
+      events: notification.facade.events
+      dispatches: notification.facade.dispatches
+    producer-retry:
+      max-attempts: 8
+      initial-backoff: 100ms
+      multiplier: 2.0
+      max-backoff: 5s
+
+spring:
+  application:
+    name: notification-mail-sender
+
+  config:
+    import: classpath:creds/user-creds.yaml
+
+  flyway:
+    locations: classpath:db/migration
+#  autoconfigure:
+#    exclude:
+#      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+  kafka:
+    bootstrap-servers: ${kafka.bootstrap.servers:localhost:9093}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:group-id}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    producer:
+      acks: ${KAFKA_PRODUCER_ACKS:all}
+      retries: ${KAFKA_PRODUCER_RETRIES:3}
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    properties:
+      enable.idempotence: true
+      max.in.flight.requests.per.connection: 1
+      delivery.timeout.ms: 120000
+      request.timeout.ms: 30000
+      linger.ms: 5
+      batch.size: 32768
+      security:
+        protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+#      sasl:
+#        mechanism: ${KAFKA_SASL_MECHANISM:PLAIN}
+#        jaas:
+#          config: >
+#            org.apache.kafka.common.security.plain.PlainLoginModule required
+#            username="${kafka.user.username}"
+#            password="${kafka.user.password}";
+
+    admin:
+      security:
+        protocol: SASL_PLAINTEXT
+      auto-create: true
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: true
+    show-sql: false
+    hibernate:
+      # set update or create to first startup
+      ddl-auto: none
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${postgresql.url}
+    password: ${postgresql.user.password}
+    username: ${postgresql.user.username}
+
+  batch:
+    jdbc:
+      initialize-schema: always
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+  task:
+    scheduling:
+      pool:
+        size: 16
+      shutdown:
+        await-termination: true
+        await-termination-period: 5m
+
+logging:
+  level:
+    com.mai.proj: DEBUG
+    liquibase: DEBUG
+    org:
+      springframework:
+        jdbc: DEBUG
+        orm: DEBUG
+        orm.jpa.JpaTransactionManager: DEBUG
+        security: INFO
+      hibernate:
+        jpa: DEBUG
+        tool.hbm2ddl: DEBUG
+        SQL: DEBUG
+        type.descriptor.sql.BasicBinder: INFO
+
+
+management:
+  health:
+    elasticsearch:
+      enabled: false
+  endpoints:
+    web.exposure.include: '*'
+  endpoint:
+    restart.enabled: true
+    health:
+      show-details: always
+      probes.enabled: true
+      group:
+        readiness:
+          include: "readinessState"
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  tracing:
+    enabled: true
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /index.html
+    disable-swagger-default-url: true
+    config-url: /api-docs/swagger-config
+    url: /api-docs
+    tryItOutEnabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    filter: true
+  packages-to-scan: com.mai.proj
