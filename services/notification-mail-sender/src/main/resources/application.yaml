@@ -26,11 +26,29 @@ outbox:
     topics:
       events: notification.facade.events
       dispatches: notification.facade.dispatches
+      mail-dispatches: notification.mail.dispatches
     producer-retry:
       max-attempts: 8
       initial-backoff: 100ms
       multiplier: 2.0
       max-backoff: 5s
+
+
+delivery:
+  mail:
+    enabled: true
+    inbox-batch-size: 100
+    delivery-batch-size: 100
+    inbox-fixed-delay: 30000ms
+    delivery-fixed-delay: 30000ms
+    counting-window: 1d
+    default-max-deliveries: 1
+    max-attempts: 3
+    retry-backoff: 5m
+  notification-event:
+    enabled: true
+    inbox-batch-size: 100
+    fixed-delay: 10000ms
 
 spring:
   application:
@@ -50,12 +68,12 @@ spring:
       group-id: ${KAFKA_CONSUMER_GROUP:group-id}
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     producer:
       acks: ${KAFKA_PRODUCER_ACKS:all}
       retries: ${KAFKA_PRODUCER_RETRIES:3}
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
     properties:
       enable.idempotence: true
       max.in.flight.requests.per.connection: 1
@@ -98,10 +116,6 @@ spring:
     jdbc:
       initialize-schema: always
 
-  liquibase:
-    enabled: true
-    change-log: classpath:db/changelog/db.changelog-master.yaml
-
   task:
     scheduling:
       pool:
@@ -112,7 +126,7 @@ spring:
 
 logging:
   level:
-    com.mai.proj: DEBUG
+    ru.batoyan.vkr.notification.mail.sender: DEBUG
     liquibase: DEBUG
     org:
       springframework:

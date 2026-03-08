@@ -1,13 +1,14 @@
 ﻿include:
 #  - './grafana/docker-compose.grafana.yml'
 #  - основная бд для notification facade
-#  - './postgres/docker-compose.postgres.yml'
-  - './notification-mail-sender/docker-compose.notification.mail.sender.yaml'
+#  - './postgres/docker-compose.pg.yml'
+  - './notification-mail-sender/docker-compose.pg.yml'
+  - './notification-facade/docker-compose.pg.yml'
 #  - './minio/docker-compose.s3.yml'
-#    кафка развернута в облаке
+#    кафка развернута в облаке -- not really
   - './kafka/docker-compose.kafka.yml'
   - './networks/docker-compose.networks.yml'
 #  - './app/docker-compose.app.yaml'
 #  - './redis/docker-compose.redis.yaml'
-# кейклок развернут в облаке
+# кейклок развернут в облаке -- not really
 #  - './keycloak/docker-compose.keycloak.yaml'

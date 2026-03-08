@@ -1,0 +1,16 @@
+services:
+  mail-sender-pg:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: mail_sender_pg
+      POSTGRES_USER: ${MAIN_DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${MAIN_DB_PASSWD:-postgres}
+    ports:
+      - "35432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - shared
+
+volumes:
+  pg_data:

@@ -8,24 +8,6 @@ application:
     email: ${ADMIN_ACCOUNT_EMAIL:admin@gmail.com}
     password: ${ADMIN_ACCOUNT_PSSWD:qweqweqwe}
 
-keycloak:
-  enabled: false
-  certs-url: ${KEYCLOAK_CERTS_URL:http://176.108.255.79:80/realms/test-realm/protocol/openid-connect/certs}
-  token-url: ${KEYCLOAK_TOKEN_URL:http://176.108.255.79:80/realms/test-realm/protocol/openid-connect/token}
-  cert-algorithms: ${KEYCLOAK_CERT_ALGO:RS256,RS512}
-
-
-  whitelist:
-    filename: ${WHITELIST_FILENAME:whitelist.json}
-  #  token-url: ${KEYCLOAK_TOKEN_URL:http://localhost:34001/realms/example/protocol/openid-connect/token}
-  credentials:
-
-
-
-events:
-  product:
-    topic: ${EVENTS_PRODUCT_TOPIC:product-events}
-
 security:
   grpc:
     client-id-claim: client_id
@@ -33,13 +15,14 @@ security:
 outbox:
   relay:
     enabled: true
-    fixed-delay: 500ms
+    fixed-delay: 5000ms
     batch-size: 100
     schema: nf
     table: outbox_message
     topics:
       events: notification.facade.events
       dispatches: notification.facade.dispatches
+      mail-dispatches: notification.mail.dispatches
     producer-retry:
       max-attempts: 8
       initial-backoff: 100ms
@@ -64,12 +47,12 @@ spring:
       group-id: ${KAFKA_CONSUMER_GROUP:group-id}
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     producer:
       acks: ${KAFKA_PRODUCER_ACKS:all}
       retries: ${KAFKA_PRODUCER_RETRIES:3}
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
     properties:
       enable.idempotence: true
       max.in.flight.requests.per.connection: 1
@@ -130,12 +113,13 @@ grpc:
       enabled: false
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:8910}
   ssl:
     enabled: ${SERVER_SSL_ENABLED:false}
 
 logging:
   level:
+    ru.batoyan.vkr.notification.facade: DEBUG
     com.mai.proj: DEBUG
     liquibase: DEBUG
     org:
