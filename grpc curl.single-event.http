@@ -1,0 +1,77 @@
+### ULTRA-MINIMAL PROTOBUF ASSEMBLY CHECK
+### Если этот запрос проходит, значит IntelliJ ломается не на сервисе, а на enum/map/audience в более сложных телах.
+### Enum переданы числами:
+### - priority: 2 = DELIVERY_PRIORITY_NORMAL
+### - preferredChannel: 1 = CHANNEL_EMAIL
+### - strategy.kind: 1 = STRATEGY_KIND_IMMEDIATE
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/CreateNotificationEvent
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "idempotencyKey": "mail-proto-smoke-001",
+  "templateId": "welcome-email",
+  "templateVersion": 1,
+  "priority": 2,
+  "preferredChannel": 1,
+  "strategy": {
+    "kind": 1
+  }
+}
+
+###
+### Minimal gRPC flow for one mail event
+### Run requests top-to-bottom and manually copy `event_id` / `dispatch_id` from responses if needed.
+
+### 1) CreateNotificationEvent
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/CreateNotificationEvent
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "idempotencyKey": "mail-single-event-001",
+  "templateId": "welcome-email",
+  "templateVersion": 1,
+  "priority": "DELIVERY_PRIORITY_NORMAL",
+  "preferredChannel": "CHANNEL_EMAIL",
+  "strategy": {
+    "kind": "STRATEGY_KIND_IMMEDIATE"
+  },
+  "payload": {
+    "campaign": "single-event-check",
+    "title": "Welcome",
+    "body": "Single test event for facade"
+  },
+  "audience": {
+    "kind": "AUDIENCE_KIND_EXPLICIT",
+    "snapshotOnDispatch": true
+  }
+}
+
+###
+### 2) AddRecipients
+### Insert the `eventId` from step 1 response manually.
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/AddRecipients
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "eventId": "PUT_EVENT_ID_HERE",
+  "idempotencyKey": "mail-single-add-001",
+  "recipientId": [
+    "mail-user-1001",
+    "mail-user-1002"
+  ]
+}
+
+###
+### 3) TriggerDispatch
+### Insert the same `eventId` from step 1 response manually.
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/TriggerDispatch
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "eventId": "PUT_EVENT_ID_HERE",
+  "idempotencyKey": "mail-single-dispatch-001"
+}

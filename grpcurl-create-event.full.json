@@ -1,0 +1,21 @@
+{
+  "idempotencyKey": "mail-full-001",
+  "templateId": "welcome-email",
+  "templateVersion": 1,
+  "priority": "DELIVERY_PRIORITY_NORMAL",
+  "preferredChannel": "CHANNEL_EMAIL",
+  "strategy": {
+    "kind": "STRATEGY_KIND_IMMEDIATE"
+  },
+  "payload": {
+    "campaign": "grpcurl-full-check",
+    "title": "Welcome title",
+    "body": "Welcome body",
+    "segment": "beta-users",
+    "source": "grpcurl"
+  },
+  "audience": {
+    "kind": "AUDIENCE_KIND_EXPLICIT",
+    "snapshotOnDispatch": true
+  }
+}
