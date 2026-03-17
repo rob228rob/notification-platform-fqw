@@ -1,8 +1,11 @@
 package ru.batoyan.vkr.notification.mail.sender.services.kafka;
 
+import java.util.List;
+import java.util.Map;
+
 public interface MailGateway {
 
-    void send(MailMessage message);
+    BatchSendResult sendBatch(List<MailMessage> messages);
 
     record MailMessage(
             String deliveryId,
@@ -12,6 +15,12 @@ public interface MailGateway {
             String templateId,
             int templateVersion,
             String payloadJson
+    ) {
+    }
+
+    record BatchSendResult(
+            List<String> succeededDeliveryIds,
+            Map<String, String> failedDeliveryErrors
     ) {
     }
 }

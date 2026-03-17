@@ -17,7 +17,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class NotificationEventConsumer {
 
-    private final MailInboxService mailInboxService;
+    private final MailInboxRepository mailInboxRepo;
     private final ObjectMapper objectMapper;
 
     @KafkaListener(
@@ -28,11 +28,11 @@ public class NotificationEventConsumer {
                           @Headers Map<String, Object> headers) {
         log.info("[NOTIFICATION EVENT CONSUMER] received rawMessage={}, headers={}", rawMessage, headers);
         var msg = readMessage(rawMessage);
-        var stored = mailInboxService.storeIncomingNotificationEvent(msg);
+        var stored = mailInboxRepo.storeIncomingNotificationEvent(msg);
         log.info("Notification event stored={}, aggregateId={}, eventType={}, headers={}",
                 stored,
-                MailInboxService.asString(msg.get("aggregateId")),
-                MailInboxService.asString(msg.get("eventType")),
+                MailInboxRepository.asString(msg.get("aggregateId")),
+                MailInboxRepository.asString(msg.get("eventType")),
                 headers);
     }
 

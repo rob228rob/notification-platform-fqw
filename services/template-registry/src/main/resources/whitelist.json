@@ -1,0 +1,11 @@
+[
+  {
+    "methods": [
+      "POST", "GET"
+    ],
+    "roles": [
+      "user_dev_RW"
+    ],
+    "path": "/template/**"
+  }
+]

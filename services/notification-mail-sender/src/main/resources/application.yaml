@@ -3,37 +3,6 @@ application:
   name: "base-template"
   description: ""
 
-  # возможно deprecated
-  admin-data:
-    email: ${ADMIN_ACCOUNT_EMAIL:admin@gmail.com}
-    password: ${ADMIN_ACCOUNT_PSSWD:qweqweqwe}
-
-events:
-  product:
-    topic: ${EVENTS_PRODUCT_TOPIC:product-events}
-
-security:
-  grpc:
-    client-id-claim: client_id
-
-outbox:
-  relay:
-    enabled: true
-    fixed-delay: 500ms
-    batch-size: 100
-    schema: nf
-    table: outbox_message
-    topics:
-      events: notification.facade.events
-      dispatches: notification.facade.dispatches
-      mail-dispatches: notification.mail.dispatches
-    producer-retry:
-      max-attempts: 8
-      initial-backoff: 100ms
-      multiplier: 2.0
-      max-backoff: 5s
-
-
 delivery:
   mail:
     enabled: true
@@ -45,6 +14,9 @@ delivery:
     default-max-deliveries: 1
     max-attempts: 3
     retry-backoff: 5m
+    gateway:
+      from: ${MAIL_FROM:no-reply@dev.local}
+      subject-fallback-prefix: ${MAIL_SUBJECT_FALLBACK_PREFIX:[notification]}
   notification-event:
     enabled: true
     inbox-batch-size: 100
@@ -112,6 +84,21 @@ spring:
     password: ${postgresql.user.password}
     username: ${postgresql.user.username}
 
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
+          connectiontimeout: ${MAIL_SMTP_CONNECTION_TIMEOUT:5000}
+          timeout: ${MAIL_SMTP_TIMEOUT:5000}
+          writetimeout: ${MAIL_SMTP_WRITE_TIMEOUT:5000}
+
   batch:
     jdbc:
       initialize-schema: always
@@ -119,7 +106,7 @@ spring:
   task:
     scheduling:
       pool:
-        size: 16
+        size: 5
       shutdown:
         await-termination: true
         await-termination-period: 5m

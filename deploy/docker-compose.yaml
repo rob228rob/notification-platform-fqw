@@ -4,6 +4,7 @@
 #  - './postgres/docker-compose.pg.yml'
   - './notification-mail-sender/docker-compose.pg.yml'
   - './notification-facade/docker-compose.pg.yml'
+  - './notification-templates/docker-compose.pg.yml'
 #  - './minio/docker-compose.s3.yml'
 #    кафка развернута в облаке -- not really
   - './kafka/docker-compose.kafka.yml'

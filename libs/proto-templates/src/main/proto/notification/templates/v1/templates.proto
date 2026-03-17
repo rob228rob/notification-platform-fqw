@@ -13,10 +13,8 @@ import "notification/common/v1/common.proto";
 service TemplateRegistry {
   rpc CreateTemplate  (CreateTemplateRequest) returns (CreateTemplateResponse);
   rpc UpdateTemplate  (UpdateTemplateRequest) returns (UpdateTemplateResponse);
-  rpc PublishTemplate (PublishTemplateRequest) returns (PublishTemplateResponse);
   rpc GetTemplate     (GetTemplateRequest) returns (GetTemplateResponse);
   rpc ListTemplates   (ListTemplatesRequest) returns (ListTemplatesResponse);
-  rpc ArchiveTemplate (ArchiveTemplateRequest) returns (ArchiveTemplateResponse);
   rpc RenderPreview   (RenderPreviewRequest) returns (RenderPreviewResponse);
 }
 
@@ -69,24 +67,19 @@ message CreateTemplateResponse { string template_id = 1; int32 created_version =
 
 message UpdateTemplateRequest {
   string template_id = 1;
-  google.protobuf.FieldMask update_mask = 2;
-  TemplateEngine engine = 3;
-  repeated TemplateChannelContent contents = 4;
-  string description = 5;
+  string idempotency_key = 2;
+  string name = 3;
+  string description = 4;
+  TemplateEngine engine = 5;
+  repeated TemplateChannelContent contents = 6;
 }
-message UpdateTemplateResponse { string template_id = 1; int32 new_version = 2; TemplateStatus status = 3; }
-
-message PublishTemplateRequest { string template_id = 1; int32 version = 2; }
-message PublishTemplateResponse { string template_id = 1; int32 active_version = 2; TemplateStatus status = 3; }
+message UpdateTemplateResponse { string template_id = 1; int32 updated_version = 2; TemplateStatus status = 3; }
 
 message GetTemplateRequest { string template_id = 1; int32 version = 2; }
 message GetTemplateResponse { TemplateView template = 1; TemplateVersionView version = 2; }
 
 message ListTemplatesRequest { int32 page = 1; int32 size = 2; TemplateStatus status_filter = 3; }
 message ListTemplatesResponse { repeated TemplateView templates = 1; int64 total = 2; int32 page = 3; int32 size = 4; }
-
-message ArchiveTemplateRequest { string template_id = 1; string reason = 2; }
-message ArchiveTemplateResponse { string template_id = 1; TemplateStatus status = 2; }
 
 message RenderPreviewRequest {
   string template_id = 1;

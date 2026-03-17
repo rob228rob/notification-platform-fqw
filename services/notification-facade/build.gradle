@@ -11,6 +11,7 @@ tasks.named("bootJar") {
 dependencies {
     implementation project(":libs:proto-facade")
     implementation project(":libs:proto-common")
+    implementation project(":libs:proto-templates")
     implementation "net.devh:grpc-server-spring-boot-starter:3.1.0.RELEASE"
 
     // --- Spring Boot starters ---

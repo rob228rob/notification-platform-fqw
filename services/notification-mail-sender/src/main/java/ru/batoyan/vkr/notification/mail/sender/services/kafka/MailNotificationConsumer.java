@@ -17,28 +17,30 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MailNotificationConsumer {
 
-    private final MailInboxService mailInboxService;
+    private final MailInboxRepository mailInboxRepository;
     private final ObjectMapper objectMapper;
 
     @KafkaListener(
             topics = "${outbox.relay.topics.mail-dispatches}",
             groupId = "${spring.kafka.consumer.group-id}"
     )
-    public void onMessage(@Payload String rawMessage,
-                          @Headers Map<String, Object> headers) {
+    public void onMessage(
+            @Payload String rawMessage,
+            @Headers Map<String, Object> headers
+    ) {
         log.info("[NOTIFICATION CONSUMER] received rawMessage={}, headers={}", rawMessage, headers);
         var msg = readMessage(rawMessage);
-        var stored = mailInboxService.storeIncomingDispatchEvent(msg);
+        var stored = mailInboxRepository.storeIncomingDispatchEvent(msg);
         log.info("Dispatch kafka event stored={}, aggregateId={}, eventType={}, headers={}",
                 stored,
-                MailInboxService.asString(msg.get("aggregateId")),
-                MailInboxService.asString(msg.get("eventType")),
+                MailInboxRepository.asString(msg.get("aggregateId")),
+                MailInboxRepository.asString(msg.get("eventType")),
                 headers);
     }
 
     private Map<String, Object> readMessage(String rawMessage) {
         try {
-            JsonNode root = unwrapTextualNode(rawMessage);
+            var root = unwrapTextualNode(rawMessage);
             if (!root.isObject()) {
                 throw new IllegalArgumentException("Unsupported kafka payload node type: " + root.getNodeType());
             }
@@ -50,7 +52,7 @@ public class MailNotificationConsumer {
     }
 
     private JsonNode unwrapTextualNode(String rawMessage) throws Exception {
-        JsonNode current = objectMapper.readTree(rawMessage);
+        var current = objectMapper.readTree(rawMessage);
         int depth = 0;
         while (current.isTextual()) {
             depth++;

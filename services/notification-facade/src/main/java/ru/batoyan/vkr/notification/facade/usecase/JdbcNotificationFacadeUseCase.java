@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.batoyan.vkr.notification.facade.template.TemplateRegistryRenderClient;
 import ru.notification.common.proto.v1.Channel;
 import ru.notification.common.proto.v1.DeliveryPriority;
 import ru.notification.facade.proto.v1.*;
@@ -28,10 +29,14 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
 
     private final NamedParameterJdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
+    private final TemplateRegistryRenderClient templateRegistryRenderClient;
 
-    public JdbcNotificationFacadeUseCase(NamedParameterJdbcTemplate jdbc, ObjectMapper objectMapper) {
+    public JdbcNotificationFacadeUseCase(NamedParameterJdbcTemplate jdbc,
+                                         ObjectMapper objectMapper,
+                                         TemplateRegistryRenderClient templateRegistryRenderClient) {
         this.jdbc = jdbc;
         this.objectMapper = objectMapper;
+        this.templateRegistryRenderClient = templateRegistryRenderClient;
     }
 
     @Override
@@ -62,7 +67,14 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                 ? EventStatus.EVENT_STATUS_SCHEDULED.name()
                 : EventStatus.EVENT_STATUS_DRAFT.name();
 
-        var payloadJson = toJson(req.getPayloadMap());
+        var payload = resolveDeliveryPayload(
+                clientId,
+                req.getTemplateId(),
+                req.getTemplateVersion(),
+                req.getPreferredChannel(),
+                req.getPayloadMap()
+        );
+        var payloadJson = toJson(payload);
 
         var sql = """
                 insert into notification_event(
@@ -149,12 +161,22 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
         }
 
         var patch = new LinkedHashMap<String, Object>();
+        var paths = new HashSet<>(mask.getPathsList());
+        var templateVersion = row.templateVersion;
+        var preferredChannel = Channel.valueOf(row.preferredChannel);
+        Map<String, String> payload = null;
 
         for (var path : mask.getPathsList()) {
             switch (path) {
-                case "template_version" -> patch.put("template_version", req.getTemplateVersion());
+                case "template_version" -> {
+                    templateVersion = req.getTemplateVersion();
+                    patch.put("template_version", templateVersion);
+                }
                 case "priority" -> patch.put("priority", req.getPriority().name());
-                case "preferred_channel" -> patch.put("preferred_channel", req.getPreferredChannel().name());
+                case "preferred_channel" -> {
+                    preferredChannel = req.getPreferredChannel();
+                    patch.put("preferred_channel", preferredChannel.name());
+                }
                 case "strategy" -> {
                     var sk = req.getStrategy().getKind();
                     patch.put("strategy_kind", sk.name());
@@ -168,10 +190,24 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                         patch.put("status", EventStatus.EVENT_STATUS_SCHEDULED.name());
                     }
                 }
-                case "payload" -> patch.put("payload", toJson(req.getPayloadMap()));
+                case "payload" -> payload = new LinkedHashMap<>(req.getPayloadMap());
                 default ->
                         throw Status.INVALID_ARGUMENT.withDescription("forbidden update_mask path: " + path).asRuntimeException();
             }
+        }
+
+        if (paths.contains("payload") || paths.contains("template_version") || paths.contains("preferred_channel")) {
+            if (payload == null) {
+                payload = readPayloadMap(row.payloadJson);
+            }
+            payload = resolveDeliveryPayload(
+                    clientId,
+                    row.templateId,
+                    templateVersion,
+                    preferredChannel,
+                    payload
+            );
+            patch.put("payload", toJson(payload));
         }
 
         var sets = new ArrayList<String>();
@@ -803,6 +839,68 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
             b.setFinishedAt(toTs(r.finishedAt));
         }
         return b.build();
+    }
+
+    private Map<String, String> resolveDeliveryPayload(String clientId,
+                                                       String templateId,
+                                                       int templateVersion,
+                                                       Channel preferredChannel,
+                                                       Map<String, String> payload) {
+        var resolved = new LinkedHashMap<>(payload == null ? Map.of() : payload);
+        if (hasInlineTemplate(resolved)) {
+            LOG.debug("Using inline template payload, skip template registry render. clientId={}, templateId={}",
+                    clientId, templateId);
+            return resolved;
+        }
+        if (!templateRegistryRenderClient.isEnabled()) {
+            LOG.debug("Template registry integration disabled. Keep payload as-is. clientId={}, templateId={}",
+                    clientId, templateId);
+            return resolved;
+        }
+        if (templateId == null || templateId.isBlank() || preferredChannel == Channel.CHANNEL_UNSPECIFIED) {
+            LOG.debug("Template registry render skipped because templateId/channel is not set. clientId={}, templateId={}, channel={}",
+                    clientId, templateId, preferredChannel);
+            return resolved;
+        }
+
+        LOG.info("Rendering template via template-registry. clientId={}, templateId={}, templateVersion={}, channel={}",
+                clientId, templateId, templateVersion, preferredChannel);
+        var rendered = templateRegistryRenderClient.renderPreview(
+                templateId,
+                templateVersion,
+                preferredChannel,
+                resolved
+        );
+        resolved.put("subject", rendered.subject());
+        resolved.put("body", rendered.body());
+        LOG.debug("Template rendered and injected into payload. clientId={}, templateId={}, payloadSize={}",
+                clientId, templateId, resolved.size());
+        return resolved;
+    }
+
+    private Map<String, String> readPayloadMap(String payloadJson) {
+        try {
+            @SuppressWarnings("unchecked")
+            var raw = (Map<String, Object>) objectMapper.readValue(payloadJson, Map.class);
+            var result = new LinkedHashMap<String, String>();
+            raw.forEach((key, value) -> result.put(key, value == null ? "" : String.valueOf(value)));
+            return result;
+        } catch (Exception e) {
+            LOG.warn("Failed to parse stored payload json, err={}", e.getMessage(), e);
+            throw Status.INTERNAL.withDescription("Failed to parse stored payload").withCause(e).asRuntimeException();
+        }
+    }
+
+    private boolean hasInlineTemplate(Map<String, String> payload) {
+        return hasText(payload.get("subject"))
+                && (hasText(payload.get("body"))
+                || hasText(payload.get("text"))
+                || hasText(payload.get("message"))
+                || hasText(payload.get("content")));
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     private String toJson(Map<String, ?> map) {

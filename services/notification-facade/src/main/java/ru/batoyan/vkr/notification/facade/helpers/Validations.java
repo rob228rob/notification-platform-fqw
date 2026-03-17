@@ -7,6 +7,7 @@ import org.springframework.util.StringUtils;
 import ru.notification.common.proto.v1.DeliveryPriority;
 import ru.notification.facade.proto.v1.*;
 
+import java.util.Map;
 import java.util.UUID;
 
 import static ru.batoyan.vkr.notification.facade.constants.Constants.MAX_PAGE_SIZE;
@@ -26,7 +27,11 @@ public final class Validations {
             throw Status.INVALID_ARGUMENT.withDescription("request must not be null").asRuntimeException();
         }
         requireNotBlank(r.getIdempotencyKey(), "idempotency_key");
-        requireNotBlank(r.getTemplateId(), "template_id");
+        if (!StringUtils.hasText(r.getTemplateId()) && !hasInlineTemplate(r.getPayloadMap())) {
+            throw Status.INVALID_ARGUMENT
+                    .withDescription("template_id must be set or inline subject/body must be provided in payload")
+                    .asRuntimeException();
+        }
 
         if (!r.hasStrategy()) {
             throw Status.INVALID_ARGUMENT.withDescription("strategy must be set").asRuntimeException();
@@ -117,6 +122,18 @@ public final class Validations {
         if (!StringUtils.hasText(v)) {
             throw Status.INVALID_ARGUMENT.withDescription(field + " must not be blank").asRuntimeException();
         }
+    }
+
+    private static boolean hasInlineTemplate(Map<String, String> payload) {
+        return hasText(payload.get("subject"))
+                && (hasText(payload.get("body"))
+                || hasText(payload.get("text"))
+                || hasText(payload.get("message"))
+                || hasText(payload.get("content")));
+    }
+
+    private static boolean hasText(@Nullable String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     public  static void requireUuid(String v, String field) {

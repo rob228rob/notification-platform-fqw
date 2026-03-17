@@ -12,10 +12,20 @@ security:
   grpc:
     client-id-claim: client_id
 
+template:
+  registry:
+    client:
+      enabled: ${TEMPLATE_REGISTRY_ENABLED:true}
+      host: ${TEMPLATE_REGISTRY_HOST:localhost}
+      port: ${TEMPLATE_REGISTRY_PORT:9090}
+      plaintext: ${TEMPLATE_REGISTRY_PLAINTEXT:true}
+      deadline: ${TEMPLATE_REGISTRY_DEADLINE:3s}
+
 outbox:
   relay:
     enabled: true
     fixed-delay: 5000ms
+    lease-duration: 30s
     batch-size: 100
     schema: nf
     table: outbox_message

@@ -26,6 +26,9 @@ public class OutboxRelayProperties {
     @NotNull
     private final Duration fixedDelay;
 
+    @NotNull
+    private final Duration leaseDuration;
+
     @Min(1)
     private final int batchSize;
 

@@ -19,9 +19,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class NotificationEventWorkflow {
 
-    private static final String AGGREGATE_TYPE_NOTIFICATION_EVENT = "notification_event";
-    private static final String EVENT_TYPE_EVENT_CREATED = "EventCreated";
-
     private final NamedParameterJdbcTemplate jdbc;
     private final NotificationEventProcessingProperties properties;
     private final MailDeliveryPlanService mailDeliveryPlanService;
@@ -115,13 +112,13 @@ public class NotificationEventWorkflow {
                 limit :limit
                 """, new MapSqlParameterSource()
                 .addValue("status", InboxStatus.NEW.dbValue())
-                .addValue("aggregate_type", AGGREGATE_TYPE_NOTIFICATION_EVENT)
-                .addValue("event_type", EVENT_TYPE_EVENT_CREATED)
+                .addValue("aggregate_type", AggregateType.NOTIFICATION_EVENT.dbValue())
+                .addValue("event_type", EventType.EVENT_CREATED.dbValue())
                 .addValue("limit", properties.getInboxBatchSize()), (rs, rowNum) -> new InboxRow(
                 UUID.fromString(rs.getString("message_id")),
                 UUID.fromString(rs.getString("event_id")),
-                rs.getString("aggregate_type"),
-                rs.getString("event_type"),
+                AggregateType.fromDb(rs.getString("aggregate_type")),
+                EventType.fromDb(rs.getString("event_type")),
                 rs.getString("payload_json"),
                 InboxStatus.fromDb(rs.getString("processing_status"))
         ));
@@ -183,8 +180,8 @@ public class NotificationEventWorkflow {
     private record InboxRow(
             UUID messageId,
             UUID eventId,
-            String aggregateType,
-            String eventType,
+            AggregateType aggregateType,
+            EventType eventType,
             String payloadJson,
             InboxStatus status
     ) {

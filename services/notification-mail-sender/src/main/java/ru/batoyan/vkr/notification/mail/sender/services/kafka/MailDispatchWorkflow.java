@@ -1,16 +1,14 @@
 package ru.batoyan.vkr.notification.mail.sender.services.kafka;
 
-import jakarta.validation.constraints.Null;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.N;
 import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,26 +24,24 @@ import java.util.UUID;
 public class MailDispatchWorkflow {
 
     private static final String CHANNEL_EMAIL = "CHANNEL_EMAIL";
-    private static final String AGGREGATE_TYPE_MAIL_DISPATCH = "mail_dispatch";
-    private static final String EVENT_TYPE_MAIL_DISPATCH_REQUESTED = "MailDispatchRequested";
 
     private final NamedParameterJdbcTemplate jdbc;
     private final MailGateway mailGateway;
     private final MailDeliveryProperties properties;
     private final MailDeliveryPlanService mailDeliveryPlanService;
+    private final TransactionTemplate transactionTemplate;
 
     @Scheduled(fixedDelayString = "${delivery.mail.inbox-fixed-delay}")
     public void processInboxTick() {
         if (!properties.isEnabled()) {
             return;
         }
-        var processed = processInboxBatch();
+        var processed = transactionTemplate.execute(status -> processInboxBatchTx());
         if (processed > 0) {
             log.info("Mail inbox worker processed {} record(s)", processed);
         }
     }
 
-    @Transactional
     @Scheduled(fixedDelayString = "${delivery.mail.delivery-fixed-delay}")
     public void processDeliveryTick() {
         if (!properties.isEnabled()) {
@@ -57,8 +53,7 @@ public class MailDispatchWorkflow {
         }
     }
 
-    @Transactional
-    public int processInboxBatch() {
+    private int processInboxBatchTx() {
         var rows = lockInboxBatch();
         for (var row : rows) {
             try {
@@ -73,18 +68,33 @@ public class MailDispatchWorkflow {
         return rows.size();
     }
 
-    @Transactional
     public int processDeliveryBatch() {
-        var rows = lockDeliveryBatch();
-        for (var row : rows) {
-            processSingleDelivery(row);
+        var rows = transactionTemplate.execute(status -> claimDeliveryBatchTx());
+        if (rows.isEmpty()) {
+            return 0;
         }
+
+        log.info("Mail delivery batch claimed size={}", rows.size());
+        var messages = rows.stream()
+                .map(row -> new MailGateway.MailMessage(
+                        row.deliveryId(),
+                        row.idempotencyKey(),
+                        row.recipientId(),
+                        row.email(),
+                        row.templateId(),
+                        row.templateVersion(),
+                        row.payloadJson()
+                ))
+                .toList();
+
+        var result = mailGateway.sendBatch(messages);
+        finalizeBatch(rows, result);
         return rows.size();
     }
 
     private void handleInboxRow(InboxRow row) {
-        if (!AGGREGATE_TYPE_MAIL_DISPATCH.equals(row.aggregateType())
-                || !EVENT_TYPE_MAIL_DISPATCH_REQUESTED.equals(row.eventType())) {
+        if (row.aggregateType() != AggregateType.MAIL_DISPATCH
+                || row.eventType() != EventType.MAIL_DISPATCH_REQUESTED) {
             log.warn("Unexpected inbox row skipped messageId={}, aggregateType={}, eventType={}",
                     row.messageId(), row.aggregateType(), row.eventType());
             return;
@@ -123,57 +133,6 @@ public class MailDispatchWorkflow {
         }
     }
 
-    private void processSingleDelivery(MailDeliveryRow row) {
-        var attemptNo = row.attemptCount() + 1;
-        try {
-            updateDeliveryStatus(row.dispatchId(), row.recipientId(), DeliveryStatus.SENDING, null, row.attemptCount(), row.nextAttemptAt());
-            createAttempt(row.dispatchId(), row.recipientId(), row.channel(), attemptNo, AttemptStatus.STARTED, null);
-
-            mailGateway.send(new MailGateway.MailMessage(
-                    row.dispatchId().toString() + ":" + row.recipientId() + ":" + row.channel(),
-                    row.idempotencyKey(),
-                    row.recipientId(),
-                    row.email(),
-                    row.templateId(),
-                    row.templateVersion(),
-                    row.payloadJson()
-            ));
-
-            updateAttempt(row.dispatchId(), row.recipientId(), row.channel(), attemptNo, AttemptStatus.SUCCESS, null);
-            jdbc.update("""
-                    update nf.mail_delivery
-                    set status = :status,
-                        attempt_count = attempt_count + 1,
-                        sent_at = :sent_at,
-                        next_attempt_at = null,
-                        last_error = null
-                    where dispatch_id = :dispatch_id
-                      and recipient_id = :recipient_id
-                      and channel = :channel
-                    """, Map.of(
-                    "status", DeliveryStatus.SENT.dbValue(),
-                    "sent_at", OffsetDateTime.now(),
-                    "dispatch_id", row.dispatchId(),
-                    "recipient_id", row.recipientId(),
-                    "channel", row.channel()
-            ));
-        } catch (Exception ex) {
-            updateAttempt(row.dispatchId(), row.recipientId(), row.channel(), attemptNo, AttemptStatus.FAILED, ex.getMessage());
-            if (attemptNo >= properties.getMaxAttempts()) {
-                updateDeliveryStatus(row.dispatchId(), row.recipientId(), DeliveryStatus.FAILED, ex.getMessage(), attemptNo, null);
-            } else {
-                updateDeliveryStatus(
-                        row.dispatchId(),
-                        row.recipientId(),
-                        DeliveryStatus.RETRY,
-                        ex.getMessage(),
-                        attemptNo,
-                        OffsetDateTime.now().plus(properties.getRetryBackoff())
-                );
-            }
-        }
-    }
-
     private List<InboxRow> lockInboxBatch() {
         return jdbc.query("""
                 select message_id, aggregate_type, event_type, payload::text as payload_json, processing_status
@@ -186,15 +145,24 @@ public class MailDispatchWorkflow {
                 limit :limit
                 """, new MapSqlParameterSource()
                 .addValue("status", InboxStatus.NEW.dbValue())
-                .addValue("aggregate_type", AGGREGATE_TYPE_MAIL_DISPATCH)
-                .addValue("event_type", EVENT_TYPE_MAIL_DISPATCH_REQUESTED)
+                .addValue("aggregate_type", AggregateType.MAIL_DISPATCH.dbValue())
+                .addValue("event_type", EventType.MAIL_DISPATCH_REQUESTED.dbValue())
                 .addValue("limit", properties.getInboxBatchSize()), (rs, rowNum) -> new InboxRow(
                 UUID.fromString(rs.getString("message_id")),
-                rs.getString("aggregate_type"),
-                rs.getString("event_type"),
+                AggregateType.fromDb(rs.getString("aggregate_type")),
+                EventType.fromDb(rs.getString("event_type")),
                 rs.getString("payload_json"),
                 InboxStatus.fromDb(rs.getString("processing_status"))
         ));
+    }
+
+    private List<MailDeliveryRow> claimDeliveryBatchTx() {
+        var rows = lockDeliveryBatch();
+        for (var row : rows) {
+            updateDeliveryStatus(row.dispatchId(), row.recipientId(), DeliveryStatus.SENDING, null, row.attemptCount(), row.nextAttemptAt());
+            createAttempt(row.dispatchId(), row.recipientId(), row.channel(), row.nextAttemptNo(), AttemptStatus.STARTED, null);
+        }
+        return rows;
     }
 
     private List<MailDeliveryRow> lockDeliveryBatch() {
@@ -210,9 +178,65 @@ public class MailDispatchWorkflow {
                 limit :limit
                 """, new MapSqlParameterSource()
                 .addValue("pending", DeliveryStatus.PENDING.dbValue())
-                .addValue("retry", DeliveryStatus.RETRY.dbValue())
-                .addValue("now_ts", OffsetDateTime.now())
-                .addValue("limit", properties.getDeliveryBatchSize()), (rs, rowNum) -> mapMailDeliveryRow(rs));
+                 .addValue("retry", DeliveryStatus.RETRY.dbValue())
+                 .addValue("now_ts", OffsetDateTime.now())
+                 .addValue("limit", properties.getDeliveryBatchSize()), (rs, rowNum) -> mapMailDeliveryRow(rs));
+    }
+
+    private void finalizeBatch(List<MailDeliveryRow> rows, MailGateway.BatchSendResult result) {
+        transactionTemplate.executeWithoutResult(status -> finalizeBatchTx(rows, result));
+        log.info("Mail delivery batch finalized size={}, succeeded={}, failed={}",
+                rows.size(), result.succeededDeliveryIds().size(), result.failedDeliveryErrors().size());
+    }
+
+    private void finalizeBatchTx(List<MailDeliveryRow> rows, MailGateway.BatchSendResult result) {
+        var failedByDeliveryId = result.failedDeliveryErrors();
+        for (var row : rows) {
+            var failure = failedByDeliveryId.get(row.deliveryId());
+            if (failure == null) {
+                markDeliverySuccessTx(row);
+            } else {
+                markDeliveryFailureTx(row, failure);
+            }
+        }
+    }
+
+    private void markDeliverySuccessTx(MailDeliveryRow row) {
+        updateAttempt(row.dispatchId(), row.recipientId(), row.channel(), row.nextAttemptNo(), AttemptStatus.SUCCESS, null);
+        jdbc.update("""
+                update nf.mail_delivery
+                set status = :status,
+                    attempt_count = attempt_count + 1,
+                    sent_at = :sent_at,
+                    next_attempt_at = null,
+                    last_error = null
+                where dispatch_id = :dispatch_id
+                  and recipient_id = :recipient_id
+                  and channel = :channel
+                """, Map.of(
+                "status", DeliveryStatus.SENT.dbValue(),
+                "sent_at", OffsetDateTime.now(),
+                "dispatch_id", row.dispatchId(),
+                "recipient_id", row.recipientId(),
+                "channel", row.channel()
+        ));
+    }
+
+    private void markDeliveryFailureTx(MailDeliveryRow row, String errorMessage) {
+        updateAttempt(row.dispatchId(), row.recipientId(), row.channel(), row.nextAttemptNo(), AttemptStatus.FAILED, errorMessage);
+        var nextAttemptNo = row.nextAttemptNo();
+        if (nextAttemptNo >= properties.getMaxAttempts()) {
+            updateDeliveryStatus(row.dispatchId(), row.recipientId(), DeliveryStatus.FAILED, errorMessage, nextAttemptNo, null);
+        } else {
+            updateDeliveryStatus(
+                    row.dispatchId(),
+                    row.recipientId(),
+                    DeliveryStatus.RETRY,
+                    errorMessage,
+                    nextAttemptNo,
+                    OffsetDateTime.now().plus(properties.getRetryBackoff())
+            );
+        }
     }
 
     private void updateInboxStatus(UUID messageId, InboxStatus status, String errorMessage) {
@@ -412,8 +436,8 @@ public class MailDispatchWorkflow {
 
     private record InboxRow(
             UUID messageId,
-            String aggregateType,
-            String eventType,
+            AggregateType aggregateType,
+            EventType eventType,
             String payloadJson,
             InboxStatus status
     ) {
@@ -440,7 +464,7 @@ public class MailDispatchWorkflow {
                     String.valueOf(payload.get("preferred_channel")),
                     String.valueOf(payload.get("template_id")),
                     Integer.parseInt(String.valueOf(payload.get("template_version"))),
-                    MailInboxService.asMap(payload.get("payload")),
+                    MailInboxRepository.asMap(payload.get("payload")),
                     asStringList(payload.get("recipient_ids"))
             );
         }
@@ -466,5 +490,12 @@ public class MailDispatchWorkflow {
             int attemptCount,
             OffsetDateTime nextAttemptAt
     ) {
+        private String deliveryId() {
+            return dispatchId + ":" + recipientId + ":" + channel;
+        }
+
+        private int nextAttemptNo() {
+            return attemptCount + 1;
+        }
     }
 }

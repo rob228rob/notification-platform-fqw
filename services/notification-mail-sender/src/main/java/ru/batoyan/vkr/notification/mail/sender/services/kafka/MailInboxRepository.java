@@ -2,6 +2,7 @@ package ru.batoyan.vkr.notification.mail.sender.services.kafka;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -14,34 +15,29 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class MailInboxService {
-
-    private static final String AGGREGATE_TYPE_MAIL_DISPATCH = "mail_dispatch";
-    private static final String EVENT_TYPE_MAIL_DISPATCH_REQUESTED = "MailDispatchRequested";
-    private static final String AGGREGATE_TYPE_NOTIFICATION_EVENT = "notification_event";
-    private static final String EVENT_TYPE_EVENT_CREATED = "EventCreated";
+public class MailInboxRepository {
 
     private final NamedParameterJdbcTemplate jdbc;
 
     public boolean storeIncomingDispatchEvent(Map<String, Object> message) {
-        return storeIncomingEvent(message, AGGREGATE_TYPE_MAIL_DISPATCH, EVENT_TYPE_MAIL_DISPATCH_REQUESTED, "dispatch_id");
+        return storeIncomingEvent(message, AggregateType.MAIL_DISPATCH, EventType.MAIL_DISPATCH_REQUESTED, "dispatch_id");
     }
 
     public boolean storeIncomingNotificationEvent(Map<String, Object> message) {
-        return storeIncomingEvent(message, AGGREGATE_TYPE_NOTIFICATION_EVENT, EVENT_TYPE_EVENT_CREATED, "event_id");
+        return storeIncomingEvent(message, AggregateType.NOTIFICATION_EVENT, EventType.EVENT_CREATED, "event_id");
     }
 
     private boolean storeIncomingEvent(Map<String, Object> message,
-                                       String expectedAggregateType,
-                                       String expectedEventType,
+                                       AggregateType expectedAggregateType,
+                                       EventType expectedEventType,
                                        String messageIdField) {
         var aggregateType = asString(message.get("aggregateType"));
         var aggregateId = asString(message.get("aggregateId"));
         var eventType = asString(message.get("eventType"));
 
-        if (!expectedAggregateType.equals(aggregateType) || !expectedEventType.equals(eventType)) {
+        if (!expectedAggregateType.matches(aggregateType) || !expectedEventType.matches(eventType)) {
             log.warn("Unexpected kafka event skipped: expectedAggregateType={}, expectedEventType={}, aggregateType={}, aggregateId={}, eventType={}",
-                    expectedAggregateType, expectedEventType, aggregateType, aggregateId, eventType);
+                    expectedAggregateType.dbValue(), expectedEventType.dbValue(), aggregateType, aggregateId, eventType);
             return false;
         }
 
@@ -76,7 +72,7 @@ public class MailInboxService {
         }
     }
 
-    static String asString(Object value) {
+    static String asString(@Nullable Object value) {
         return value == null ? "" : String.valueOf(value);
     }
 

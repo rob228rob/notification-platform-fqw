@@ -15,10 +15,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * @author batoyan.rl
@@ -37,8 +39,10 @@ public class OutboxRelayService {
     private final ObjectMapper objectMapper;
 
 
-    @Scheduled(fixedDelayString = "${outbox.relay.fixed-delay}")
-    @Transactional
+    @Scheduled(
+            fixedDelayString = "${outbox.relay.fixed-delay}",
+            scheduler = "outboxRelayTaskScheduler"
+    )
     public void tick() {
         if (!props.isEnabled()) {
             LOG.warn("Outbox relay is disabled by properties");
@@ -55,17 +59,19 @@ public class OutboxRelayService {
         }
     }
 
-    @Transactional
     public int pollAndPublishOnce() {
-        var rows = lockBatch();
+        var claimToken = UUID.randomUUID();
+        var rows = claimBatch(claimToken);
         if (rows.isEmpty()) {
             LOG.debug("[OUTBOX] poll: no unpublished rows");
             return 0;
         }
 
-        LOG.info("[OUTBOX] poll: locked {} row(s) (batchSize={})", rows.size(), props.getBatchSize());
+        LOG.info("[OUTBOX] poll: claimed {} row(s) (batchSize={}, claimToken={})",
+                rows.size(), props.getBatchSize(), claimToken);
 
-        var ids = new ArrayList<Long>(rows.size());
+        var publishedIds = new ArrayList<Long>(rows.size());
+        var failedIds = new ArrayList<Long>();
 
         for (var row : rows) {
             var topic = topicFor(row.aggregateType());
@@ -74,43 +80,75 @@ public class OutboxRelayService {
             LOG.debug("[OUTBOX] publish: outboxId={}, aggregateType={}, eventType={}, key={}, topic={}",
                     row.outboxId(), row.aggregateType(), row.eventType(), key, topic);
 
-            retryTemplate.execute(ctx -> {
-                var attempt = ctx.getRetryCount() + 1;
-                LOG.debug("[OUTBOX] publish attempt {}: outboxId={}, topic={}", attempt, row.outboxId(), topic);
+            try {
+                retryTemplate.execute(ctx -> {
+                    var attempt = ctx.getRetryCount() + 1;
+                    LOG.debug("[OUTBOX] publish attempt {}: outboxId={}, topic={}", attempt, row.outboxId(), topic);
 
-                try {
-                    kafka.send(topic, key, serializePublisherEvent(row)).join();
-                    LOG.debug("[OUTBOX] publish ok: outboxId={}, topic={}", row.outboxId(), topic);
-                    return null;
-                } catch (Exception e) {
-                    LOG.warn("[OUTBOX] publish failed (attempt {}): outboxId={}, topic={}, err={}",
-                            attempt, row.outboxId(), topic, e.getMessage(), e);
-                    throw e;
-                }
-            });
+                    try {
+                        kafka.send(topic, key, serializePublisherEvent(row))
+                                .whenComplete((r, e) -> {
+                                    LOG.debug("[OUTBOX] publish ok: outboxId={}, topic={}", row.outboxId(), topic);
+                                })
+                                .join();
 
-            ids.add(row.outboxId());
+                        return null;
+                    } catch (Exception e) {
+                        LOG.warn("[OUTBOX] publish failed (attempt {}): outboxId={}, topic={}, err={}",
+                                attempt, row.outboxId(), topic, e.getMessage(), e);
+                        throw e;
+                    }
+                });
+                publishedIds.add(row.outboxId());
+            } catch (Exception ex) {
+                failedIds.add(row.outboxId());
+            }
         }
 
-        LOG.info("[OUTBOX] marking published: ids={}", ids);
-        markPublished(ids);
+        if (!publishedIds.isEmpty()) {
+            LOG.info("[OUTBOX] marking published: ids={}, claimToken={}", publishedIds, claimToken);
+            markPublished(publishedIds, claimToken);
+        }
 
-        LOG.info("[OUTBOX] poll done: published={}", ids.size());
-        return ids.size();
+        if (!failedIds.isEmpty()) {
+            LOG.info("[OUTBOX] releasing failed claims: ids={}, claimToken={}", failedIds, claimToken);
+            releaseClaims(failedIds, claimToken);
+        }
+
+        LOG.info("[OUTBOX] poll done: published={}, failed={}", publishedIds.size(), failedIds.size());
+        return publishedIds.size();
     }
 
-    private List<OutboxRow> lockBatch() {
+    @Transactional
+    protected List<OutboxRow> claimBatch(UUID claimToken) {
         var sql = """
-                select outbox_id, aggregate_type, aggregate_id, event_type,
-                       payload::text as payload_json, headers::text as headers_json,
-                       created_at
-                from %s.%s
-                where published_at is null
-                order by outbox_id
-                for update skip locked
-                limit :limit""".formatted(props.getSchema(), props.getTable());
+                with candidate as (
+                    select outbox_id
+                    from %s.%s
+                    where published_at is null
+                      and (claim_token is null or claimed_at < :claimed_before)
+                    order by outbox_id
+                    for update skip locked
+                    limit :limit
+                )
+                update %s.%s target
+                set claim_token = :claim_token,
+                    claimed_at = now()
+                from candidate
+                where target.outbox_id = candidate.outbox_id
+                returning target.outbox_id,
+                          target.aggregate_type,
+                          target.aggregate_id,
+                          target.event_type,
+                          target.payload::text as payload_json,
+                          target.headers::text as headers_json,
+                          target.created_at
+                """.formatted(props.getSchema(), props.getTable(), props.getSchema(), props.getTable());
 
-        return jdbc.query(sql, Map.of("limit", props.getBatchSize()), (rs, n) -> new OutboxRow(
+        return jdbc.query(sql, new MapSqlParameterSource()
+                .addValue("limit", props.getBatchSize())
+                .addValue("claim_token", claimToken)
+                .addValue("claimed_before", OffsetDateTime.now().minus(props.getLeaseDuration())), (rs, n) -> new OutboxRow(
                 rs.getLong("outbox_id"),
                 rs.getString("aggregate_type"),
                 rs.getString("aggregate_id"),
@@ -121,14 +159,37 @@ public class OutboxRelayService {
         ));
     }
 
-    private void markPublished(List<Long> ids) {
+    @Transactional
+    protected void markPublished(List<Long> ids, UUID claimToken) {
         var sql = """
         update %s.%s
-        set published_at = now()
+        set published_at = now(),
+            claim_token = null,
+            claimed_at = null
         where outbox_id = any(:ids)
+          and claim_token = :claim_token
         """.formatted(props.getSchema(), props.getTable());
 
-        var p = new MapSqlParameterSource().addValue("ids", ids.toArray(Long[]::new));
+        var p = new MapSqlParameterSource()
+                .addValue("ids", ids.toArray(Long[]::new))
+                .addValue("claim_token", claimToken);
+        jdbc.update(sql, p);
+    }
+
+    @Transactional
+    protected void releaseClaims(List<Long> ids, UUID claimToken) {
+        var sql = """
+        update %s.%s
+        set claim_token = null,
+            claimed_at = null
+        where outbox_id = any(:ids)
+          and claim_token = :claim_token
+          and published_at is null
+        """.formatted(props.getSchema(), props.getTable());
+
+        var p = new MapSqlParameterSource()
+                .addValue("ids", ids.toArray(Long[]::new))
+                .addValue("claim_token", claimToken);
         jdbc.update(sql, p);
     }
 
