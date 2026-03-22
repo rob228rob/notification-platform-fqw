@@ -1,6 +1,6 @@
 ﻿include:
   #  - './grafana/docker-compose.grafana.yml'
-  - './postgres/docker-compose.pg.yml'
+  - './postgres/docker-compose.postgres.yml'
   #  - './notification-mail-sender/docker-compose.pg.yml'
   #  - './notification-facade/docker-compose.pg.yml'
   #  - './notification-templates/docker-compose.pg.yml'
@@ -12,4 +12,4 @@
   #  - './redis/docker-compose.redis.yaml'
   # кейклок развернут в облаке -- not really
   #  - './keycloak/docker-compose.keycloak.yaml'
-  - './structurizr/docker-compose.structurizr.yml'
+  #  - './structurizr/docker-compose.structurizr.yml'

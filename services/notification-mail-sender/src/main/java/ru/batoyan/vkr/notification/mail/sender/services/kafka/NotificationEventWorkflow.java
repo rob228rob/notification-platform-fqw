@@ -7,6 +7,10 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.batoyan.vkr.notification.mail.sender.services.kafka.model.AggregateType;
+import ru.batoyan.vkr.notification.mail.sender.services.kafka.model.EventType;
+import ru.batoyan.vkr.notification.mail.sender.services.kafka.model.NotificationEventProcessingProperties;
+import ru.batoyan.vkr.notification.mail.sender.services.kafka.policy.MailDeliveryPlanService;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -20,7 +24,7 @@ import java.util.UUID;
 public class NotificationEventWorkflow {
 
     private final NamedParameterJdbcTemplate jdbc;
-    private final NotificationEventProcessingProperties properties;
+    private final   NotificationEventProcessingProperties properties;
     private final MailDeliveryPlanService mailDeliveryPlanService;
 
     @Transactional

@@ -6,7 +6,7 @@ application:
 outbox:
   relay:
     enabled: true
-    fixed-delay: 500ms
+    fixed-delay: 10000ms
     lease-duration: 30s
     batch-size: 100
     schema: nf_mail
@@ -36,6 +36,7 @@ delivery:
     gateway:
       from: ${MAIL_FROM:no-reply@dev.local}
       subject-fallback-prefix: ${MAIL_SUBJECT_FALLBACK_PREFIX:[notification]}
+      log-only: ${MAIL_GATEWAY_LOG_ONLY:true}
   notification-event:
     enabled: true
     inbox-batch-size: 100
@@ -132,24 +133,27 @@ spring:
 
 logging:
   level:
-    ru.batoyan.vkr.notification.mail.sender: DEBUG
+    root: INFO
+    ru.batoyan.vkr.notification.mail.sender: INFO
     liquibase: DEBUG
     org:
       springframework:
-        jdbc: DEBUG
-        orm: DEBUG
-        orm.jpa.JpaTransactionManager: DEBUG
+        jdbc: INFO
+        orm: INFO
+        orm.jpa.JpaTransactionManager: INFO
         security: INFO
       hibernate:
-        jpa: DEBUG
-        tool.hbm2ddl: DEBUG
-        SQL: DEBUG
+        jpa: INFO
+        tool.hbm2ddl: INFO
+        SQL: INFO
         type.descriptor.sql.BasicBinder: INFO
 
 
 management:
   health:
     elasticsearch:
+      enabled: false
+    mail:
       enabled: false
   endpoints:
     web.exposure.include: '*'

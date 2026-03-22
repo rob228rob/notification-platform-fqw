@@ -1,4 +1,4 @@
-package ru.batoyan.vkr.notification.mail.sender.services.kafka;
+package ru.batoyan.vkr.notification.mail.sender.services.kafka.model;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

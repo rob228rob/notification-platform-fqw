@@ -6,14 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collections;
 import java.util.Map;
 
-final class Jsons {
+public final class Jsons {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private Jsons() {
     }
 
-    static String write(Object value) {
+    public static String write(Object value) {
         try {
             return OBJECT_MAPPER.writeValueAsString(value);
         } catch (Exception e) {
@@ -21,7 +21,7 @@ final class Jsons {
         }
     }
 
-    static Map<String, Object> read(String value) {
+    public static Map<String, Object> read(String value) {
         try {
             if (value == null || value.isBlank()) {
                 return Collections.emptyMap();

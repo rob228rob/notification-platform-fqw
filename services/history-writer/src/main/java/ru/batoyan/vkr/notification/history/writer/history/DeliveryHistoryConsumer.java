@@ -20,7 +20,7 @@ public class DeliveryHistoryConsumer {
     public void onMessage(String rawMessage) {
         var event = eventParser.parse(rawMessage);
         var stored = repository.save(event);
-        log.info("Delivery history consumed outboxId={}, aggregateId={}, statusStored={}",
-                event.outboxId(), event.aggregateId(), stored);
+        log.info("Delivery history consumed outboxId={}, eventType={}, aggregateId={}, statusStored={}, payload={}",
+                event.outboxId(), event.eventType(), event.aggregateId(), stored, event.payload());
     }
 }

@@ -25,11 +25,13 @@ spring:
 
 grpc:
   server:
+    port: ${GRPC_SERVER_PORT:9091}
     auth:
       enabled: false
 
 logging:
   level:
+    root: INFO
     ru.batoyan.vkr.notification.history.writer: DEBUG
 
 management:

@@ -492,12 +492,15 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
         var aud = getAudienceRow(eventId)
                 .orElseThrow(() -> Status.FAILED_PRECONDITION.withDescription("audience not set").asRuntimeException());
 
-        var planned = req.hasOverrideSendAt() ? toInstant(req.getOverrideSendAt())
-                : (ev.scheduledAt != null ? ev.scheduledAt : Instant.now());
+        var planned = req.hasOverrideSendAt()
+                ? OffsetDateTime.ofInstant(toInstant(req.getOverrideSendAt()), ZoneOffset.UTC)
+                : (ev.scheduledAt != null
+                ? OffsetDateTime.ofInstant(ev.scheduledAt, ZoneOffset.UTC)
+                : OffsetDateTime.now(ZoneOffset.UTC));
 
         // idempotent dispatch by (event_id, idempotency_key)
         var dispatchId = UUID.randomUUID();
-        var now = Instant.now();
+        var now = OffsetDateTime.now(ZoneOffset.UTC);
 
         try {
             jdbc.update("""
@@ -538,9 +541,9 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
             insertDispatchTargets(dispatchId, recipients);
 
             jdbc.update("""
-                            update dispatch set total_targets = :total, updated_at = now()
+                            update dispatch set total_targets = :total
                             where dispatch_id = :dispatch_id
-                            """.replace("updated_at = now()", ""),
+                            """,
                     Map.of("total", (long) recipients.size(), "dispatch_id", dispatchId)
             );
 
@@ -561,8 +564,8 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
     private void enqueueMailDispatch(UUID dispatchId,
                                      EventRow event,
                                      List<String> recipients,
-                                     Instant plannedAt,
-                                     Instant createdAt) {
+                                     OffsetDateTime plannedAt,
+                                     OffsetDateTime createdAt) {
         var payload = Map.<String, Object>of(
                 "dispatch_id", dispatchId.toString(),
                 "event_id", event.eventId.toString(),
@@ -939,6 +942,11 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
     private static final RowMapper<AudienceRow> AUDIENCE_ROW_MAPPER = (rs, rowNum) -> new AudienceRow(rs);
     private static final RowMapper<DispatchRow> DISPATCH_ROW_MAPPER = (rs, rowNum) -> new DispatchRow(rs);
 
+    private static Instant readInstant(ResultSet rs, String column) throws SQLException {
+        var value = rs.getObject(column, OffsetDateTime.class);
+        return value == null ? null : value.toInstant();
+    }
+
     private static final class EventRow {
         final UUID eventId;
         final UUID clientId;
@@ -965,12 +973,12 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
             this.priority = rs.getString("priority");
             this.preferredChannel = rs.getString("preferred_channel");
             this.strategyKind = rs.getString("strategy_kind");
-            this.scheduledAt = rs.getObject("scheduled_at", Instant.class);
+            this.scheduledAt = readInstant(rs, "scheduled_at");
             this.status = rs.getString("status");
             this.payloadJson = rs.getString("payload");
-            this.createdAt = rs.getObject("created_at", Instant.class);
-            this.updatedAt = rs.getObject("updated_at", Instant.class);
-            this.cancelledAt = rs.getObject("cancelled_at", Instant.class);
+            this.createdAt = readInstant(rs, "created_at");
+            this.updatedAt = readInstant(rs, "updated_at");
+            this.cancelledAt = readInstant(rs, "cancelled_at");
             this.cancelReason = rs.getString("cancel_reason");
         }
     }
@@ -1005,9 +1013,9 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
             this.eventId = UUID.fromString(rs.getString("event_id"));
             this.clientId = UUID.fromString(rs.getString("client_id"));
             this.status = rs.getString("status");
-            this.plannedSendAt = rs.getObject("planned_send_at", Instant.class);
-            this.startedAt = rs.getObject("started_at", Instant.class);
-            this.finishedAt = rs.getObject("finished_at", Instant.class);
+            this.plannedSendAt = readInstant(rs, "planned_send_at");
+            this.startedAt = readInstant(rs, "started_at");
+            this.finishedAt = readInstant(rs, "finished_at");
             this.totalTargets = rs.getLong("total_targets");
             this.enqueued = rs.getLong("enqueued");
         }

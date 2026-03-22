@@ -1,4 +1,4 @@
-package ru.batoyan.vkr.notification.mail.sender.services.kafka;
+package ru.batoyan.vkr.notification.mail.sender.services.kafka.gateway;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +8,7 @@ import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
+import ru.batoyan.vkr.notification.mail.sender.services.kafka.Jsons;
 
 import java.util.*;
 
@@ -23,6 +24,18 @@ public class SpringMailGateway implements MailGateway {
     public BatchSendResult sendBatch(List<MailMessage> messages) {
         if (messages.isEmpty()) {
             return new BatchSendResult(List.of(), Map.of());
+        }
+
+        if (properties.isLogOnly()) {
+            for (var message : messages) {
+                var envelope = toEnvelope(message);
+                log.info("[MAIL-LOG-ONLY] deliveryId={}, to={}, subject={}, body={}",
+                        message.deliveryId(), message.email(), envelope.getSubject(), envelope.getText());
+            }
+            return new BatchSendResult(
+                    messages.stream().map(MailMessage::deliveryId).toList(),
+                    Map.of()
+            );
         }
 
         var mailByEnvelope = new IdentityHashMap<SimpleMailMessage, MailMessage>();

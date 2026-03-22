@@ -1,4 +1,4 @@
-package ru.batoyan.vkr.notification.mail.sender.services.kafka;
+package ru.batoyan.vkr.notification.mail.sender.services.kafka.gateway;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -17,4 +17,6 @@ public class SpringMailGatewayProperties {
 
     @NotBlank
     private final String subjectFallbackPrefix;
+
+    private final boolean logOnly;
 }

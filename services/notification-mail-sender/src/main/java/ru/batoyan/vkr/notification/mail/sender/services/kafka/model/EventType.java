@@ -1,4 +1,4 @@
-package ru.batoyan.vkr.notification.mail.sender.services.kafka;
+package ru.batoyan.vkr.notification.mail.sender.services.kafka.model;
 
 import java.util.Arrays;
 

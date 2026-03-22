@@ -9,6 +9,11 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import ru.batoyan.vkr.notification.mail.sender.services.kafka.gateway.MailGateway;
+import ru.batoyan.vkr.notification.mail.sender.services.kafka.model.AggregateType;
+import ru.batoyan.vkr.notification.mail.sender.services.kafka.model.EventType;
+import ru.batoyan.vkr.notification.mail.sender.services.kafka.policy.MailDeliveryPlanService;
+import ru.batoyan.vkr.notification.mail.sender.services.kafka.policy.MailDeliveryProperties;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

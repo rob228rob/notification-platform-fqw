@@ -62,6 +62,7 @@ public class OutboxRelayService {
             var topic = topicFor(row.aggregateType());
             try {
                 outboxRetryTemplate.execute(ctx -> {
+                    log.info("[PUBLISHER] published event: {}, payload: {}", row.eventType, row);
                     outboxKafkaTemplate.send(topic, row.aggregateId(), serializeEvent(row)).join();
                     return null;
                 });

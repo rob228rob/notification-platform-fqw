@@ -1,4 +1,4 @@
-package ru.batoyan.vkr.notification.mail.sender.services.kafka;
+package ru.batoyan.vkr.notification.mail.sender.services.kafka.consumer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -9,6 +9,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
+import ru.batoyan.vkr.notification.mail.sender.services.kafka.MailInboxRepository;
 
 import java.util.Map;
 

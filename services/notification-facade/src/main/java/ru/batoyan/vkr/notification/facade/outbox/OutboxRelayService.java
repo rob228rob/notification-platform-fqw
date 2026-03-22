@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -63,7 +64,7 @@ public class OutboxRelayService {
         var claimToken = UUID.randomUUID();
         var rows = claimBatch(claimToken);
         if (rows.isEmpty()) {
-            LOG.debug("[OUTBOX] poll: no unpublished rows");
+            LOG.info("[OUTBOX] poll: no unpublished rows");
             return 0;
         }
 
@@ -74,21 +75,21 @@ public class OutboxRelayService {
         var failedIds = new ArrayList<Long>();
 
         for (var row : rows) {
-            var topic = topicFor(row.aggregateType());
+            var topic = topicFor(row);
             var key = row.aggregateId();
 
-            LOG.debug("[OUTBOX] publish: outboxId={}, aggregateType={}, eventType={}, key={}, topic={}",
-                    row.outboxId(), row.aggregateType(), row.eventType(), key, topic);
+            LOG.info("[OUTBOX] publish: outboxId={}, aggregateType={}, eventType={}, key={}, topic={}, payload: {}",
+                    row.outboxId(), row.aggregateType(), row.eventType(), key, topic, row.payloadJson());
 
             try {
                 retryTemplate.execute(ctx -> {
                     var attempt = ctx.getRetryCount() + 1;
-                    LOG.debug("[OUTBOX] publish attempt {}: outboxId={}, topic={}", attempt, row.outboxId(), topic);
+                    LOG.info("[OUTBOX] publish attempt {}: outboxId={}, topic={}", attempt, row.outboxId(), topic);
 
                     try {
                         kafka.send(topic, key, serializePublisherEvent(row))
                                 .whenComplete((r, e) -> {
-                                    LOG.debug("[OUTBOX] publish ok: outboxId={}, topic={}", row.outboxId(), topic);
+                                    LOG.info("[OUTBOX] publish ok: outboxId={}, topic={}", row.outboxId(), topic);
                                 })
                                 .join();
 
@@ -193,14 +194,53 @@ public class OutboxRelayService {
         jdbc.update(sql, p);
     }
 
-    private String topicFor(String aggregateType) {
+    private String topicFor(OutboxRow row) {
         var topics = props.getTopics();
-        return switch (aggregateType) {
+        return switch (row.aggregateType()) {
             case "notification_event" -> topics.events();
             case "dispatch" -> topics.dispatches();
-            case "mail_dispatch" -> topics.mailDispatches();
+            case "mail_dispatch" -> isDelayedMailDispatch(row) ? topics.mailDispatchesScheduled() : topics.mailDispatches();
             default -> topics.events();
         };
+    }
+
+    private boolean isDelayedMailDispatch(OutboxRow row) {
+        var payload = readJsonMap(row.payloadJson());
+        var rawPlannedSendAt = firstPresent(payload, "planned_send_at", "plannedSendAt", "send_at", "sendAt");
+        if (rawPlannedSendAt == null) {
+            return false;
+        }
+
+        var plannedSendAtText = String.valueOf(rawPlannedSendAt).trim();
+        if (plannedSendAtText.isEmpty() || "null".equalsIgnoreCase(plannedSendAtText)) {
+            return false;
+        }
+
+        var plannedSendAt = parseInstant(plannedSendAtText, row.outboxId());
+        return plannedSendAt != null && plannedSendAt.isAfter(Instant.now());
+    }
+
+    private Object firstPresent(Map<String, Object> payload, String... keys) {
+        for (var key : keys) {
+            var value = payload.get(key);
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private Instant parseInstant(String value, long outboxId) {
+        try {
+            return OffsetDateTime.parse(value).toInstant();
+        } catch (DateTimeParseException ignored) {
+            try {
+                return Instant.parse(value);
+            } catch (DateTimeParseException ex) {
+                LOG.warn("[OUTBOX] Failed to parse planned_send_at for outboxId={}, value={}", outboxId, value);
+                return null;
+            }
+        }
     }
 
     private String serializePublisherEvent(OutboxRow row) {

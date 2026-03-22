@@ -32,6 +32,7 @@ scheduler:
 
 logging:
   level:
+    root: INFO
     ru.batoyan.vkr.notification.scheduler.delivery: DEBUG
 
 management:

@@ -49,6 +49,7 @@ public class ScheduledDeliveryPublisher {
     public int publishDueBatch() {
         var tasks = repository.lockDueTasks(properties.getBatchSize());
         if (tasks.isEmpty()) {
+            LOG.info("Scheduled delivery poll found no due tasks (batchSize={})", properties.getBatchSize());
             return 0;
         }
 
@@ -62,7 +63,7 @@ public class ScheduledDeliveryPublisher {
                         task.eventType(),
                         task.payload(),
                         task.headers(),
-                        task.sourceCreatedAt()
+                        task.sourceCreatedAt() == null ? null : task.sourceCreatedAt().toString()
                 ));
                 kafkaTemplate.send(properties.getProducerTopic(), task.aggregateId(), payload).join();
                 repository.markPublished(task.taskId());
@@ -86,7 +87,7 @@ public class ScheduledDeliveryPublisher {
             String eventType,
             Map<String, Object> payload,
             Map<String, Object> headers,
-            OffsetDateTime createdAt
+            String createdAt
     ) {
     }
 

@@ -47,7 +47,8 @@ public class OutboxRelayProperties {
     public record Topics(
             @NotBlank String events,
             @NotBlank String dispatches,
-            @NotBlank String mailDispatches
+            @NotBlank String mailDispatches,
+            @NotBlank String mailDispatchesScheduled
     ) {
     }
 

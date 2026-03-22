@@ -33,6 +33,7 @@ outbox:
       events: notification.facade.events
       dispatches: notification.facade.dispatches
       mail-dispatches: notification.mail.dispatches
+      mail-dispatches-scheduled: notification.mail.dispatches.scheduled
     producer-retry:
       max-attempts: 8
       initial-backoff: 100ms
@@ -129,6 +130,7 @@ server:
 
 logging:
   level:
+    root: INFO
     ru.batoyan.vkr.notification.facade: DEBUG
     com.mai.proj: DEBUG
     liquibase: DEBUG

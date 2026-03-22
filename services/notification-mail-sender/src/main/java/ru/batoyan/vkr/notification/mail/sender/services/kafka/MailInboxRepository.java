@@ -7,6 +7,8 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
+import ru.batoyan.vkr.notification.mail.sender.services.kafka.model.AggregateType;
+import ru.batoyan.vkr.notification.mail.sender.services.kafka.model.EventType;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
@@ -35,7 +37,7 @@ public class MailInboxRepository {
         var aggregateId = asString(message.get("aggregateId"));
         var eventType = asString(message.get("eventType"));
 
-        if (!expectedAggregateType.matches(aggregateType) || !expectedEventType.matches(eventType)) {
+        if (!expectedAggregateType.matches(aggregateType)) {
             log.warn("Unexpected kafka event skipped: expectedAggregateType={}, expectedEventType={}, aggregateType={}, aggregateId={}, eventType={}",
                     expectedAggregateType.dbValue(), expectedEventType.dbValue(), aggregateType, aggregateId, eventType);
             return false;
@@ -72,7 +74,7 @@ public class MailInboxRepository {
         }
     }
 
-    static String asString(@Nullable Object value) {
+    public static String asString(@Nullable Object value) {
         return value == null ? "" : String.valueOf(value);
     }
 

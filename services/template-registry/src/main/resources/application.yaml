@@ -102,6 +102,7 @@ server:
 
 logging:
   level:
+    root: INFO
     ru.batoyan.vkr.notification.facade: DEBUG
     com.mai.proj: DEBUG
     liquibase: DEBUG

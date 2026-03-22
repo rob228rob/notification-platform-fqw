@@ -17,6 +17,7 @@ import java.util.UUID;
 public class ClientIdResolver {
 
     private final Boolean authEnabled;
+    private final String fallbackClientId = UUID.randomUUID().toString();
 
     public ClientIdResolver(@Value("${grpc.server.auth.enabled:false}") Boolean authEnabled) {
         this.authEnabled = authEnabled;
@@ -27,7 +28,8 @@ public class ClientIdResolver {
     public String requireClientId() {
         var clientId = GrpcAuthContext.CLIENT_ID.get();
         if (!authEnabled) {
-            return UUID.randomUUID().toString();
+            LOG.debug("Auth disabled; using fallback clientId={}", fallbackClientId);
+            return fallbackClientId;
         }
         if (clientId == null || clientId.isBlank()) {
             LOG.error("Client id not found, unauthorized");
