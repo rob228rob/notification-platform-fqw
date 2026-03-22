@@ -1,0 +1,44 @@
+plugins {
+    id "org.springframework.boot"
+    id "io.spring.dependency-management"
+    id "java"
+}
+
+tasks.named("bootJar") {
+    archiveFileName = "history-writer.jar"
+}
+
+dependencies {
+    implementation project(":libs:proto-common")
+    implementation project(":libs:proto-history")
+    implementation "net.devh:grpc-server-spring-boot-starter:3.1.0.RELEASE"
+
+
+    // jackson-jq — основная либа
+    implementation 'net.thisptr:jackson-jq:1.6.0'
+
+    // опционально: uuid3/1, uuid5/1, расширенные time-функции
+    implementation 'net.thisptr:jackson-jq-extra:1.6.0'
+
+    // jackson — если ещё нет в проекте
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+    implementation "org.springframework.boot:spring-boot-starter"
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "org.springframework.boot:spring-boot-starter-jdbc"
+    implementation "org.springframework.kafka:spring-kafka"
+
+    implementation "org.flywaydb:flyway-core"
+    implementation "org.flywaydb:flyway-database-postgresql"
+    runtimeOnly "org.postgresql:postgresql"
+
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.17.2"
+
+    compileOnly "org.projectlombok:lombok"
+    annotationProcessor "org.projectlombok:lombok"
+    testCompileOnly "org.projectlombok:lombok"
+    testAnnotationProcessor "org.projectlombok:lombok"
+
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+}
+
+tasks.test { useJUnitPlatform() }

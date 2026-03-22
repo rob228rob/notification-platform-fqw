@@ -1,4 +1,4 @@
-set search_path = nf;
+set search_path = nf_tpl;
 
 create table if not exists template (
     template_id      uuid primary key,

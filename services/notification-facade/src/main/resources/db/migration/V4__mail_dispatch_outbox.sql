@@ -1,4 +1,4 @@
-set search_path = nf;
+set search_path = nf_fac;
 
 drop trigger if exists tr_dispatch_outbox on dispatch;
 

@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: scheduler-delivery
+  config:
+    import: classpath:creds/user-creds.yaml
+  flyway:
+    locations: classpath:db/migration
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${postgresql.url}
+    password: ${postgresql.user.password}
+    username: ${postgresql.user.username}
+  kafka:
+    bootstrap-servers: ${kafka.bootstrap.servers:localhost:9093}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:scheduler-delivery-group}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+scheduler:
+  delivery:
+    consumer-topic: ${SCHEDULER_DELIVERY_CONSUMER_TOPIC:notification.mail.dispatches.scheduled}
+    producer-topic: ${SCHEDULER_DELIVERY_PRODUCER_TOPIC:notification.mail.dispatches}
+    consumer-concurrency: ${SCHEDULER_DELIVERY_CONSUMER_CONCURRENCY:1}
+    poll-fixed-delay: ${SCHEDULER_DELIVERY_POLL_FIXED_DELAY:5s}
+    batch-size: ${SCHEDULER_DELIVERY_BATCH_SIZE:100}
+    retry-backoff: ${SCHEDULER_DELIVERY_RETRY_BACKOFF:1m}
+
+logging:
+  level:
+    ru.batoyan.vkr.notification.scheduler.delivery: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

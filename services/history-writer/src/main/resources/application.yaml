@@ -1,0 +1,39 @@
+outbox:
+  relay:
+    topics:
+      mail-delivery-statuses: notification.mail.delivery-statuses
+
+spring:
+  application:
+    name: history-writer
+  config:
+    import: classpath:creds/user-creds.yaml
+  flyway:
+    locations: classpath:db/migration
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${postgresql.url}
+    password: ${postgresql.user.password}
+    username: ${postgresql.user.username}
+  kafka:
+    bootstrap-servers: ${kafka.bootstrap.servers:localhost:9093}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:history-writer-group}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+grpc:
+  server:
+    auth:
+      enabled: false
+
+logging:
+  level:
+    ru.batoyan.vkr.notification.history.writer: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

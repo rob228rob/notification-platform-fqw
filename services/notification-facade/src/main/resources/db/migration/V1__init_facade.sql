@@ -1,6 +1,6 @@
 -- V1__init_facade.sql
 
-create schema if not exists nf;
+create schema if not exists nf_fac;
 
 
 -- notification_event

@@ -41,7 +41,7 @@ public class MailDeliveryPlanService {
 
         long alreadyScheduled = jdbc.queryForObject("""
                 select count(*)
-                from nf.mail_delivery
+                from nf_mail.mail_delivery
                 where recipient_id = :recipient_id
                   and channel = :channel
                   and created_at >= :from_ts
@@ -66,6 +66,7 @@ public class MailDeliveryPlanService {
 
     public void createPendingDelivery(UUID dispatchId,
                                       UUID eventId,
+                                      String clientId,
                                       String recipientId,
                                       String email,
                                       String templateId,
@@ -73,18 +74,19 @@ public class MailDeliveryPlanService {
                                       Map<String, Object> payload) {
         try {
             jdbc.update("""
-                    insert into nf.mail_delivery(
-                      dispatch_id, event_id, recipient_id, channel, status, email,
+                    insert into nf_mail.mail_delivery(
+                      dispatch_id, event_id, client_id, recipient_id, channel, status, email,
                       template_id, template_version, payload, idempotency_key,
                       attempt_count, next_attempt_at, created_at
                     ) values (
-                      :dispatch_id, :event_id, :recipient_id, :channel, :status, :email,
+                      :dispatch_id, :event_id, :client_id, :recipient_id, :channel, :status, :email,
                       :template_id, :template_version, cast(:payload as jsonb), :idempotency_key,
                       0, :next_attempt_at, :created_at
                     )
                     """, new MapSqlParameterSource()
                     .addValue("dispatch_id", dispatchId)
                     .addValue("event_id", eventId)
+                    .addValue("client_id", clientId)
                     .addValue("recipient_id", recipientId)
                     .addValue("channel", CHANNEL_EMAIL)
                     .addValue("status", STATUS_PENDING)
@@ -95,16 +97,17 @@ public class MailDeliveryPlanService {
                     .addValue("idempotency_key", deliveryIdempotencyKey(dispatchId, recipientId))
                     .addValue("next_attempt_at", OffsetDateTime.now())
                     .addValue("created_at", OffsetDateTime.now()));
-            log.info("Mail delivery created dispatchId={}, eventId={}, recipientId={}, templateId={}",
-                    dispatchId, eventId, recipientId, templateId);
+            log.info("Mail delivery created dispatchId={}, eventId={}, clientId={}, recipientId={}, templateId={}",
+                    dispatchId, eventId, clientId, recipientId, templateId);
         } catch (DuplicateKeyException ignored) {
-            log.info("Mail delivery already exists dispatchId={}, eventId={}, recipientId={}",
-                    dispatchId, eventId, recipientId);
+            log.info("Mail delivery already exists dispatchId={}, eventId={}, clientId={}, recipientId={}",
+                    dispatchId, eventId, clientId, recipientId);
         }
     }
 
     public void saveSkippedDelivery(UUID dispatchId,
                                     UUID eventId,
+                                    String clientId,
                                     String recipientId,
                                     String reasonCode,
                                     String email,
@@ -113,18 +116,19 @@ public class MailDeliveryPlanService {
                                     Map<String, Object> payload) {
         try {
             jdbc.update("""
-                    insert into nf.mail_delivery(
-                      dispatch_id, event_id, recipient_id, channel, status, email,
+                    insert into nf_mail.mail_delivery(
+                      dispatch_id, event_id, client_id, recipient_id, channel, status, email,
                       template_id, template_version, payload, rule_code, idempotency_key,
                       attempt_count, created_at
                     ) values (
-                      :dispatch_id, :event_id, :recipient_id, :channel, :status, :email,
+                      :dispatch_id, :event_id, :client_id, :recipient_id, :channel, :status, :email,
                       :template_id, :template_version, cast(:payload as jsonb), :rule_code, :idempotency_key,
                       0, :created_at
                     )
                     """, new MapSqlParameterSource()
                     .addValue("dispatch_id", dispatchId)
                     .addValue("event_id", eventId)
+                    .addValue("client_id", clientId)
                     .addValue("recipient_id", recipientId)
                     .addValue("channel", CHANNEL_EMAIL)
                     .addValue("status", STATUS_SKIPPED)
@@ -135,18 +139,18 @@ public class MailDeliveryPlanService {
                     .addValue("rule_code", reasonCode)
                     .addValue("idempotency_key", deliveryIdempotencyKey(dispatchId, recipientId))
                     .addValue("created_at", OffsetDateTime.now()));
-            log.info("Mail delivery skipped dispatchId={}, eventId={}, recipientId={}, reasonCode={}",
-                    dispatchId, eventId, recipientId, reasonCode);
+            log.info("Mail delivery skipped dispatchId={}, eventId={}, clientId={}, recipientId={}, reasonCode={}",
+                    dispatchId, eventId, clientId, recipientId, reasonCode);
         } catch (DuplicateKeyException ignored) {
-            log.info("Skipped mail delivery already exists dispatchId={}, eventId={}, recipientId={}",
-                    dispatchId, eventId, recipientId);
+            log.info("Skipped mail delivery already exists dispatchId={}, eventId={}, clientId={}, recipientId={}",
+                    dispatchId, eventId, clientId, recipientId);
         }
     }
 
     private Optional<RecipientSettings> findRecipientSettings(String recipientId) {
         var rows = jdbc.query("""
                 select recipient_id, email, email_consent, active, max_deliveries_per_day
-                from nf.recipient_mail_settings
+                from nf_mail.recipient_mail_settings
                 where recipient_id = :recipient_id
                 """, Map.of("recipient_id", recipientId), (rs, rowNum) -> new RecipientSettings(
                 rs.getString("recipient_id"),

@@ -1,15 +1,15 @@
 ﻿include:
-#  - './grafana/docker-compose.grafana.yml'
-#  - основная бд для notification facade
-#  - './postgres/docker-compose.pg.yml'
-  - './notification-mail-sender/docker-compose.pg.yml'
-  - './notification-facade/docker-compose.pg.yml'
-  - './notification-templates/docker-compose.pg.yml'
-#  - './minio/docker-compose.s3.yml'
-#    кафка развернута в облаке -- not really
+  #  - './grafana/docker-compose.grafana.yml'
+  - './postgres/docker-compose.pg.yml'
+  #  - './notification-mail-sender/docker-compose.pg.yml'
+  #  - './notification-facade/docker-compose.pg.yml'
+  #  - './notification-templates/docker-compose.pg.yml'
+  #  - './minio/docker-compose.s3.yml'
+  #    кафка развернута в облаке -- not really
   - './kafka/docker-compose.kafka.yml'
   - './networks/docker-compose.networks.yml'
-#  - './app/docker-compose.app.yaml'
-#  - './redis/docker-compose.redis.yaml'
-# кейклок развернут в облаке -- not really
-#  - './keycloak/docker-compose.keycloak.yaml'
+  #  - './app/docker-compose.app.yaml'
+  #  - './redis/docker-compose.redis.yaml'
+  # кейклок развернут в облаке -- not really
+  #  - './keycloak/docker-compose.keycloak.yaml'
+  - './structurizr/docker-compose.structurizr.yml'

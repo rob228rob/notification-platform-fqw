@@ -27,7 +27,7 @@ outbox:
     fixed-delay: 5000ms
     lease-duration: 30s
     batch-size: 100
-    schema: nf
+    schema: nf_fac
     table: outbox_message
     topics:
       events: notification.facade.events

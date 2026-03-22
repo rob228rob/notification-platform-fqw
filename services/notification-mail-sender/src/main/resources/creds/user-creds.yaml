@@ -8,7 +8,7 @@ kafka:
 
 # бд разворачивается локально в докере
 postgresql:
-  url: jdbc:postgresql://localhost:35432/mail_sender_pg?currentSchema=nf
+  url: jdbc:postgresql://localhost:25432/main_db?currentSchema=nf_mail
   user:
-    username: postgres
-    password: postgres
+    username: user
+    password: password

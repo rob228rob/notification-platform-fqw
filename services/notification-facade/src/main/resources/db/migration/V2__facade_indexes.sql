@@ -1,6 +1,6 @@
 -- V2__indexes_facade.sql
 
-set search_path = nf;
+set search_path = nf_fac;
 
 -- events
 create index if not exists ix_event_client_created

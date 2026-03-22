@@ -47,7 +47,7 @@ public class MailInboxRepository {
 
         try {
             jdbc.update("""
-                    insert into nf.consumer_inbox_message(
+                    insert into nf_mail.consumer_inbox_message(
                       message_id, aggregate_type, aggregate_id, event_type,
                       event_id,
                       payload, headers, processing_status, received_at

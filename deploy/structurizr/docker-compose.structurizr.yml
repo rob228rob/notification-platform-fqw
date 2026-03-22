@@ -1,0 +1,11 @@
+services:
+  structurizr-lite:
+    image: structurizr/structurizr:latest
+    container_name: structurizr-lite
+    command: ["local"]
+    ports:
+      - "8088:8080"
+    volumes:
+      - ../../:/usr/local/structurizr
+    networks:
+      - shared

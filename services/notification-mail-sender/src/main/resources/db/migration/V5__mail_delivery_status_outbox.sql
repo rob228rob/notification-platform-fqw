@@ -1,4 +1,4 @@
-set search_path = nf;
+set search_path = nf_mail;
 
 create table if not exists outbox_message
 (

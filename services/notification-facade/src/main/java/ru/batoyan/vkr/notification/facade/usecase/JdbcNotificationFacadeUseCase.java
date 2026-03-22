@@ -582,7 +582,7 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
         );
 
         jdbc.update("""
-                insert into nf.outbox_message(
+                insert into nf_fac.outbox_message(
                   aggregate_type, aggregate_id, event_type, payload, headers, created_at
                 ) values (
                   :aggregate_type, :aggregate_id, :event_type, cast(:payload as jsonb), cast(:headers as jsonb), :created_at

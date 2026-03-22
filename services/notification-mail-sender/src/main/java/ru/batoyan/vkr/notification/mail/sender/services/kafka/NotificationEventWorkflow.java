@@ -78,6 +78,7 @@ public class NotificationEventWorkflow {
                     event.eventId(),
                     event.eventId(),
                     event.clientId(),
+                    event.clientId(),
                     decision.reasonCode(),
                     decision.email(),
                     event.templateId(),
@@ -91,6 +92,7 @@ public class NotificationEventWorkflow {
                 event.eventId(),
                 event.eventId(),
                 event.clientId(),
+                event.clientId(),
                 decision.email(),
                 event.templateId(),
                 event.templateVersion(),
@@ -103,7 +105,7 @@ public class NotificationEventWorkflow {
     private List<InboxRow> lockInboxBatch() {
         return jdbc.query("""
                 select message_id, event_id, aggregate_type, event_type, payload::text as payload_json, processing_status
-                from nf.consumer_inbox_message
+                from nf_mail.consumer_inbox_message
                 where processing_status = :status
                   and aggregate_type = :aggregate_type
                   and event_type = :event_type
@@ -126,7 +128,7 @@ public class NotificationEventWorkflow {
 
     private void updateInboxStatus(UUID messageId, InboxStatus status, String errorMessage) {
         jdbc.update("""
-                update nf.consumer_inbox_message
+                update nf_mail.consumer_inbox_message
                 set processing_status = :status,
                     processed_at = :processed_at,
                     error_message = :error_message

@@ -1,0 +1,14 @@
+kafka:
+  bootstrap:
+    servers: localhost:9093
+  user:
+    # креды нужно уточнять для remote kafka
+    username: kafka
+    password: kafka
+
+# бд разворачивается локально в докере
+postgresql:
+  url: jdbc:postgresql://localhost:25432/main_db?currentSchema=nf_hist
+  user:
+    username: user
+    password: password

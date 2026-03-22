@@ -1,1 +1,1 @@
-create schema if not exists nf;
+create schema if not exists nf_tpl;

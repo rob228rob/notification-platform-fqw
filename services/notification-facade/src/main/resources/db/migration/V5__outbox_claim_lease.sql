@@ -1,4 +1,4 @@
-set search_path = nf;
+set search_path = nf_fac;
 
 alter table if exists outbox_message
     add column if not exists claimed_at timestamptz null;

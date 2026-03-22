@@ -1,6 +1,6 @@
 -- V3__outbox_and_triggers.sql
 
-set search_path = nf;
+set search_path = nf_fac;
 
 create table if not exists outbox_message
 (

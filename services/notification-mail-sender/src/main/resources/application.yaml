@@ -3,6 +3,25 @@ application:
   name: "base-template"
   description: ""
 
+outbox:
+  relay:
+    enabled: true
+    fixed-delay: 500ms
+    lease-duration: 30s
+    batch-size: 100
+    schema: nf_mail
+    table: outbox_message
+    topics:
+      events: notification.facade.events
+      dispatches: notification.facade.dispatches
+      mail-dispatches: notification.mail.dispatches
+      mail-delivery-statuses: notification.mail.delivery-statuses
+    producer-retry:
+      max-attempts: 8
+      initial-backoff: 100ms
+      multiplier: 2.0
+      max-backoff: 5s
+
 delivery:
   mail:
     enabled: true

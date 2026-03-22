@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="template-registry (Spring Boot)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="template-registry.main" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+    <option name="MAIN_CLASS_NAME" value="ru.batoyan.vkr.notification.templates.Application" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="SHORTEN_COMMAND_LINE" value="JAR_MANIFEST" />
+    <method v="2" />
+  </configuration>
+</component>

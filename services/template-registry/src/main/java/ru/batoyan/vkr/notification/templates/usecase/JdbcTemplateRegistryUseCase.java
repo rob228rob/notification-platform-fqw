@@ -40,7 +40,7 @@ public class JdbcTemplateRegistryUseCase implements TemplateRegistryUseCase {
 
         try {
             jdbc.update("""
-                    insert into nf.template(template_id, client_id, name, description, status, active_version, idempotency_key, created_at, updated_at)
+                    insert into nf_tpl.template(template_id, client_id, name, description, status, active_version, idempotency_key, created_at, updated_at)
                     values (:template_id, :client_id, :name, :description, :status, :active_version, :idem, :now, :now)
                     """, new MapSqlParameterSource()
                     .addValue("template_id", templateId)
@@ -60,7 +60,7 @@ public class JdbcTemplateRegistryUseCase implements TemplateRegistryUseCase {
         }
 
         jdbc.update("""
-                insert into nf.template_version(template_id, version, engine, contents, created_at)
+                insert into nf_tpl.template_version(template_id, version, engine, contents, created_at)
                 values (:template_id, :version, :engine, cast(:contents as jsonb), :now)
                 """, new MapSqlParameterSource()
                 .addValue("template_id", templateId)
@@ -90,7 +90,7 @@ public class JdbcTemplateRegistryUseCase implements TemplateRegistryUseCase {
         // ensure template exists and get current fields
         var existing = jdbc.query("""
                 select template_id, name, description, active_version
-                from nf.template
+                from nf_tpl.template
                 where template_id = :template_id and client_id = :client_id
                 """, Map.of("template_id", templateId, "client_id", UUID.fromString(clientId)),
                 (rs, n) -> Map.of(
@@ -100,13 +100,13 @@ public class JdbcTemplateRegistryUseCase implements TemplateRegistryUseCase {
                 )).stream().findFirst().orElseThrow(() -> new IllegalArgumentException("Template not found"));
 
         var nextVersion = jdbc.queryForObject("""
-                select coalesce(max(version), 0) + 1 from nf.template_version where template_id = :template_id
+                select coalesce(max(version), 0) + 1 from nf_tpl.template_version where template_id = :template_id
                 """, Map.of("template_id", templateId), Integer.class);
 
         var contentsJson = toJson(request.getContentsList());
 
         jdbc.update("""
-                insert into nf.template_version(template_id, version, engine, contents, created_at)
+                insert into nf_tpl.template_version(template_id, version, engine, contents, created_at)
                 values (:template_id, :version, :engine, cast(:contents as jsonb), :now)
                 """, new MapSqlParameterSource()
                 .addValue("template_id", templateId)
@@ -116,7 +116,7 @@ public class JdbcTemplateRegistryUseCase implements TemplateRegistryUseCase {
                 .addValue("now", now));
 
         jdbc.update("""
-                update nf.template
+                update nf_tpl.template
                 set name = :name,
                     description = :description,
                     status = :status,
@@ -144,7 +144,7 @@ public class JdbcTemplateRegistryUseCase implements TemplateRegistryUseCase {
         var templateId = UUID.fromString(request.getTemplateId());
         var tpl = jdbc.query("""
                 select template_id, client_id, name, description, status, active_version, created_at, updated_at
-                from nf.template
+                from nf_tpl.template
                 where template_id = :template_id and client_id = :client_id
                 """, Map.of("template_id", templateId, "client_id", UUID.fromString(clientId)),
                 (rs, n) -> TemplateView.newBuilder()
@@ -188,10 +188,10 @@ public class JdbcTemplateRegistryUseCase implements TemplateRegistryUseCase {
             params.addValue("status", filterStatus);
         }
 
-        var total = jdbc.queryForObject("select count(*) from nf.template " + where + " ", params, Long.class);
+        var total = jdbc.queryForObject("select count(*) from nf_tpl.template " + where + " ", params, Long.class);
         var query = """
                 select template_id, client_id, name, description, status, active_version, created_at, updated_at
-                from nf.template
+                from nf_tpl.template
                 %s
                 order by updated_at desc
                 limit :limit offset :offset
@@ -245,7 +245,7 @@ public class JdbcTemplateRegistryUseCase implements TemplateRegistryUseCase {
     private TemplateVersionView fetchVersion(UUID templateId, int version) {
         var ver = jdbc.query("""
                 select template_id, version, engine, contents, created_at
-                from nf.template_version
+                from nf_tpl.template_version
                 where template_id = :template_id and version = :version
                 """, Map.of("template_id", templateId, "version", version),
                 (rs, n) -> TemplateVersionView.newBuilder()
@@ -260,7 +260,7 @@ public class JdbcTemplateRegistryUseCase implements TemplateRegistryUseCase {
 
     private int getActiveVersion(UUID templateId) {
         Integer v = jdbc.queryForObject("""
-                select active_version from nf.template where template_id = :template_id
+                select active_version from nf_tpl.template where template_id = :template_id
                 """, Map.of("template_id", templateId), Integer.class);
         if (v == null || v <= 0) {
             throw new IllegalArgumentException("Active version not set for template " + templateId);

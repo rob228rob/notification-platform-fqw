@@ -112,6 +112,7 @@ public class MailDispatchWorkflow {
                 mailDeliveryPlanService.saveSkippedDelivery(
                         dispatch.dispatchId(),
                         dispatch.eventId(),
+                        dispatch.clientId(),
                         recipientId,
                         decision.reasonCode(),
                         decision.email(),
@@ -124,6 +125,7 @@ public class MailDispatchWorkflow {
             mailDeliveryPlanService.createPendingDelivery(
                     dispatch.dispatchId(),
                     dispatch.eventId(),
+                    dispatch.clientId(),
                     recipientId,
                     decision.email(),
                     dispatch.templateId(),
@@ -136,7 +138,7 @@ public class MailDispatchWorkflow {
     private List<InboxRow> lockInboxBatch() {
         return jdbc.query("""
                 select message_id, aggregate_type, event_type, payload::text as payload_json, processing_status
-                from nf.consumer_inbox_message
+                from nf_mail.consumer_inbox_message
                 where processing_status = :status
                   and aggregate_type = :aggregate_type
                   and event_type = :event_type
@@ -167,10 +169,10 @@ public class MailDispatchWorkflow {
 
     private List<MailDeliveryRow> lockDeliveryBatch() {
         return jdbc.query("""
-                select dispatch_id, event_id, recipient_id, channel, status, email,
+                select dispatch_id, event_id, client_id, recipient_id, channel, status, email,
                        payload::text as payload_json, template_id, template_version,
                        idempotency_key, attempt_count, next_attempt_at
-                from nf.mail_delivery
+                from nf_mail.mail_delivery
                 where status in (:pending, :retry)
                   and (next_attempt_at is null or next_attempt_at <= :now_ts)
                 order by created_at, dispatch_id, recipient_id
@@ -202,9 +204,10 @@ public class MailDispatchWorkflow {
     }
 
     private void markDeliverySuccessTx(MailDeliveryRow row) {
+        var sentAt = OffsetDateTime.now();
         updateAttempt(row.dispatchId(), row.recipientId(), row.channel(), row.nextAttemptNo(), AttemptStatus.SUCCESS, null);
         jdbc.update("""
-                update nf.mail_delivery
+                update nf_mail.mail_delivery
                 set status = :status,
                     attempt_count = attempt_count + 1,
                     sent_at = :sent_at,
@@ -215,11 +218,12 @@ public class MailDispatchWorkflow {
                   and channel = :channel
                 """, Map.of(
                 "status", DeliveryStatus.SENT.dbValue(),
-                "sent_at", OffsetDateTime.now(),
+                "sent_at", sentAt,
                 "dispatch_id", row.dispatchId(),
                 "recipient_id", row.recipientId(),
                 "channel", row.channel()
         ));
+        enqueueMailDeliveryStatusOutbox(row, DeliveryStatus.SENT, null, null, sentAt, row.nextAttemptNo());
     }
 
     private void markDeliveryFailureTx(MailDeliveryRow row, String errorMessage) {
@@ -227,21 +231,24 @@ public class MailDispatchWorkflow {
         var nextAttemptNo = row.nextAttemptNo();
         if (nextAttemptNo >= properties.getMaxAttempts()) {
             updateDeliveryStatus(row.dispatchId(), row.recipientId(), DeliveryStatus.FAILED, errorMessage, nextAttemptNo, null);
+            enqueueMailDeliveryStatusOutbox(row, DeliveryStatus.FAILED, errorMessage, null, OffsetDateTime.now(), nextAttemptNo);
         } else {
+            var nextAttemptAt = OffsetDateTime.now().plus(properties.getRetryBackoff());
             updateDeliveryStatus(
                     row.dispatchId(),
                     row.recipientId(),
                     DeliveryStatus.RETRY,
                     errorMessage,
                     nextAttemptNo,
-                    OffsetDateTime.now().plus(properties.getRetryBackoff())
+                    nextAttemptAt
             );
+            enqueueMailDeliveryStatusOutbox(row, DeliveryStatus.RETRY, errorMessage, nextAttemptAt, OffsetDateTime.now(), nextAttemptNo);
         }
     }
 
     private void updateInboxStatus(UUID messageId, InboxStatus status, String errorMessage) {
         jdbc.update("""
-                update nf.consumer_inbox_message
+                update nf_mail.consumer_inbox_message
                 set processing_status = :status,
                     processed_at = :processed_at,
                     error_message = :error_message
@@ -261,7 +268,7 @@ public class MailDispatchWorkflow {
                                String errorMessage) {
         try {
             jdbc.update("""
-                    insert into nf.mail_delivery_attempt(
+                    insert into nf_mail.mail_delivery_attempt(
                       dispatch_id, recipient_id, channel, attempt_no, status, error_message, created_at
                     ) values (
                       :dispatch_id, :recipient_id, :channel, :attempt_no, :status, :error_message, :created_at
@@ -286,7 +293,7 @@ public class MailDispatchWorkflow {
                                AttemptStatus status,
                                String errorMessage) {
         jdbc.update("""
-                update nf.mail_delivery_attempt
+                update nf_mail.mail_delivery_attempt
                 set status = :status,
                     error_message = :error_message,
                     finished_at = :finished_at
@@ -311,7 +318,7 @@ public class MailDispatchWorkflow {
                                       int attemptCount,
                                       @Nullable OffsetDateTime nextAttemptAt) {
         jdbc.update("""
-                update nf.mail_delivery
+                update nf_mail.mail_delivery
                 set status = :status,
                     attempt_count = :attempt_count,
                     next_attempt_at = :next_attempt_at,
@@ -329,10 +336,55 @@ public class MailDispatchWorkflow {
                 .addValue("channel", CHANNEL_EMAIL));
     }
 
+    private void enqueueMailDeliveryStatusOutbox(MailDeliveryRow row,
+                                                 DeliveryStatus deliveryStatus,
+                                                 @Nullable String errorMessage,
+                                                 @Nullable OffsetDateTime nextAttemptAt,
+                                                 OffsetDateTime occurredAt,
+                                                 int attemptNo) {
+        var payload = new java.util.LinkedHashMap<String, Object>();
+        payload.put("dispatch_id", row.dispatchId().toString());
+        payload.put("event_id", row.eventId().toString());
+        payload.put("client_id", row.clientId());
+        payload.put("recipient_id", row.recipientId());
+        payload.put("email", row.email());
+        payload.put("channel", row.channel());
+        payload.put("status", deliveryStatus.dbValue());
+        payload.put("template_id", row.templateId());
+        payload.put("template_version", row.templateVersion());
+        payload.put("idempotency_key", row.idempotencyKey());
+        payload.put("attempt_no", attemptNo);
+        payload.put("error_message", errorMessage);
+        payload.put("next_attempt_at", nextAttemptAt == null ? null : nextAttemptAt.toString());
+        payload.put("occurred_at", occurredAt.toString());
+
+        var headers = Map.<String, Object>of(
+                "message_id", row.deliveryId() + ":" + attemptNo + ":" + deliveryStatus.dbValue(),
+                "event_type", "MailDeliveryStatusChanged"
+        );
+
+        jdbc.update("""
+                insert into nf_mail.outbox_message(
+                  aggregate_type, aggregate_id, event_type, payload, headers, created_at
+                ) values (
+                  :aggregate_type, :aggregate_id, :event_type, cast(:payload as jsonb), cast(:headers as jsonb), :created_at
+                )
+                """, new MapSqlParameterSource()
+                .addValue("aggregate_type", "mail_delivery")
+                .addValue("aggregate_id", row.deliveryId())
+                .addValue("event_type", "MailDeliveryStatusChanged")
+                .addValue("payload", Jsons.write(payload))
+                .addValue("headers", Jsons.write(headers))
+                .addValue("created_at", occurredAt));
+        log.debug("Mail delivery status enqueued to outbox deliveryId={}, status={}",
+                row.deliveryId(), deliveryStatus.dbValue());
+    }
+
     private static MailDeliveryRow mapMailDeliveryRow(ResultSet rs) throws SQLException {
         return new MailDeliveryRow(
                 UUID.fromString(rs.getString("dispatch_id")),
                 UUID.fromString(rs.getString("event_id")),
+                rs.getString("client_id"),
                 rs.getString("recipient_id"),
                 rs.getString("channel"),
                 DeliveryStatus.fromDb(rs.getString("status")),
@@ -446,6 +498,7 @@ public class MailDispatchWorkflow {
     private record DispatchMessage(
             UUID dispatchId,
             UUID eventId,
+            String clientId,
             String preferredChannel,
             String templateId,
             int templateVersion,
@@ -455,12 +508,14 @@ public class MailDispatchWorkflow {
         private static DispatchMessage fromPayload(Map<String, Object> payload) {
             requireField(payload, "dispatch_id");
             requireField(payload, "event_id");
+            requireField(payload, "client_id");
             requireField(payload, "preferred_channel");
             requireField(payload, "template_id");
             requireField(payload, "template_version");
             return new DispatchMessage(
                     UUID.fromString(String.valueOf(payload.get("dispatch_id"))),
                     UUID.fromString(String.valueOf(payload.get("event_id"))),
+                    String.valueOf(payload.get("client_id")),
                     String.valueOf(payload.get("preferred_channel")),
                     String.valueOf(payload.get("template_id")),
                     Integer.parseInt(String.valueOf(payload.get("template_version"))),
@@ -479,6 +534,7 @@ public class MailDispatchWorkflow {
     private record MailDeliveryRow(
             UUID dispatchId,
             UUID eventId,
+            String clientId,
             String recipientId,
             String channel,
             DeliveryStatus status,

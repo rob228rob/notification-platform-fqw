@@ -11,7 +11,7 @@ public class OutboxRelayProperties {
     private Duration fixedDelay = Duration.ofSeconds(5);
     private Duration leaseDuration = Duration.ofSeconds(30);
     private int batchSize = 100;
-    private String schema = "nf";
+    private String schema = "nf_mail";
     private String table = "outbox_message";
     private Topics topics = new Topics();
     private ProducerRetry producerRetry = new ProducerRetry();

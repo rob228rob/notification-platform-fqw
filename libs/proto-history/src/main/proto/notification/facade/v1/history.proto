@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package notification.facade.v1;
+
+option java_multiple_files = true;
+option java_package = "ru.notification.history.proto.v1";
+option java_outer_classname = "NotificationHistoryProto";
+
+import "google/protobuf/timestamp.proto";
+import "notification/common/v1/common.proto";
+
+service NotificationHistoryService {
+  rpc ListClientHistory(ListClientHistoryRequest) returns (ListClientHistoryResponse);
+}
+
+enum DeliveryStatus {
+  DELIVERY_STATUS_UNSPECIFIED = 0;
+  DELIVERY_STATUS_PENDING = 1;
+  DELIVERY_STATUS_SENDING = 2;
+  DELIVERY_STATUS_SENT = 3;
+  DELIVERY_STATUS_RETRY = 4;
+  DELIVERY_STATUS_FAILED = 5;
+  DELIVERY_STATUS_SKIPPED = 6;
+}
+
+message DeliveryHistoryPayload {
+  string dispatch_id = 1;
+  string event_id = 2;
+  string client_id = 3;
+  string recipient_id = 4;
+  string email = 5;
+  notification.common.v1.Channel channel = 6;
+  DeliveryStatus status = 7;
+  string template_id = 8;
+  int32 template_version = 9;
+  string idempotency_key = 10;
+  int32 attempt_no = 11;
+  string error_message = 12;
+  google.protobuf.Timestamp next_attempt_at = 13;
+  google.protobuf.Timestamp occurred_at = 14;
+}
+
+message DeliveryStatusKafkaEvent {
+  int64 outbox_id = 1;
+  string aggregate_type = 2;
+  string aggregate_id = 3;
+  string event_type = 4;
+  DeliveryHistoryPayload payload = 5;
+  map<string, string> headers = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message ListClientHistoryRequest {
+  string client_id = 1;
+  int32 page = 2;
+  int32 size = 3;
+}
+
+message ListClientHistoryResponse {
+  repeated DeliveryStatusKafkaEvent events = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 size = 4;
+}
