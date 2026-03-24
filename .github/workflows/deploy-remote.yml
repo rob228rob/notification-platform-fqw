@@ -16,7 +16,7 @@ jobs:
           username: ${{ secrets.VM_SSH_USERNAME }}
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            cd ~/own_apps/notifcation-platform-gradle-groovy
+            cd ~/own_apps/notification-platform-fqw
             git pull --ff-only
             cd deploy
             docker compose up -d --remove-orphans
