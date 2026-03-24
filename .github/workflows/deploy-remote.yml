@@ -9,7 +9,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Pull and deploy on VM
+      - name: Pull & deploy on VM
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VM_SSH_HOST }}
