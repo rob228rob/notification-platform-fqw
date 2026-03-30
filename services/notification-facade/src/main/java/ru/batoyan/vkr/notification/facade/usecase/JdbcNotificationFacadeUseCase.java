@@ -547,7 +547,7 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                     Map.of("total", (long) recipients.size(), "dispatch_id", dispatchId)
             );
 
-            enqueueMailDispatch(dispatchId, ev, recipients, planned, now);
+            enqueueChannelDispatch(dispatchId, ev, recipients, planned, now);
         }
 
         jdbc.update("""
@@ -561,27 +561,58 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                 .build();
     }
 
-    private void enqueueMailDispatch(UUID dispatchId,
-                                     EventRow event,
-                                     List<String> recipients,
-                                     OffsetDateTime plannedAt,
-                                     OffsetDateTime createdAt) {
-        var payload = Map.<String, Object>of(
-                "dispatch_id", dispatchId.toString(),
-                "event_id", event.eventId.toString(),
-                "client_id", event.clientId.toString(),
-                "template_id", event.templateId,
-                "template_version", event.templateVersion,
-                "preferred_channel", event.preferredChannel,
-                "payload", readJsonMap(event.payloadJson),
-                "recipient_ids", recipients,
-                "planned_send_at", plannedAt == null ? null : plannedAt.toString(),
-                "created_at", createdAt.toString()
-        );
+    private void enqueueChannelDispatch(UUID dispatchId,
+                                        EventRow event,
+                                        List<String> recipients,
+                                        OffsetDateTime plannedAt,
+                                        OffsetDateTime createdAt) {
+        switch (event.preferredChannel) {
+            case "CHANNEL_EMAIL" -> enqueueDispatch(
+                    "mail_dispatch",
+                    "MailDispatchRequested",
+                    dispatchId,
+                    event,
+                    recipients,
+                    plannedAt,
+                    createdAt
+            );
+            case "CHANNEL_SMS" -> enqueueDispatch(
+                    "sms_dispatch",
+                    "SmsDispatchRequested",
+                    dispatchId,
+                    event,
+                    recipients,
+                    plannedAt,
+                    createdAt
+            );
+            default -> throw Status.UNIMPLEMENTED
+                    .withDescription("dispatch publication is not implemented for channel " + event.preferredChannel)
+                    .asRuntimeException();
+        }
+    }
+
+    private void enqueueDispatch(String aggregateType,
+                                 String eventType,
+                                 UUID dispatchId,
+                                 EventRow event,
+                                 List<String> recipients,
+                                 OffsetDateTime plannedAt,
+                                 OffsetDateTime createdAt) {
+        var payload = new LinkedHashMap<String, Object>();
+        payload.put("dispatch_id", dispatchId.toString());
+        payload.put("event_id", event.eventId.toString());
+        payload.put("client_id", event.clientId.toString());
+        payload.put("template_id", event.templateId);
+        payload.put("template_version", event.templateVersion);
+        payload.put("preferred_channel", event.preferredChannel);
+        payload.put("payload", readJsonMap(event.payloadJson));
+        payload.put("recipient_ids", recipients);
+        payload.put("planned_send_at", plannedAt == null ? null : plannedAt.toString());
+        payload.put("created_at", createdAt.toString());
 
         var headers = Map.<String, Object>of(
                 "message_id", dispatchId.toString(),
-                "event_type", "MailDispatchRequested"
+                "event_type", eventType
         );
 
         jdbc.update("""
@@ -591,9 +622,9 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                   :aggregate_type, :aggregate_id, :event_type, cast(:payload as jsonb), cast(:headers as jsonb), :created_at
                 )
                 """, new MapSqlParameterSource()
-                .addValue("aggregate_type", "mail_dispatch")
+                .addValue("aggregate_type", aggregateType)
                 .addValue("aggregate_id", dispatchId.toString())
-                .addValue("event_type", "MailDispatchRequested")
+                .addValue("event_type", eventType)
                 .addValue("payload", toJson(payload))
                 .addValue("headers", toJson(headers))
                 .addValue("created_at", createdAt));

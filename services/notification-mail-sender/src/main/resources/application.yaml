@@ -42,6 +42,12 @@ delivery:
     inbox-batch-size: 100
     fixed-delay: 10000ms
 
+clients:
+  profile-consent:
+    host: ${PROFILE_CONSENT_HOST:localhost}
+    port: ${PROFILE_CONSENT_PORT:9096}
+    deadline: 3s
+
 spring:
   application:
     name: notification-mail-sender

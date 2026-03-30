@@ -33,6 +33,7 @@ outbox:
       events: notification.facade.events
       dispatches: notification.facade.dispatches
       mail-dispatches: notification.mail.dispatches
+      sms-dispatches: notification.sms.dispatches
       mail-dispatches-scheduled: notification.mail.dispatches.scheduled
     producer-retry:
       max-attempts: 8

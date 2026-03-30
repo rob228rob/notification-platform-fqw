@@ -200,6 +200,7 @@ public class OutboxRelayService {
             case "notification_event" -> topics.events();
             case "dispatch" -> topics.dispatches();
             case "mail_dispatch" -> isDelayedMailDispatch(row) ? topics.mailDispatchesScheduled() : topics.mailDispatches();
+            case "sms_dispatch" -> topics.smsDispatches();
             default -> topics.events();
         };
     }

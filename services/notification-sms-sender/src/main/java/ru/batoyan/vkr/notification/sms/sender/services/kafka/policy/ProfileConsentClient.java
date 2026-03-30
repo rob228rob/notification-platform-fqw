@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import ru.notification.common.proto.v1.Channel;
 import ru.notification.profile.proto.v1.BatchGetRecipientProfilesRequest;
+import ru.notification.profile.proto.v1.CheckRecipientChannelRequest;
+import ru.notification.profile.proto.v1.CheckRecipientChannelResponse;
 import ru.notification.profile.proto.v1.ProfileConsentServiceGrpc;
 
 import java.time.Duration;
@@ -15,29 +17,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-@Configuration
-class ProfileConsentClientConfig {
-
-    @Bean
-    @ConfigurationProperties(prefix = "clients.profile-consent")
-    ProfileConsentClientProperties profileConsentClientProperties() {
-        return new ProfileConsentClientProperties();
-    }
-}
-
-class ProfileConsentClientProperties {
-    private String host = "localhost";
-    private int port = 9096;
-    private Duration deadline = Duration.ofSeconds(3);
-
-    public String getHost() { return host; }
-    public void setHost(String host) { this.host = host; }
-    public int getPort() { return port; }
-    public void setPort(int port) { this.port = port; }
-    public Duration getDeadline() { return deadline; }
-    public void setDeadline(Duration deadline) { this.deadline = deadline; }
-}
 
 @Component
 @RequiredArgsConstructor
@@ -92,10 +71,57 @@ public class ProfileConsentClient {
         return result;
     }
 
+    public CheckRecipientChannelResponse checkRecipientChannel(String recipientId, Channel channel) {
+        return stub().checkRecipientChannel(CheckRecipientChannelRequest.newBuilder()
+                .setRecipientId(recipientId)
+                .setChannel(channel)
+                .build());
+    }
+
     @PreDestroy
     public void close() {
         if (channel != null) {
             channel.shutdown();
         }
+    }
+}
+
+@Configuration
+class ProfileConsentClientConfig {
+
+    @Bean
+    @ConfigurationProperties(prefix = "clients.profile-consent")
+    ProfileConsentClientProperties profileConsentClientProperties() {
+        return new ProfileConsentClientProperties();
+    }
+}
+
+class ProfileConsentClientProperties {
+    private String host = "localhost";
+    private int port = 9096;
+    private Duration deadline = Duration.ofSeconds(3);
+
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public Duration getDeadline() {
+        return deadline;
+    }
+
+    public void setDeadline(Duration deadline) {
+        this.deadline = deadline;
     }
 }

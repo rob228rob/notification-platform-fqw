@@ -19,6 +19,7 @@ public class SpringMailGateway implements MailGateway {
 
     private final JavaMailSender mailSender;
     private final SpringMailGatewayProperties properties;
+    private final MailProviderGuardService providerGuardService;
 
     @Override
     public BatchSendResult sendBatch(List<MailMessage> messages) {
@@ -26,23 +27,32 @@ public class SpringMailGateway implements MailGateway {
             return new BatchSendResult(List.of(), Map.of());
         }
 
+        var guardResult = providerGuardService.validateBatch(messages);
+        var guardedMessages = guardResult.allowedMessages();
+        var rejectedByPolicy = guardResult.rejectedDeliveries();
+        if (guardedMessages.isEmpty()) {
+            return new BatchSendResult(List.of(), rejectedByPolicy);
+        }
+
         if (properties.isLogOnly()) {
-            for (var message : messages) {
+            for (var message : guardedMessages) {
                 var envelope = toEnvelope(message);
                 log.info("[MAIL-LOG-ONLY] deliveryId={}, to={}, subject={}, body={}",
                         message.deliveryId(), message.email(), envelope.getSubject(), envelope.getText());
             }
+            var succeeded = guardedMessages.stream().map(MailMessage::deliveryId).toList();
+            var failed = new LinkedHashMap<String, String>(rejectedByPolicy);
             return new BatchSendResult(
-                    messages.stream().map(MailMessage::deliveryId).toList(),
-                    Map.of()
+                    succeeded,
+                    Map.copyOf(failed)
             );
         }
 
         var mailByEnvelope = new IdentityHashMap<SimpleMailMessage, MailMessage>();
-        var envelopeBatch = new SimpleMailMessage[messages.size()];
+        var envelopeBatch = new SimpleMailMessage[guardedMessages.size()];
 
-        for (int index = 0; index < messages.size(); index++) {
-            var message = messages.get(index);
+        for (int index = 0; index < guardedMessages.size(); index++) {
+            var message = guardedMessages.get(index);
             var envelope = toEnvelope(message);
             envelopeBatch[index] = envelope;
             mailByEnvelope.put(envelope, message);
@@ -50,13 +60,13 @@ public class SpringMailGateway implements MailGateway {
 
         try {
             mailSender.send(envelopeBatch);
-            log.info("MAIL batch sent size={}", messages.size());
+            log.info("MAIL batch sent size={}", guardedMessages.size());
             return new BatchSendResult(
-                    messages.stream().map(MailMessage::deliveryId).toList(),
-                    Map.of()
+                    guardedMessages.stream().map(MailMessage::deliveryId).toList(),
+                    rejectedByPolicy
             );
         } catch (MailSendException ex) {
-            var failed = new LinkedHashMap<String, String>();
+            var failed = new LinkedHashMap<String, String>(rejectedByPolicy);
             ex.getFailedMessages().forEach((failedMessage, failure) -> {
                 if (failedMessage instanceof SimpleMailMessage envelope) {
                     var message = mailByEnvelope.get(envelope);
@@ -66,22 +76,22 @@ public class SpringMailGateway implements MailGateway {
                 }
             });
 
-            var succeeded = new ArrayList<String>(messages.size() - failed.size());
-            for (var message : messages) {
+            var succeeded = new ArrayList<String>(guardedMessages.size());
+            for (var message : guardedMessages) {
                 if (!failed.containsKey(message.deliveryId())) {
                     succeeded.add(message.deliveryId());
                 }
             }
 
             log.warn("MAIL batch partially failed size={}, succeeded={}, failed={}",
-                    messages.size(), succeeded.size(), failed.size(), ex);
+                    guardedMessages.size(), succeeded.size(), failed.size(), ex);
             return new BatchSendResult(succeeded, failed);
         } catch (MailException ex) {
-            var failed = new java.util.LinkedHashMap<String, String>();
-            for (var message : messages) {
+            var failed = new java.util.LinkedHashMap<String, String>(rejectedByPolicy);
+            for (var message : guardedMessages) {
                 failed.put(message.deliveryId(), rootMessage(ex));
             }
-            log.warn("MAIL batch failed size={}", messages.size(), ex);
+            log.warn("MAIL batch failed size={}", guardedMessages.size(), ex);
             return new BatchSendResult(List.of(), failed);
         }
     }

@@ -11,6 +11,7 @@ tasks.named("bootJar") {
 dependencies {
     implementation project(":libs:proto-facade")
     implementation project(":libs:proto-common")
+    implementation project(":libs:proto-profile")
 
     // --- Spring Boot starters ---
     implementation "org.springframework.boot:spring-boot-starter-webflux"
@@ -28,6 +29,7 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5"
 
     implementation "org.springframework.boot:spring-boot-starter-aop"
+    implementation "io.grpc:grpc-netty-shaded:${providers.gradleProperty('grpcVersion').get()}"
 
     implementation "org.flywaydb:flyway-core"
     implementation "org.flywaydb:flyway-database-postgresql"
