@@ -1,0 +1,89 @@
+spring:
+  application:
+    name: notification-sms-sender
+  flyway:
+    locations: classpath:db/migration
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${SMS_SENDER_DATASOURCE_URL:jdbc:postgresql://localhost:25432/main_db?currentSchema=nf_sms}
+    username: ${SMS_SENDER_DATASOURCE_USERNAME:user}
+    password: ${SMS_SENDER_DATASOURCE_PASSWORD:password}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9093}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:notification-sms-sender}
+      auto-offset-reset: earliest
+    producer:
+      acks: all
+      retries: 3
+    properties:
+      enable.idempotence: true
+      max.in.flight.requests.per.connection: 1
+      delivery.timeout.ms: 120000
+      request.timeout.ms: 30000
+      linger.ms: 5
+      batch.size: 32768
+  task:
+    scheduling:
+      pool:
+        size: 4
+      shutdown:
+        await-termination: true
+        await-termination-period: 5m
+
+outbox:
+  relay:
+    enabled: true
+    fixed-delay: 10000ms
+    lease-duration: 30s
+    batch-size: 100
+    schema: nf_sms
+    table: outbox_message
+    topics:
+      events: ${SMS_SENDER_EVENTS_TOPIC:notification.facade.events}
+      sms-dispatches: ${SMS_SENDER_DISPATCHES_TOPIC:notification.sms.dispatches}
+      sms-delivery-statuses: ${SMS_SENDER_DELIVERY_STATUSES_TOPIC:notification.sms.delivery-statuses}
+    producer-retry:
+      max-attempts: 8
+      initial-backoff: 100ms
+      multiplier: 2.0
+      max-backoff: 5s
+
+delivery:
+  sms:
+    enabled: true
+    inbox-batch-size: 100
+    delivery-batch-size: 100
+    inbox-fixed-delay: 10000ms
+    delivery-fixed-delay: 15000ms
+    max-attempts: 3
+    retry-backoff: 5m
+    gateway:
+      log-only: ${SMS_GATEWAY_LOG_ONLY:true}
+      sender: ${SMS_GATEWAY_SENDER:notification-platform}
+  notification-event:
+    enabled: true
+    inbox-batch-size: 100
+    fixed-delay: 10000ms
+
+clients:
+  profile-consent:
+    host: ${PROFILE_CONSENT_HOST:localhost}
+    port: ${PROFILE_CONSENT_PORT:9096}
+    deadline: 3s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    ru.batoyan.vkr.notification.sms.sender: INFO

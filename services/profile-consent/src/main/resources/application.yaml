@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: profile-consent
+  data:
+    redis:
+      host: ${PROFILE_CONSENT_REDIS_HOST:localhost}
+      port: ${PROFILE_CONSENT_REDIS_PORT:6380}
+      username: ${PROFILE_CONSENT_REDIS_USERNAME:redisuser}
+      password: ${PROFILE_CONSENT_REDIS_PASSWORD:redisuserpassword}
+      timeout: 3s
+      connect-timeout: 3s
+
+profile-consent:
+  redis:
+    key-prefix: ${PROFILE_CONSENT_REDIS_KEY_PREFIX:profile-consent:recipient:}
+
+grpc:
+  server:
+    port: ${PROFILE_CONSENT_GRPC_PORT:9096}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    ru.batoyan.vkr.notification.profile: INFO

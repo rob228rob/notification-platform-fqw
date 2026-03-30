@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package notification.facade.v1;
+
+option java_multiple_files = true;
+option java_package = "ru.notification.profile.proto.v1";
+option java_outer_classname = "ProfileConsentProto";
+
+import "google/protobuf/timestamp.proto";
+import "notification/common/v1/common.proto";
+
+service ProfileConsentService {
+  rpc GetRecipientProfile (GetRecipientProfileRequest) returns (GetRecipientProfileResponse);
+  rpc BatchGetRecipientProfiles (BatchGetRecipientProfilesRequest) returns (BatchGetRecipientProfilesResponse);
+  rpc CheckRecipientChannel (CheckRecipientChannelRequest) returns (CheckRecipientChannelResponse);
+}
+
+message RecipientChannelSettings {
+  notification.common.v1.Channel channel = 1;
+  bool enabled = 2;
+  bool blacklisted = 3;
+  string destination = 4;
+}
+
+message RecipientProfile {
+  string recipient_id = 1;
+  bool active = 2;
+  notification.common.v1.Channel preferred_channel = 3;
+  repeated RecipientChannelSettings channels = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message GetRecipientProfileRequest {
+  string recipient_id = 1;
+}
+
+message GetRecipientProfileResponse {
+  RecipientProfile profile = 1;
+}
+
+message BatchGetRecipientProfilesRequest {
+  repeated string recipient_id = 1;
+}
+
+message BatchGetRecipientProfilesResponse {
+  repeated RecipientProfile profiles = 1;
+}
+
+message CheckRecipientChannelRequest {
+  string recipient_id = 1;
+  notification.common.v1.Channel channel = 2;
+}
+
+message CheckRecipientChannelResponse {
+  bool allowed = 1;
+  string destination = 2;
+  notification.common.v1.Channel preferred_channel = 3;
+  string reason_code = 4;
+  google.protobuf.Timestamp checked_at = 5;
+}
