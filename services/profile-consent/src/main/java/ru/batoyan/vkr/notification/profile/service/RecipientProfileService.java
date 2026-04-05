@@ -3,7 +3,7 @@ package ru.batoyan.vkr.notification.profile.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.batoyan.vkr.notification.profile.model.RecipientProfile;
+import ru.batoyan.vkr.notification.profile.model.RecipientProfileDomain;
 import ru.batoyan.vkr.notification.profile.repository.RecipientProfileRepository;
 import ru.notification.common.proto.v1.Channel;
 import ru.notification.profile.proto.v1.CHECK_REASON_CODE;
@@ -19,13 +19,13 @@ public class RecipientProfileService {
 
     private final RecipientProfileRepository repository;
 
-    public Optional<RecipientProfile> getRecipientProfile(String recipientId) {
+    public Optional<RecipientProfileDomain> getRecipientProfile(String recipientId) {
         var profile = repository.findByRecipientId(recipientId);
         log.debug("Service getRecipientProfile: recipientId={}, found={}", recipientId, profile.isPresent());
         return profile;
     }
 
-    public Map<String, RecipientProfile> getRecipientProfiles(Collection<String> recipientIds) {
+    public Map<String, RecipientProfileDomain> getRecipientProfiles(Collection<String> recipientIds) {
         var profiles = repository.findAllByRecipientIds(recipientIds);
         log.debug("Service getRecipientProfiles: requested={}, found={}", recipientIds.size(), profiles.size());
         return profiles;
@@ -43,7 +43,7 @@ public class RecipientProfileService {
     }
 
     // rule checks for possibility of dispatching
-    private ChannelCheckResult checkByChannels(RecipientProfile profile, Channel channel) {
+    private ChannelCheckResult checkByChannels(RecipientProfileDomain profile, Channel channel) {
         if (!profile.active()) {
             return new ChannelCheckResult(false, "", profile.preferredChannel(), mapReasonCode("PROFILE_INACTIVE"));
         }
