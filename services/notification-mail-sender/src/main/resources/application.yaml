@@ -6,9 +6,9 @@ application:
 outbox:
   relay:
     enabled: true
-    fixed-delay: 10000ms
+    fixed-delay: 500ms
     lease-duration: 30s
-    batch-size: 100
+    batch-size: 1000
     schema: nf_mail
     table: outbox_message
     topics:
@@ -25,12 +25,13 @@ outbox:
 delivery:
   mail:
     enabled: true
-    inbox-batch-size: 100
-    delivery-batch-size: 100
-    inbox-fixed-delay: 30000ms
-    delivery-fixed-delay: 30000ms
+    inbox-batch-size: 500
+    delivery-batch-size: 500
+    inbox-fixed-delay: 500ms
+    delivery-fixed-delay: 500ms
     counting-window: 1d
-    default-max-deliveries: 1
+    history-check-enabled: true
+    default-max-deliveries: 2500
     max-attempts: 3
     retry-backoff: 5m
     gateway:
@@ -39,16 +40,23 @@ delivery:
       log-only: ${MAIL_GATEWAY_LOG_ONLY:true}
   notification-event:
     enabled: true
-    inbox-batch-size: 100
-    fixed-delay: 10000ms
+    inbox-batch-size: 1000
+    fixed-delay: 500ms
 
 clients:
   profile-consent:
     host: ${PROFILE_CONSENT_HOST:localhost}
     port: ${PROFILE_CONSENT_PORT:9096}
     deadline: 3s
+  notification-history:
+    host: ${NOTIFICATION_HISTORY_HOST:localhost}
+    port: ${NOTIFICATION_HISTORY_PORT:9091}
+    deadline: 3s
 
 spring:
+  threads:
+    virtual:
+      enabled: true
   application:
     name: notification-mail-sender
 
@@ -62,6 +70,8 @@ spring:
 #      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
   kafka:
     bootstrap-servers: ${kafka.bootstrap.servers:localhost:9093}
+    listener:
+      concurrency: 8
     consumer:
       group-id: ${KAFKA_CONSUMER_GROUP:group-id}
       auto-offset-reset: earliest
@@ -91,7 +101,7 @@ spring:
 
     admin:
       security:
-        protocol: SASL_PLAINTEXT
+        protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
       auto-create: true
   jpa:
     properties:
@@ -109,6 +119,8 @@ spring:
     url: ${postgresql.url}
     password: ${postgresql.user.password}
     username: ${postgresql.user.username}
+    hikari:
+      maximum-pool-size: 25
 
   mail:
     host: ${MAIL_HOST:localhost}
@@ -131,8 +143,6 @@ spring:
 
   task:
     scheduling:
-      pool:
-        size: 5
       shutdown:
         await-termination: true
         await-termination-period: 5m
@@ -140,7 +150,7 @@ spring:
 logging:
   level:
     root: INFO
-    ru.batoyan.vkr.notification.mail.sender: INFO
+    ru.batoyan.vkr.notification.mail: INFO
     liquibase: DEBUG
     org:
       springframework:
@@ -175,6 +185,9 @@ management:
     metrics:
       export:
         enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
   tracing:
     enabled: true
 
@@ -191,3 +204,6 @@ springdoc:
     tagsSorter: alpha
     filter: true
   packages-to-scan: com.mai.proj
+
+server:
+  port: ${SERVER_PORT:8911}

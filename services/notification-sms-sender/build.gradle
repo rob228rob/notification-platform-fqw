@@ -10,6 +10,7 @@ tasks.named("bootJar") {
 
 dependencies {
     implementation project(":libs:proto-profile")
+    implementation project(":libs:proto-history")
 
     implementation "org.springframework.boot:spring-boot-starter"
     implementation "org.springframework.boot:spring-boot-starter-actuator"

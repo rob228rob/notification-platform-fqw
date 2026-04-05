@@ -1,9 +1,10 @@
-﻿package ru.batoyan.vkr.notification.profile.grpc;
+package ru.batoyan.vkr.notification.profile.grpc;
 
 import com.google.protobuf.Timestamp;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 import ru.batoyan.vkr.notification.profile.model.RecipientProfile;
 import ru.batoyan.vkr.notification.profile.service.RecipientProfileService;
@@ -19,6 +20,7 @@ import ru.notification.profile.proto.v1.RecipientChannelSettings;
 import java.time.Instant;
 
 @GrpcService
+@Slf4j
 @RequiredArgsConstructor
 public class ProfileConsentGrpcService extends ProfileConsentServiceGrpc.ProfileConsentServiceImplBase {
 
@@ -26,24 +28,33 @@ public class ProfileConsentGrpcService extends ProfileConsentServiceGrpc.Profile
 
     @Override
     public void getRecipientProfile(GetRecipientProfileRequest request, StreamObserver<GetRecipientProfileResponse> responseObserver) {
+        log.debug("gRPC getRecipientProfile called: recipientId={}", request.getRecipientId());
         recipientProfileService.getRecipientProfile(request.getRecipientId())
                 .ifPresentOrElse(profile -> {
+                    log.debug("gRPC getRecipientProfile success: recipientId={}, preferredChannel={}, active={}",
+                            request.getRecipientId(), profile.preferredChannel(), profile.active());
                     responseObserver.onNext(GetRecipientProfileResponse.newBuilder()
                             .setProfile(profileToProto(profile))
                             .build());
                     responseObserver.onCompleted();
-                }, () -> responseObserver.onError(Status.NOT_FOUND
-                        .withDescription("Recipient profile not found: " + request.getRecipientId())
-                        .asRuntimeException()));
+                }, () -> {
+                    log.debug("gRPC getRecipientProfile not found: recipientId={}", request.getRecipientId());
+                    responseObserver.onError(Status.NOT_FOUND
+                            .withDescription("Recipient profile not found: " + request.getRecipientId())
+                            .asRuntimeException());
+                });
     }
 
     @Override
     public void batchGetRecipientProfiles(BatchGetRecipientProfilesRequest request,
                                           StreamObserver<BatchGetRecipientProfilesResponse> responseObserver) {
+        log.debug("gRPC batchGetRecipientProfiles called: recipientIdsCount={}", request.getRecipientIdCount());
         var response = BatchGetRecipientProfilesResponse.newBuilder();
-        recipientProfileService.getRecipientProfiles(request.getRecipientIdList())
-                .values()
+        var profiles = recipientProfileService.getRecipientProfiles(request.getRecipientIdList());
+        profiles.values()
                 .forEach(profile -> response.addProfiles(profileToProto(profile)));
+        log.debug("gRPC batchGetRecipientProfiles completed: requested={}, found={}",
+                request.getRecipientIdCount(), profiles.size());
         responseObserver.onNext(response.build());
         responseObserver.onCompleted();
     }
@@ -51,7 +62,12 @@ public class ProfileConsentGrpcService extends ProfileConsentServiceGrpc.Profile
     @Override
     public void checkRecipientChannel(CheckRecipientChannelRequest request,
                                       StreamObserver<CheckRecipientChannelResponse> responseObserver) {
+        log.debug("gRPC checkRecipientChannel called: recipientId={}, channel={}",
+                request.getRecipientId(), request.getChannel());
         var result = recipientProfileService.checkRecipientChannel(request.getRecipientId(), request.getChannel());
+        log.debug("gRPC checkRecipientChannel result: recipientId={}, channel={}, allowed={}, reasonCode={}, preferredChannel={}, destination={}",
+                request.getRecipientId(), request.getChannel(), result.allowed(), result.reasonCode(),
+                result.preferredChannel(), result.destination());
         responseObserver.onNext(CheckRecipientChannelResponse.newBuilder()
                 .setAllowed(result.allowed())
                 .setDestination(result.destination())

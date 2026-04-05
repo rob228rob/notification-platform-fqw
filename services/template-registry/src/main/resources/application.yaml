@@ -55,7 +55,7 @@ spring:
 
     admin:
       security:
-        protocol: SASL_PLAINTEXT
+        protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
       auto-create: true
   jpa:
     properties:

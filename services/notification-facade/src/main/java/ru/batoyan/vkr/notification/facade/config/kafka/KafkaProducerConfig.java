@@ -22,6 +22,8 @@ public class KafkaProducerConfig {
 
     @Bean
     public KafkaTemplate<String, String> outboxKafkaTemplate(ProducerFactory<String, String> outboxProducerFactory) {
-        return new KafkaTemplate<>(outboxProducerFactory);
+        var template = new KafkaTemplate<>(outboxProducerFactory);
+        template.setObservationEnabled(true);
+        return template;
     }
 }

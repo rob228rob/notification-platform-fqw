@@ -7,7 +7,7 @@ services:
       - REDIS_USER=redisuser
       - REDIS_USER_PASSWORD=redisuserpassword
     ports:
-      - "6380:6379"
+      - "6379:6379"
     volumes:
       - redis-data:/data
     deploy:
@@ -16,7 +16,7 @@ services:
           cpus: '0.50'
           memory: 512M
         reservations:
-          cpus: '0.25'
+          cpus: '0.2'
           memory: 256M
     command: >
       sh -c '

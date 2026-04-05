@@ -32,6 +32,12 @@ public class OutboxRelayProperties {
     @Min(1)
     private final int batchSize;
 
+    @Min(1)
+    private final int maxBatchesPerTick;
+
+    @Min(1)
+    private final int publishConcurrency;
+
     @NotBlank
     private final String schema;
 

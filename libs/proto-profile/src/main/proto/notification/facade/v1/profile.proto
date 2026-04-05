@@ -15,6 +15,18 @@ service ProfileConsentService {
   rpc CheckRecipientChannel (CheckRecipientChannelRequest) returns (CheckRecipientChannelResponse);
 }
 
+enum CHECK_REASON_CODE {
+  CHECK_REASON_CODE_UNSPECIFIED = 0;
+  ALLOWED = 1;
+  PROFILE_NOT_FOUND = 2;
+  PROFILE_INACTIVE = 3;
+  CHANNEL_DISABLED = 4;
+  CHANNEL_BLACKLISTED = 5;
+  DESTINATION_MISSING = 6;
+  SMS_CHANNEL_MISSING = 7;
+  PROFILE_CONSENT_UNAVAILABLE = 8;
+}
+
 message RecipientChannelSettings {
   notification.common.v1.Channel channel = 1;
   bool enabled = 2;
@@ -55,6 +67,6 @@ message CheckRecipientChannelResponse {
   bool allowed = 1;
   string destination = 2;
   notification.common.v1.Channel preferred_channel = 3;
-  string reason_code = 4;
+  CHECK_REASON_CODE reason_code = 4;
   google.protobuf.Timestamp checked_at = 5;
 }

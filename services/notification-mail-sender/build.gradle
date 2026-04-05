@@ -12,10 +12,12 @@ dependencies {
     implementation project(":libs:proto-facade")
     implementation project(":libs:proto-common")
     implementation project(":libs:proto-profile")
+    implementation project(":libs:proto-history")
 
     // --- Spring Boot starters ---
     implementation "org.springframework.boot:spring-boot-starter-webflux"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "io.micrometer:micrometer-registry-prometheus"
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-mail"
 

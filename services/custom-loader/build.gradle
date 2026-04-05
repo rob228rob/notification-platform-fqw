@@ -1,0 +1,37 @@
+plugins {
+    id "application"
+    id "java"
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+application {
+    mainClass = "ru.batoyan.vkr.notification.loader.CustomLoaderMain"
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(":libs:proto-common")
+    implementation project(":libs:proto-facade")
+
+    implementation "io.grpc:grpc-netty-shaded:${providers.gradleProperty("grpcVersion").get()}"
+    implementation "redis.clients:jedis:5.2.0"
+    implementation "org.slf4j:slf4j-simple:2.0.16"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+}
+
+tasks.named("jar") {
+    manifest {
+        attributes("Main-Class": application.mainClass.get())
+    }
+}

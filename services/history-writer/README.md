@@ -1,48 +1,58 @@
 # history-writer
 
 ## Назначение
-Сервис истории доставок: потребляет delivery status events из Kafka, сохраняет их в БД и отдает историю по `client_id` через gRPC.
+Сервис собирает историю доставок из Kafka и хранит её как read model в `nf_hist.delivery_history`.
+Поверх этой истории сервис предоставляет gRPC API:
+- для чтения истории по `client_id`;
+- для получения краткой сводки по `recipient_id/recipient_ids` за ограниченное окно времени.
 
-## Входящие интерфейсы
+## Входящие интеграции
 
 ### Kafka consumer
-Класс: `DeliveryHistoryConsumer`
+Сервис читает:
+- `notification.mail.delivery-statuses`
+- `notification.sms.delivery-statuses`
 
-Топик:
-- `notification.mail.delivery-statuses` (`outbox.relay.topics.mail-delivery-statuses`)
+События доставки сохраняются в общую историческую таблицу с полями:
+- `dispatch_id`
+- `event_id`
+- `client_id`
+- `recipient_id`
+- `channel`
+- `delivery_status`
+- `attempt_no`
+- `error_message`
+- `occurred_at`
 
-Ожидаемый envelope (должен совпадать с mail-sender outbox relay):
-- `outboxId: number`
-- `aggregateType: string` (`mail_delivery`)
-- `aggregateId: string`
-- `eventType: string` (`MailDeliveryStatusChanged`)
-- `payload: object`
-- `headers: object`
-- `createdAt: string (ISO-8601)`
+## gRPC API
+Proto:
+- [history.proto](C:\Users\Asus\IdeaProjects\notifcation-platform-gradle-groovy\libs\proto-history\src\main\proto\notification\facade\v1\history.proto)
 
-Payload сохраняется как типизированная запись истории (включая `client_id`, `status`, `attempt_no`, `error_message`, `occurred_at`, `next_attempt_at`).
+Методы:
+- `ListClientHistory`
+- `GetRecipientDeliverySummary`
+- `BatchGetRecipientDeliverySummaries`
 
-### gRPC API
-Proto: `libs/proto-history/src/main/proto/notification/facade/v1/history.proto`
+### Recipient summary
+Сводка по получателю возвращает:
+- общее число успешных доставок;
+- общее число неуспешных доставок;
+- total по окну;
+- разбивку по каналам;
+- границы окна `window_from/window_to`.
 
-Сервис: `notification.facade.v1.NotificationHistoryService`
-
-Метод:
-- `ListClientHistory(ListClientHistoryRequest)` — отдать историю доставок по `client_id`
+Успешными считаются записи со статусом `SENT`.
+Неуспешными считаются записи со статусами `FAILED` и `SKIPPED`.
 
 ## Хранилище
+Схема:
+- `nf_hist`
+
 Таблица:
-- `nf.delivery_history`
+- `delivery_history`
 
-Ключ:
-- `outbox_id` (идемпотентная запись одного Kafka message).
+Индекс для клиентской истории:
+- `(client_id, occurred_at desc, outbox_id desc)`
 
-Индекс чтения:
-- `(client_id, occurred_at desc, outbox_id desc)`.
-
-## proto контракт
-Основные типы:
-- `DeliveryStatusKafkaEvent`
-- `DeliveryHistoryPayload`
-- `DeliveryStatus` enum
-- `ListClientHistoryRequest/Response`
+## Использование в planning
+Sender-сервисы могут запрашивать по `recipient_id` или батчу получателей краткую историю доставок за последние сутки и применять собственные лимиты без хранения локальной user-policy модели.

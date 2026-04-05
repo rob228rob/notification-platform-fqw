@@ -11,6 +11,8 @@ import "notification/common/v1/common.proto";
 
 service NotificationHistoryService {
   rpc ListClientHistory(ListClientHistoryRequest) returns (ListClientHistoryResponse);
+  rpc GetRecipientDeliverySummary(GetRecipientDeliverySummaryRequest) returns (GetRecipientDeliverySummaryResponse);
+  rpc BatchGetRecipientDeliverySummaries(BatchGetRecipientDeliverySummariesRequest) returns (BatchGetRecipientDeliverySummariesResponse);
 }
 
 enum DeliveryStatus {
@@ -61,4 +63,39 @@ message ListClientHistoryResponse {
   int64 total = 2;
   int32 page = 3;
   int32 size = 4;
+}
+
+message ChannelDeliverySummary {
+  notification.common.v1.Channel channel = 1;
+  int32 successful_count = 2;
+  int32 unsuccessful_count = 3;
+  int32 total_count = 4;
+}
+
+message RecipientDeliverySummary {
+  string recipient_id = 1;
+  int32 successful_count = 2;
+  int32 unsuccessful_count = 3;
+  int32 total_count = 4;
+  repeated ChannelDeliverySummary channels = 5;
+  google.protobuf.Timestamp window_from = 6;
+  google.protobuf.Timestamp window_to = 7;
+}
+
+message GetRecipientDeliverySummaryRequest {
+  string recipient_id = 1;
+  int32 lookback_hours = 2;
+}
+
+message GetRecipientDeliverySummaryResponse {
+  RecipientDeliverySummary summary = 1;
+}
+
+message BatchGetRecipientDeliverySummariesRequest {
+  repeated string recipient_id = 1;
+  int32 lookback_hours = 2;
+}
+
+message BatchGetRecipientDeliverySummariesResponse {
+  repeated RecipientDeliverySummary summaries = 1;
 }

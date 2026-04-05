@@ -1,4 +1,4 @@
-﻿package ru.batoyan.vkr.notification.profile.config;
+package ru.batoyan.vkr.notification.profile.config;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -22,6 +22,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 
 /**
  * @author batoyan.rl
@@ -49,9 +52,8 @@ public class OutboxRelayService {
             LOG.warn("Outbox relay is disabled by properties");
             return;
         }
-        LOG.info("Outbox relay enabled");
         try {
-            var published = pollAndPublishOnce();
+            var published = pollAndPublishAvailable();
             if (published > 0) {
                 LOG.info("[OUTBOX] published={}", published);
             }
@@ -60,64 +62,78 @@ public class OutboxRelayService {
         }
     }
 
+    public int pollAndPublishAvailable() {
+        int totalPublished = 0;
+        for (int batch = 0; batch < props.getMaxBatchesPerTick(); batch++) {
+            int published = pollAndPublishOnce();
+            if (published == 0) {
+                break;
+            }
+            totalPublished += published;
+        }
+        return totalPublished;
+    }
+
     public int pollAndPublishOnce() {
         var claimToken = UUID.randomUUID();
         var rows = claimBatch(claimToken);
         if (rows.isEmpty()) {
-            LOG.info("[OUTBOX] poll: no unpublished rows");
             return 0;
         }
 
-        LOG.info("[OUTBOX] poll: claimed {} row(s) (batchSize={}, claimToken={})",
+        LOG.info("[OUTBOX] claimed {} row(s) (batchSize={}, claimToken={})",
                 rows.size(), props.getBatchSize(), claimToken);
 
-        var publishedIds = new ArrayList<Long>(rows.size());
-        var failedIds = new ArrayList<Long>();
+        var publishedIds = Collections.synchronizedList(new ArrayList<Long>(rows.size()));
+        var failedIds = Collections.synchronizedList(new ArrayList<Long>());
+        var concurrencyLimiter = new Semaphore(props.getPublishConcurrency());
 
-        for (var row : rows) {
-            var topic = topicFor(row);
-            var key = row.aggregateId();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var futures = rows.stream()
+                    .map(row -> CompletableFuture.runAsync(() -> publishRow(row, publishedIds, failedIds, concurrencyLimiter), executor))
+                    .toArray(CompletableFuture[]::new);
 
-            LOG.info("[OUTBOX] publish: outboxId={}, aggregateType={}, eventType={}, key={}, topic={}, payload: {}",
-                    row.outboxId(), row.aggregateType(), row.eventType(), key, topic, row.payloadJson());
-
-            try {
-                retryTemplate.execute(ctx -> {
-                    var attempt = ctx.getRetryCount() + 1;
-                    LOG.info("[OUTBOX] publish attempt {}: outboxId={}, topic={}", attempt, row.outboxId(), topic);
-
-                    try {
-                        kafka.send(topic, key, serializePublisherEvent(row))
-                                .whenComplete((r, e) -> {
-                                    LOG.info("[OUTBOX] publish ok: outboxId={}, topic={}", row.outboxId(), topic);
-                                })
-                                .join();
-
-                        return null;
-                    } catch (Exception e) {
-                        LOG.warn("[OUTBOX] publish failed (attempt {}): outboxId={}, topic={}, err={}",
-                                attempt, row.outboxId(), topic, e.getMessage(), e);
-                        throw e;
-                    }
-                });
-                publishedIds.add(row.outboxId());
-            } catch (Exception ex) {
-                failedIds.add(row.outboxId());
-            }
+            CompletableFuture.allOf(futures).join();
         }
 
         if (!publishedIds.isEmpty()) {
-            LOG.info("[OUTBOX] marking published: ids={}, claimToken={}", publishedIds, claimToken);
             markPublished(publishedIds, claimToken);
         }
 
         if (!failedIds.isEmpty()) {
-            LOG.info("[OUTBOX] releasing failed claims: ids={}, claimToken={}", failedIds, claimToken);
             releaseClaims(failedIds, claimToken);
         }
 
-        LOG.info("[OUTBOX] poll done: published={}, failed={}", publishedIds.size(), failedIds.size());
+        LOG.info("[OUTBOX] batch done: claimed={}, published={}, failed={}", rows.size(), publishedIds.size(), failedIds.size());
         return publishedIds.size();
+    }
+
+    private void publishRow(OutboxRow row,
+                            List<Long> publishedIds,
+                            List<Long> failedIds,
+                            Semaphore concurrencyLimiter) {
+        boolean acquired = false;
+        try {
+            concurrencyLimiter.acquire();
+            acquired = true;
+            var topic = topicFor(row);
+            var key = row.aggregateId();
+            var publishedEvent = serializePublisherEvent(row);
+
+            retryTemplate.execute(ctx -> {
+                kafka.send(topic, key, publishedEvent).join();
+                return null;
+            });
+
+            publishedIds.add(row.outboxId());
+        } catch (Exception ex) {
+            failedIds.add(row.outboxId());
+            LOG.warn("[OUTBOX] publish failed: outboxId={}, err={}", row.outboxId(), ex.getMessage());
+        } finally {
+            if (acquired) {
+                concurrencyLimiter.release();
+            }
+        }
     }
 
     @Transactional

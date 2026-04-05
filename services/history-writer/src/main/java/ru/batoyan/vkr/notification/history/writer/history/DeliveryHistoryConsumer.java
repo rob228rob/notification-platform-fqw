@@ -14,7 +14,10 @@ public class DeliveryHistoryConsumer {
     private final DeliveryHistoryRepository repository;
 
     @KafkaListener(
-            topics = "${outbox.relay.topics.mail-delivery-statuses}",
+            topics = {
+                    "${outbox.relay.topics.mail-delivery-statuses}",
+                    "${outbox.relay.topics.sms-delivery-statuses}"
+            },
             groupId = "${spring.kafka.consumer.group-id}"
     )
     public void onMessage(String rawMessage) {
