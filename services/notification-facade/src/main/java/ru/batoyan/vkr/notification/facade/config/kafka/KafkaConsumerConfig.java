@@ -65,6 +65,7 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         factory.setConcurrency(concurrency);
+        factory.getContainerProperties().setObservationEnabled(true);
         log.info("Concurrent kafka-listeners configured");
         return factory;
     }

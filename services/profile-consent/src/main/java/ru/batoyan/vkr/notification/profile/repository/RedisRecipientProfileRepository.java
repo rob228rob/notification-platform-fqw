@@ -5,7 +5,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
 import ru.batoyan.vkr.notification.profile.config.ProfileConsentRedisProperties;
 import ru.batoyan.vkr.notification.profile.model.ChannelConsent;
-import ru.batoyan.vkr.notification.profile.model.RecipientProfile;
+import ru.batoyan.vkr.notification.profile.model.RecipientProfileDomain;
 import ru.notification.common.proto.v1.Channel;
 
 import java.time.Instant;
@@ -25,17 +25,17 @@ public class RedisRecipientProfileRepository implements RecipientProfileReposito
     private final ProfileConsentRedisProperties properties;
 
     @Override
-    public Optional<RecipientProfile> findByRecipientId(String recipientId) {
+    public Optional<RecipientProfileDomain> findByRecipientId(String recipientId) {
         var values = redisTemplate.opsForHash().entries(key(recipientId));
-        if (values == null || values.isEmpty()) {
+        if (values.isEmpty()) {
             return Optional.empty();
         }
         return Optional.of(mapProfile(recipientId, values));
     }
 
     @Override
-    public Map<String, RecipientProfile> findAllByRecipientIds(Collection<String> recipientIds) {
-        var result = new LinkedHashMap<String, RecipientProfile>();
+    public Map<String, RecipientProfileDomain> findAllByRecipientIds(Collection<String> recipientIds) {
+        var result = new LinkedHashMap<String, RecipientProfileDomain>();
         for (var recipientId : recipientIds) {
             findByRecipientId(recipientId).ifPresent(profile -> result.put(recipientId, profile));
         }
@@ -46,7 +46,7 @@ public class RedisRecipientProfileRepository implements RecipientProfileReposito
         return properties.getKeyPrefix() + recipientId;
     }
 
-    private RecipientProfile mapProfile(String recipientId, Map<Object, Object> rawValues) {
+    private RecipientProfileDomain mapProfile(String recipientId, Map<Object, Object> rawValues) {
         var values = new LinkedHashMap<String, String>();
         rawValues.forEach((key, value) -> values.put(String.valueOf(key), String.valueOf(value)));
 
@@ -55,7 +55,7 @@ public class RedisRecipientProfileRepository implements RecipientProfileReposito
         channels.put(Channel.CHANNEL_SMS, buildChannel(Channel.CHANNEL_SMS, values, "sms"));
         channels.put(Channel.CHANNEL_PUSH, buildChannel(Channel.CHANNEL_PUSH, values, "push"));
 
-        return new RecipientProfile(
+        return new RecipientProfileDomain(
                 recipientId,
                 parseBoolean(values.getOrDefault("active", "true")),
                 parseChannel(values.getOrDefault("preferred_channel", "CHANNEL_EMAIL")),

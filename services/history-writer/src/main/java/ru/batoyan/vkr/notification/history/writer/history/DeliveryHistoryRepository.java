@@ -6,9 +6,11 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.notification.common.proto.v1.Channel;
+import ru.notification.history.proto.v1.ChannelDeliverySummary;
 import ru.notification.history.proto.v1.DeliveryHistoryPayload;
 import ru.notification.history.proto.v1.DeliveryStatus;
 import ru.notification.history.proto.v1.DeliveryStatusKafkaEvent;
+import ru.notification.history.proto.v1.RecipientDeliverySummary;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -87,6 +89,87 @@ public class DeliveryHistoryRepository {
                 .addValue("client_id", clientId)
                 .addValue("limit", size)
                 .addValue("offset", page * size), (rs, rowNum) -> toKafkaEvent(rs));
+    }
+
+    public RecipientDeliverySummary getRecipientSummary(String recipientId, int lookbackHours) {
+        return getRecipientSummaries(List.of(recipientId), lookbackHours).getOrDefault(
+                recipientId,
+                emptySummary(recipientId, lookbackHours)
+        );
+    }
+
+    public Map<String, RecipientDeliverySummary> getRecipientSummaries(List<String> recipientIds, int lookbackHours) {
+        if (recipientIds == null || recipientIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        var sanitizedRecipientIds = recipientIds.stream()
+                .filter(id -> id != null && !id.isBlank())
+                .distinct()
+                .toList();
+        if (sanitizedRecipientIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        var windowTo = OffsetDateTime.now();
+        var windowFrom = windowTo.minusHours(Math.max(lookbackHours, 1));
+
+        var rows = jdbc.query("""
+                select recipient_id,
+                       channel,
+                       count(*) filter (
+                           where delivery_status in ('MAIL_DELIVERY_STATUS_SENT', 'SMS_DELIVERY_STATUS_SENT')
+                       ) as successful_count,
+                       count(*) filter (
+                           where delivery_status in (
+                               'MAIL_DELIVERY_STATUS_FAILED', 'MAIL_DELIVERY_STATUS_SKIPPED',
+                               'SMS_DELIVERY_STATUS_FAILED', 'SMS_DELIVERY_STATUS_SKIPPED'
+                           )
+                       ) as unsuccessful_count
+                from nf_hist.delivery_history
+                where recipient_id in (:recipient_ids)
+                  and coalesce(occurred_at, created_at) >= :window_from
+                  and coalesce(occurred_at, created_at) <= :window_to
+                group by recipient_id, channel
+                order by recipient_id, channel
+                """, new MapSqlParameterSource()
+                .addValue("recipient_ids", sanitizedRecipientIds)
+                .addValue("window_from", windowFrom)
+                .addValue("window_to", windowTo), (rs, rowNum) -> new ChannelSummaryRow(
+                rs.getString("recipient_id"),
+                toChannel(rs.getString("channel")),
+                rs.getInt("successful_count"),
+                rs.getInt("unsuccessful_count")
+        ));
+
+        var summaries = new LinkedHashMap<String, RecipientDeliverySummary.Builder>();
+        for (var recipientId : sanitizedRecipientIds) {
+            summaries.put(recipientId, RecipientDeliverySummary.newBuilder()
+                    .setRecipientId(recipientId)
+                    .setWindowFrom(toTs(windowFrom.toInstant()))
+                    .setWindowTo(toTs(windowTo.toInstant())));
+        }
+
+        for (var row : rows) {
+            var builder = summaries.get(row.recipientId());
+            if (builder == null) {
+                continue;
+            }
+            var total = row.successfulCount() + row.unsuccessfulCount();
+            builder.addChannels(ChannelDeliverySummary.newBuilder()
+                    .setChannel(row.channel())
+                    .setSuccessfulCount(row.successfulCount())
+                    .setUnsuccessfulCount(row.unsuccessfulCount())
+                    .setTotalCount(total)
+                    .build());
+            builder.setSuccessfulCount(builder.getSuccessfulCount() + row.successfulCount());
+            builder.setUnsuccessfulCount(builder.getUnsuccessfulCount() + row.unsuccessfulCount());
+            builder.setTotalCount(builder.getTotalCount() + total);
+        }
+
+        var result = new LinkedHashMap<String, RecipientDeliverySummary>(summaries.size());
+        summaries.forEach((recipientId, builder) -> result.put(recipientId, builder.build()));
+        return result;
     }
 
     private DeliveryStatusKafkaEvent toKafkaEvent(ResultSet rs) throws SQLException {
@@ -179,12 +262,12 @@ public class DeliveryHistoryRepository {
 
     private static DeliveryStatus toStatus(String dbValue) {
         return switch (dbValue) {
-            case "MAIL_DELIVERY_STATUS_PENDING" -> DeliveryStatus.DELIVERY_STATUS_PENDING;
-            case "MAIL_DELIVERY_STATUS_SENDING" -> DeliveryStatus.DELIVERY_STATUS_SENDING;
-            case "MAIL_DELIVERY_STATUS_SENT" -> DeliveryStatus.DELIVERY_STATUS_SENT;
-            case "MAIL_DELIVERY_STATUS_RETRY" -> DeliveryStatus.DELIVERY_STATUS_RETRY;
-            case "MAIL_DELIVERY_STATUS_FAILED" -> DeliveryStatus.DELIVERY_STATUS_FAILED;
-            case "MAIL_DELIVERY_STATUS_SKIPPED" -> DeliveryStatus.DELIVERY_STATUS_SKIPPED;
+            case "MAIL_DELIVERY_STATUS_PENDING", "SMS_DELIVERY_STATUS_PENDING" -> DeliveryStatus.DELIVERY_STATUS_PENDING;
+            case "MAIL_DELIVERY_STATUS_SENDING", "SMS_DELIVERY_STATUS_SENDING" -> DeliveryStatus.DELIVERY_STATUS_SENDING;
+            case "MAIL_DELIVERY_STATUS_SENT", "SMS_DELIVERY_STATUS_SENT" -> DeliveryStatus.DELIVERY_STATUS_SENT;
+            case "MAIL_DELIVERY_STATUS_RETRY", "SMS_DELIVERY_STATUS_RETRY" -> DeliveryStatus.DELIVERY_STATUS_RETRY;
+            case "MAIL_DELIVERY_STATUS_FAILED", "SMS_DELIVERY_STATUS_FAILED" -> DeliveryStatus.DELIVERY_STATUS_FAILED;
+            case "MAIL_DELIVERY_STATUS_SKIPPED", "SMS_DELIVERY_STATUS_SKIPPED" -> DeliveryStatus.DELIVERY_STATUS_SKIPPED;
             default -> DeliveryStatus.DELIVERY_STATUS_UNSPECIFIED;
         };
     }
@@ -204,5 +287,23 @@ public class DeliveryHistoryRepository {
                 .setSeconds(instant.getEpochSecond())
                 .setNanos(instant.getNano())
                 .build();
+    }
+
+    private RecipientDeliverySummary emptySummary(String recipientId, int lookbackHours) {
+        var windowTo = OffsetDateTime.now();
+        var windowFrom = windowTo.minusHours(Math.max(lookbackHours, 1));
+        return RecipientDeliverySummary.newBuilder()
+                .setRecipientId(recipientId)
+                .setWindowFrom(toTs(windowFrom.toInstant()))
+                .setWindowTo(toTs(windowTo.toInstant()))
+                .build();
+    }
+
+    private record ChannelSummaryRow(
+            String recipientId,
+            Channel channel,
+            int successfulCount,
+            int unsuccessfulCount
+    ) {
     }
 }

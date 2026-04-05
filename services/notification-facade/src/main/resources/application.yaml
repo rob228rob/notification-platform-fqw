@@ -24,9 +24,11 @@ template:
 outbox:
   relay:
     enabled: true
-    fixed-delay: 5000ms
-    lease-duration: 30s
-    batch-size: 100
+    fixed-delay: 100ms
+    lease-duration: 2s
+    batch-size: 1000
+    max-batches-per-tick: 10
+    publish-concurrency: 1024
     schema: nf_fac
     table: outbox_message
     topics:
@@ -84,7 +86,7 @@ spring:
 
     admin:
       security:
-        protocol: SASL_PLAINTEXT
+        protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
       auto-create: true
   jpa:
     properties:
@@ -132,19 +134,19 @@ server:
 logging:
   level:
     root: INFO
-    ru.batoyan.vkr.notification.facade: DEBUG
-    com.mai.proj: DEBUG
-    liquibase: DEBUG
+    ru.batoyan.vkr.notification.facade: INFO
+    com.mai.proj: INFO
+    liquibase: INFO
     org:
       springframework:
-        jdbc: DEBUG
-        orm: DEBUG
-        orm.jpa.JpaTransactionManager: DEBUG
+        jdbc: INFO
+        orm: INFO
+        orm.jpa.JpaTransactionManager: INFO
         security: INFO
       hibernate:
-        jpa: DEBUG
-        tool.hbm2ddl: DEBUG
-        SQL: DEBUG
+        jpa: INFO
+        tool.hbm2ddl: INFO
+        SQL: INFO
         type.descriptor.sql.BasicBinder: INFO
 
 
@@ -166,6 +168,9 @@ management:
     metrics:
       export:
         enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
   tracing:
     enabled: true
 

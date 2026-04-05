@@ -2,18 +2,18 @@ package ru.batoyan.vkr.notification.facade.outbox;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.SimpleAsyncTaskScheduler;
 
 @Configuration
 public class OutboxRelaySchedulerConfig {
 
     @Bean(name = "outboxRelayTaskScheduler")
-    public ThreadPoolTaskScheduler outboxRelayTaskScheduler() {
-        var scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(2);
+    public TaskScheduler outboxRelayTaskScheduler() {
+        var scheduler = new SimpleAsyncTaskScheduler();
         scheduler.setThreadNamePrefix("outbox-relay-");
-        scheduler.setWaitForTasksToCompleteOnShutdown(true);
-        scheduler.setAwaitTerminationSeconds(30);
+        scheduler.setVirtualThreads(true);
+        scheduler.setConcurrencyLimit(8);
         return scheduler;
     }
 }

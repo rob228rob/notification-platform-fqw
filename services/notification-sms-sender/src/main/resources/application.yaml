@@ -56,6 +56,9 @@ delivery:
     delivery-batch-size: 100
     inbox-fixed-delay: 10000ms
     delivery-fixed-delay: 15000ms
+    history-check-enabled: true
+    history-check-lookback-hours: 24
+    max-total-deliveries-in-window: 3
     max-attempts: 3
     retry-backoff: 5m
     gateway:
@@ -70,6 +73,10 @@ clients:
   profile-consent:
     host: ${PROFILE_CONSENT_HOST:localhost}
     port: ${PROFILE_CONSENT_PORT:9096}
+    deadline: 3s
+  notification-history:
+    host: ${NOTIFICATION_HISTORY_HOST:localhost}
+    port: ${NOTIFICATION_HISTORY_PORT:9091}
     deadline: 3s
 
 management:

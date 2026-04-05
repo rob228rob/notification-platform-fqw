@@ -4,7 +4,7 @@ spring:
   data:
     redis:
       host: ${PROFILE_CONSENT_REDIS_HOST:localhost}
-      port: ${PROFILE_CONSENT_REDIS_PORT:6380}
+      port: ${PROFILE_CONSENT_REDIS_PORT:6379}
       username: ${PROFILE_CONSENT_REDIS_USERNAME:redisuser}
       password: ${PROFILE_CONSENT_REDIS_PASSWORD:redisuserpassword}
       timeout: 3s
@@ -18,6 +18,9 @@ grpc:
   server:
     port: ${PROFILE_CONSENT_GRPC_PORT:9096}
 
+server:
+  port: ${SERVER_PORT:8913}
+
 management:
   endpoints:
     web:
@@ -28,8 +31,15 @@ management:
       probes:
         enabled: true
       show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
 
 logging:
   level:
     root: INFO
-    ru.batoyan.vkr.notification.profile: INFO
+    ru.batoyan.vkr.notification.profile: DEBUG

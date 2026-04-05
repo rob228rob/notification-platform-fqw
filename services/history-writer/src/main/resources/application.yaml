@@ -2,6 +2,7 @@ outbox:
   relay:
     topics:
       mail-delivery-statuses: notification.mail.delivery-statuses
+      sms-delivery-statuses: notification.sms.delivery-statuses
 
 spring:
   application:
@@ -29,6 +30,9 @@ grpc:
     auth:
       enabled: false
 
+server:
+  port: ${SERVER_PORT:8912}
+
 logging:
   level:
     root: INFO
@@ -39,3 +43,15 @@ management:
     web:
       exposure:
         include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

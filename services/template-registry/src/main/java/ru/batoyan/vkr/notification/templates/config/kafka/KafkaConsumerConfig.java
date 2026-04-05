@@ -33,7 +33,7 @@ public class KafkaConsumerConfig {
     private String autoOffsetReset;
 
     // Настройки безопасности для SASL/PLAIN
-    @Value("${spring.kafka.properties.security.protocol:SASL_PLAINTEXT}")
+    @Value("${spring.kafka.properties.security.protocol:PLAINTEXT}")
     private String securityProtocol;
 
     @Value("${spring.kafka.properties.sasl.mechanism:PLAINTEXT}")

@@ -2,6 +2,7 @@ package ru.batoyan.vkr.notification.facade.template;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.ClientInterceptors;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import jakarta.annotation.PreDestroy;
@@ -17,11 +18,14 @@ import java.util.concurrent.TimeUnit;
 public class TemplateRegistryRenderClient {
 
     private final TemplateRegistryClientProperties properties;
+    private final GrpcClientMetricsInterceptor metricsInterceptor;
     private ManagedChannel channel;
     private TemplateRegistryGrpc.TemplateRegistryBlockingStub blockingStub;
 
-    public TemplateRegistryRenderClient(TemplateRegistryClientProperties properties) {
+    public TemplateRegistryRenderClient(TemplateRegistryClientProperties properties,
+                                        GrpcClientMetricsInterceptor metricsInterceptor) {
         this.properties = properties;
+        this.metricsInterceptor = metricsInterceptor;
     }
 
     public boolean isEnabled() {
@@ -74,7 +78,7 @@ public class TemplateRegistryRenderClient {
                 builder.usePlaintext();
             }
             this.channel = builder.build();
-            this.blockingStub = TemplateRegistryGrpc.newBlockingStub(this.channel);
+            this.blockingStub = TemplateRegistryGrpc.newBlockingStub(ClientInterceptors.intercept(this.channel, metricsInterceptor));
         }
         return blockingStub;
     }

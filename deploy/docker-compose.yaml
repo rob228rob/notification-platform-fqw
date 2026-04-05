@@ -1,5 +1,6 @@
 include:
-  #  - './grafana/docker-compose.grafana.yml'
+  - './grafana/docker-compose.grafana.yml'
+  - './prometheus/docker-compose.prometheus.yml'
   - './postgres/docker-compose.postgres.yml'
   #  - './notification-mail-sender/docker-compose.pg.yml'
   #  - './notification-facade/docker-compose.pg.yml'

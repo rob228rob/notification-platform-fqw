@@ -5,6 +5,10 @@ import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import net.devh.boot.grpc.server.service.GrpcService;
 import ru.batoyan.vkr.notification.history.writer.history.DeliveryHistoryRepository;
+import ru.notification.history.proto.v1.BatchGetRecipientDeliverySummariesRequest;
+import ru.notification.history.proto.v1.BatchGetRecipientDeliverySummariesResponse;
+import ru.notification.history.proto.v1.GetRecipientDeliverySummaryRequest;
+import ru.notification.history.proto.v1.GetRecipientDeliverySummaryResponse;
 import ru.notification.history.proto.v1.ListClientHistoryRequest;
 import ru.notification.history.proto.v1.ListClientHistoryResponse;
 import ru.notification.history.proto.v1.NotificationHistoryServiceGrpc;
@@ -14,6 +18,9 @@ import ru.notification.history.proto.v1.NotificationHistoryServiceGrpc;
 public class NotificationHistoryGrpcService extends NotificationHistoryServiceGrpc.NotificationHistoryServiceImplBase {
 
     private static final int MAX_PAGE_SIZE = 200;
+    private static final int DEFAULT_LOOKBACK_HOURS = 24;
+    private static final int MAX_LOOKBACK_HOURS = 24 * 30;
+    private static final int MAX_BATCH_SIZE = 500;
 
     private final DeliveryHistoryRepository repository;
 
@@ -40,5 +47,55 @@ public class NotificationHistoryGrpcService extends NotificationHistoryServiceGr
         } catch (Exception ex) {
             responseObserver.onError(ex);
         }
+    }
+
+    @Override
+    public void getRecipientDeliverySummary(GetRecipientDeliverySummaryRequest request,
+                                            StreamObserver<GetRecipientDeliverySummaryResponse> responseObserver) {
+        try {
+            var recipientId = request.getRecipientId();
+            if (recipientId == null || recipientId.isBlank()) {
+                throw Status.INVALID_ARGUMENT.withDescription("recipient_id must not be blank").asRuntimeException();
+            }
+
+            var summary = repository.getRecipientSummary(recipientId, normalizeLookbackHours(request.getLookbackHours()));
+            responseObserver.onNext(GetRecipientDeliverySummaryResponse.newBuilder()
+                    .setSummary(summary)
+                    .build());
+            responseObserver.onCompleted();
+        } catch (Exception ex) {
+            responseObserver.onError(ex);
+        }
+    }
+
+    @Override
+    public void batchGetRecipientDeliverySummaries(BatchGetRecipientDeliverySummariesRequest request,
+                                                   StreamObserver<BatchGetRecipientDeliverySummariesResponse> responseObserver) {
+        try {
+            if (request.getRecipientIdCount() == 0) {
+                throw Status.INVALID_ARGUMENT.withDescription("recipient_id must not be empty").asRuntimeException();
+            }
+            if (request.getRecipientIdCount() > MAX_BATCH_SIZE) {
+                throw Status.INVALID_ARGUMENT.withDescription("recipient_id batch is too large").asRuntimeException();
+            }
+
+            var summaries = repository.getRecipientSummaries(
+                    request.getRecipientIdList(),
+                    normalizeLookbackHours(request.getLookbackHours())
+            );
+            responseObserver.onNext(BatchGetRecipientDeliverySummariesResponse.newBuilder()
+                    .addAllSummaries(summaries.values())
+                    .build());
+            responseObserver.onCompleted();
+        } catch (Exception ex) {
+            responseObserver.onError(ex);
+        }
+    }
+
+    private int normalizeLookbackHours(int lookbackHours) {
+        if (lookbackHours <= 0) {
+            return DEFAULT_LOOKBACK_HOURS;
+        }
+        return Math.min(lookbackHours, MAX_LOOKBACK_HOURS);
     }
 }

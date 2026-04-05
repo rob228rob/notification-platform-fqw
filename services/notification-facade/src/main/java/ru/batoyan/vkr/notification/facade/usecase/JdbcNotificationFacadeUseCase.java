@@ -126,6 +126,10 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
 
         if (req.hasAudience()) {
             upsertAudience(eventId, req.getAudience());
+            if (req.getAudience().getKind() == AudienceKind.AUDIENCE_KIND_EXPLICIT
+                    && req.getAudience().getRecipientIdCount() > 0) {
+                replaceRecipients(eventId, req.getAudience().getRecipientIdList());
+            }
         } else {
             // по умолчанию аудитория EXPLICIT пустая (TODO(rbatoyan): можно добавить потом батчами)
             upsertAudience(eventId, Audience.newBuilder()
@@ -133,6 +137,15 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                     .setSnapshotOnDispatch(true)
                     .build());
         }
+
+        var createdEvent = findEventByIdAndClient(eventId, clientUuid)
+                .orElseThrow(() -> Status.INTERNAL.withDescription("event disappeared after create").asRuntimeException());
+        enqueueNotificationEvent(
+                "EventCreated",
+                createdEvent,
+                loadExplicitRecipients(eventId),
+                OffsetDateTime.ofInstant(now, ZoneOffset.UTC)
+        );
 
         return CreateEventResponse.newBuilder()
                 .setEventId(eventId.toString())
@@ -591,6 +604,46 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
         }
     }
 
+    private void enqueueNotificationEvent(String eventType,
+                                          EventRow event,
+                                          List<String> recipients,
+                                          OffsetDateTime createdAt) {
+        var payload = new LinkedHashMap<String, Object>();
+        payload.put("event_id", event.eventId.toString());
+        payload.put("client_id", event.clientId.toString());
+        payload.put("template_id", event.templateId);
+        payload.put("template_version", event.templateVersion);
+        payload.put("priority", event.priority);
+        payload.put("preferred_channel", event.preferredChannel);
+        payload.put("strategy_kind", event.strategyKind);
+        payload.put("scheduled_at", event.scheduledAt == null ? null : OffsetDateTime.ofInstant(event.scheduledAt, ZoneOffset.UTC).toString());
+        payload.put("status", event.status);
+        payload.put("created_at", createdAt.toString());
+        payload.put("updated_at", event.updatedAt == null ? null : OffsetDateTime.ofInstant(event.updatedAt, ZoneOffset.UTC).toString());
+        payload.put("payload", readJsonMap(event.payloadJson));
+        payload.put("recipient_ids", recipients);
+
+        var headers = Map.<String, Object>of(
+                "message_id", event.eventId.toString(),
+                "event_type", eventType,
+                "client_id", event.clientId.toString()
+        );
+
+        jdbc.update("""
+                insert into nf_fac.outbox_message(
+                  aggregate_type, aggregate_id, event_type, payload, headers, created_at
+                ) values (
+                  :aggregate_type, :aggregate_id, :event_type, cast(:payload as jsonb), cast(:headers as jsonb), :created_at
+                )
+                """, new MapSqlParameterSource()
+                .addValue("aggregate_type", "notification_event")
+                .addValue("aggregate_id", event.eventId.toString())
+                .addValue("event_type", eventType)
+                .addValue("payload", toJson(payload))
+                .addValue("headers", toJson(headers))
+                .addValue("created_at", createdAt));
+    }
+
     private void enqueueDispatch(String aggregateType,
                                  String eventType,
                                  UUID dispatchId,
@@ -628,6 +681,14 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                 .addValue("payload", toJson(payload))
                 .addValue("headers", toJson(headers))
                 .addValue("created_at", createdAt));
+    }
+
+    private List<String> loadExplicitRecipients(UUID eventId) {
+        return jdbc.queryForList(
+                "select recipient_id from event_recipient where event_id = :event_id order by recipient_id",
+                Map.of("event_id", eventId),
+                String.class
+        );
     }
 
     @SuppressWarnings("unchecked")
