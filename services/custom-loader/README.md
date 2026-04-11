@@ -16,10 +16,12 @@
   - `push.enabled`, `push.blacklisted`, `push.destination`
 - шлёт `CreateNotificationEvent` в facade с:
   - разными `idempotencyKey`
-  - разными `subject`, `body`, `category`, `tenant`, `correlationId`
+  - разными `subject`, `body`, `previewText`, `category`, `tenant`, `correlationId`
   - разными `priority`
   - смесью `IMMEDIATE` и `SCHEDULED`
   - смесью `CHANNEL_EMAIL` и `CHANNEL_SMS`
+  - несколькими `recipient_id` в одном событии
+  - крупным HTML-подобным `body` для email-нагрузки
 
 ## Запуск
 
@@ -76,6 +78,9 @@ Seed + нагрузка:
 - `--recipient-prefix`
 - `--email-share`
 - `--sms-share`
+- `--recipients-per-event`
+- `--email-sections`
+- `--email-paragraph-repeat`
 - `--template-id`
 - `--template-version`
 
@@ -93,6 +98,9 @@ Seed + нагрузка:
 - `duration`: `600s`
 - `templateId`: `tmpl-order-reminder`
 - `templateVersion`: `1`
+- `recipientsPerEvent`: `3`
+- `emailSections`: `6`
+- `emailParagraphRepeat`: `4`
 
 ## Ожидаемый поток
 

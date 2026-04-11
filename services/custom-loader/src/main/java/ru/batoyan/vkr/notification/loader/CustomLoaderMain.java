@@ -1,6 +1,9 @@
 package ru.batoyan.vkr.notification.loader;
 
+import java.util.logging.Logger;
+
 public final class CustomLoaderMain {
+    private static final Logger LOG = Logger.getLogger(CustomLoaderMain.class.getName());
 
     private CustomLoaderMain() {
     }

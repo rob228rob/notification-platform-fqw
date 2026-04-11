@@ -28,8 +28,6 @@ public class NotificationFacadeService extends NotificationFacadeGrpc.Notificati
         this.clientIdResolver = clientIdResolver;
     }
 
-    // --- Events Management ---
-
     @Override
     public void createNotificationEvent(CreateEventRequest request, StreamObserver<CreateEventResponse> responseObserver) {
         execute("createNotificationEvent", () -> {

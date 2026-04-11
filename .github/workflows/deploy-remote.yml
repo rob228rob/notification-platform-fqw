@@ -20,3 +20,16 @@ jobs:
             git pull --ff-only
             cd deploy
             docker compose up -d --remove-orphans
+
+  pull:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run git pull on VM
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ~/own_apps/tg-chat-history-analyser
+            git pull --ff-only

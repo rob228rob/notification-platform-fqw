@@ -19,7 +19,6 @@ public class SpringMailGateway implements MailGateway {
 
     private final JavaMailSender mailSender;
     private final SpringMailGatewayProperties properties;
-    private final MailProviderGuardService providerGuardService;
 
     @Override
     public BatchSendResult sendBatch(List<MailMessage> messages) {
@@ -27,12 +26,8 @@ public class SpringMailGateway implements MailGateway {
             return new BatchSendResult(List.of(), Map.of());
         }
 
-        var guardResult = providerGuardService.validateBatch(messages);
-        var guardedMessages = guardResult.allowedMessages();
-        var rejectedByPolicy = guardResult.rejectedDeliveries();
-        if (guardedMessages.isEmpty()) {
-            return new BatchSendResult(List.of(), rejectedByPolicy);
-        }
+        var guardedMessages = messages;
+        Map<String, String> rejectedByPolicy = Map.of();
 
         if (properties.isLogOnly()) {
             for (var message : guardedMessages) {

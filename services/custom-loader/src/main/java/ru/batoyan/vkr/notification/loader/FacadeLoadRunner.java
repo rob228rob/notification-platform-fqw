@@ -9,12 +9,13 @@ import ru.notification.common.proto.v1.DeliveryPriority;
 import ru.notification.facade.proto.v1.*;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -40,7 +41,7 @@ public final class FacadeLoadRunner {
         long durationSeconds = Math.max(1L, config.duration().toSeconds());
         long startedAt = System.nanoTime();
 
-        try (FacadeClient client = new FacadeClient(config)) {
+        try (var client = new FacadeClient(config)) {
             for (int second = 0; second < durationSeconds; second++) {
                 int currentQps = qpsForSecond(second, durationSeconds);
                 long secondStartedAt = System.nanoTime();
@@ -103,7 +104,7 @@ public final class FacadeLoadRunner {
     }
 
     private CreateEventRequest buildRequest(long sequence) {
-        String recipientId = recipients.get(random.nextInt(recipients.size()));
+        var selectedRecipients = selectRecipients();
         Channel preferred = random.nextDouble() < config.emailShare() ? Channel.CHANNEL_EMAIL : Channel.CHANNEL_SMS;
         DeliveryPriority priority = switch (random.nextInt(3)) {
             case 0 -> DeliveryPriority.DELIVERY_PRIORITY_HIGH;
@@ -117,6 +118,13 @@ public final class FacadeLoadRunner {
             strategyBuilder.setSendAt(toTimestamp(Instant.now().plusSeconds(5 + random.nextInt(90))));
         }
 
+        var correlationId = UUID.randomUUID().toString();
+        var subject = randomSubject(sequence, preferred);
+        var previewText = previewText(sequence, selectedRecipients);
+        var body = preferred == Channel.CHANNEL_EMAIL
+                ? buildEmailBody(sequence, selectedRecipients, priority, correlationId)
+                : randomSmsBody(sequence, selectedRecipients);
+
         return CreateEventRequest.newBuilder()
                 .setIdempotencyKey("loader-" + sequence + "-" + UUID.randomUUID())
                 .setTemplateId(config.templateId())
@@ -124,17 +132,29 @@ public final class FacadeLoadRunner {
                 .setPriority(priority)
                 .setPreferredChannel(preferred)
                 .setStrategy(strategyBuilder.build())
-                .putPayload("subject", randomSubject(sequence, preferred))
-                .putPayload("body", randomBody(sequence, recipientId))
+                .putPayload("subject", subject)
+                .putPayload("body", body)
+                .putPayload("previewText", previewText)
                 .putPayload("category", randomCategory())
-                .putPayload("correlationId", UUID.randomUUID().toString())
+                .putPayload("correlationId", correlationId)
                 .putPayload("tenant", "tenant-" + (1 + random.nextInt(20)))
+                .putPayload("emailFormat", preferred == Channel.CHANNEL_EMAIL ? "text/html" : "text/plain")
+                .putPayload("recipientCount", Integer.toString(selectedRecipients.size()))
                 .setAudience(Audience.newBuilder()
                         .setKind(AudienceKind.AUDIENCE_KIND_EXPLICIT)
                         .setSnapshotOnDispatch(true)
-                        .addRecipientId(recipientId)
+                        .addAllRecipientId(selectedRecipients)
                         .build())
                 .build();
+    }
+
+    private List<String> selectRecipients() {
+        int requested = Math.max(1, Math.min(config.recipientsPerEvent(), recipients.size()));
+        Set<String> selected = new LinkedHashSet<>();
+        while (selected.size() < requested) {
+            selected.add(recipients.get(random.nextInt(recipients.size())));
+        }
+        return List.copyOf(selected);
     }
 
     private String randomSubject(long sequence, Channel preferred) {
@@ -149,16 +169,89 @@ public final class FacadeLoadRunner {
         return subjects[random.nextInt(subjects.length)] + " #" + sequence + " via " + preferred.name();
     }
 
-    private String randomBody(long sequence, String recipientId) {
-        String[] bodies = {
-                "Payload for recipient %1$s, operation %2$d, segment retail",
-                "Event %2$d for %1$s with diverse content and delivery metadata",
-                "Reminder for %1$s, synthetic load message %2$d",
-                "Operational message %2$d routed to %1$s",
-                "Multi-field body for %1$s, sequence=%2$d"
-        };
-        String template = bodies[random.nextInt(bodies.length)];
-        return String.format(Locale.ROOT, template, recipientId, sequence);
+    private String previewText(long sequence, List<String> recipientIds) {
+        return String.format(Locale.ROOT,
+                "Synthetic event #%d for %d recipients. Render preview for %s.",
+                sequence, recipientIds.size(), recipientIds.getFirst());
+    }
+
+    private String randomSmsBody(long sequence, List<String> recipientIds) {
+        return String.format(Locale.ROOT,
+                "SMS synthetic event #%d for %d recipients. Lead recipient: %s.",
+                sequence, recipientIds.size(), recipientIds.getFirst());
+    }
+
+    private String buildEmailBody(long sequence,
+                                  List<String> recipientIds,
+                                  DeliveryPriority priority,
+                                  String correlationId) {
+        StringBuilder html = new StringBuilder(8_192);
+        html.append("<html><body style=\"margin:0;padding:0;background:#f3f6fb;font-family:Arial,sans-serif;color:#102033;\">")
+                .append("<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f3f6fb;padding:24px 0;\">")
+                .append("<tr><td align=\"center\">")
+                .append("<table role=\"presentation\" width=\"720\" cellpadding=\"0\" cellspacing=\"0\" style=\"width:720px;max-width:720px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(16,32,51,0.12);\">")
+                .append("<tr><td style=\"padding:32px 40px;background:linear-gradient(135deg,#173b6d 0%,#247ba0 100%);color:#ffffff;\">")
+                .append("<div style=\"font-size:12px;letter-spacing:0.12em;text-transform:uppercase;opacity:0.78;\">Notification Platform</div>")
+                .append("<h1 style=\"margin:12px 0 8px;font-size:30px;line-height:1.2;\">Synthetic campaign #").append(sequence).append("</h1>")
+                .append("<p style=\"margin:0;font-size:15px;line-height:1.6;max-width:560px;\">")
+                .append("Large renderable email payload generated by custom-loader to stress gRPC, Kafka and downstream planning.")
+                .append("</p></td></tr>")
+                .append("<tr><td style=\"padding:28px 40px 8px;\">")
+                .append("<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:collapse;\">")
+                .append("<tr>")
+                .append(metricCell("Priority", priority.name()))
+                .append(metricCell("Recipients", Integer.toString(recipientIds.size())))
+                .append(metricCell("Template", config.templateId() + " v" + config.templateVersion()))
+                .append("</tr></table></td></tr>");
+
+        for (int section = 1; section <= Math.max(1, config.emailSections()); section++) {
+            html.append("<tr><td style=\"padding:16px 40px 0;\">")
+                    .append("<div style=\"border:1px solid #d9e2f2;border-radius:16px;padding:20px 24px;background:#fbfdff;\">")
+                    .append("<h2 style=\"margin:0 0 12px;font-size:20px;color:#173b6d;\">Section ").append(section).append("</h2>");
+            for (int paragraph = 1; paragraph <= Math.max(1, config.emailParagraphRepeat()); paragraph++) {
+                html.append("<p style=\"margin:0 0 14px;font-size:15px;line-height:1.72;color:#34495e;\">")
+                        .append("Sequence ").append(sequence)
+                        .append(", section ").append(section)
+                        .append(", paragraph ").append(paragraph)
+                        .append(": recipient cohort size is ").append(recipientIds.size())
+                        .append(". Primary recipient is ").append(escapeHtml(recipientIds.get((section + paragraph - 2) % recipientIds.size())))
+                        .append(". This payload intentionally contains enough structured copy and inline markup to resemble a real email campaign render.")
+                        .append("</p>");
+            }
+            html.append("<ul style=\"margin:0;padding-left:20px;color:#34495e;font-size:14px;line-height:1.7;\">");
+            for (int i = 0; i < Math.min(recipientIds.size(), 6); i++) {
+                html.append("<li>").append(escapeHtml(recipientIds.get(i))).append("</li>");
+            }
+            html.append("</ul></div></td></tr>");
+        }
+
+        html.append("<tr><td style=\"padding:24px 40px 36px;\">")
+                .append("<div style=\"border-radius:14px;background:#0f172a;color:#e2e8f0;padding:18px 20px;font-family:'Courier New',monospace;font-size:13px;line-height:1.7;\">")
+                .append("correlationId=").append(escapeHtml(correlationId)).append("<br/>")
+                .append("templateId=").append(escapeHtml(config.templateId())).append("<br/>")
+                .append("templateVersion=").append(config.templateVersion()).append("<br/>")
+                .append("sampleRecipients=").append(escapeHtml(String.join(", ", recipientIds.subList(0, Math.min(5, recipientIds.size())))))
+                .append("</div></td></tr>")
+                .append("</table></td></tr></table></body></html>");
+        return html.toString();
+    }
+
+    private String metricCell(String label, String value) {
+        return "<td style=\"width:33.33%;padding:0 12px 20px 0;\">"
+                + "<div style=\"background:#eef4fb;border-radius:14px;padding:16px 18px;\">"
+                + "<div style=\"font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#5b708b;\">"
+                + escapeHtml(label)
+                + "</div><div style=\"margin-top:8px;font-size:16px;font-weight:700;color:#17324d;\">"
+                + escapeHtml(value)
+                + "</div></div></td>";
+    }
+
+    private String escapeHtml(String value) {
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 
     private String randomCategory() {

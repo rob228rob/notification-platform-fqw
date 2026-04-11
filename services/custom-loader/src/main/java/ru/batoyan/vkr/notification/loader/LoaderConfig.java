@@ -23,6 +23,9 @@ public record LoaderConfig(
         String recipientPrefix,
         double emailShare,
         double smsShare,
+        int recipientsPerEvent,
+        int emailSections,
+        int emailParagraphRepeat,
         String templateId,
         int templateVersion
 ) {
@@ -46,11 +49,14 @@ public record LoaderConfig(
         String recipientPrefix = arg(args, "--recipient-prefix", env(defaults, "RECIPIENT_PREFIX", "load-user-"));
         double emailShare = doubleArg(args, "--email-share", doubleEnv(defaults, "EMAIL_SHARE", 0.7d));
         double smsShare = doubleArg(args, "--sms-share", doubleEnv(defaults, "SMS_SHARE", 0.3d));
+        int recipientsPerEvent = intArg(args, "--recipients-per-event", intEnv(defaults, "RECIPIENTS_PER_EVENT", 3));
+        int emailSections = intArg(args, "--email-sections", intEnv(defaults, "EMAIL_SECTIONS", 6));
+        int emailParagraphRepeat = intArg(args, "--email-paragraph-repeat", intEnv(defaults, "EMAIL_PARAGRAPH_REPEAT", 4));
         String templateId = arg(args, "--template-id", env(defaults, "TEMPLATE_ID", "tmpl-order-reminder"));
         int templateVersion = intArg(args, "--template-version", intEnv(defaults, "TEMPLATE_VERSION", 1));
         return new LoaderConfig(mode, users, threads, duration, qpsStart, qpsEnd, facadeHost, facadePort, facadePlaintext,
                 redisHost, redisPort, redisUser, redisPassword, redisKeyPrefix, recipientPrefix, emailShare, smsShare,
-                templateId, templateVersion);
+                recipientsPerEvent, emailSections, emailParagraphRepeat, templateId, templateVersion);
     }
 
     private static String arg(String[] args, String name, String fallback) {

@@ -130,7 +130,12 @@ message RemoveRecipientsResponse {string event_id = 1; int32 removed = 2;}
 message GetAudienceRequest {string event_id = 1;}
 message GetAudienceResponse {string event_id = 1; Audience audience = 2;}
 
-message TriggerDispatchRequest {string event_id = 1; string idempotency_key = 2; google.protobuf.Timestamp override_send_at = 3;}
+message TriggerDispatchRequest {
+    string event_id = 1;
+    string idempotency_key = 2;
+    google.protobuf.Timestamp override_send_at = 3;
+}
+
 message TriggerDispatchResponse {string dispatch_id = 1; DispatchStatus status = 2;}
 
 message GetDispatchRequest {string dispatch_id = 1;}

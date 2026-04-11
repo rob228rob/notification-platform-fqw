@@ -22,10 +22,23 @@
 
 Рекомендуемый способ, потому что не требует локально установленного TeX.
 
-Из корня проекта:
+### Linux / macOS
 
 ```bash
 docker run --rm -v "${PWD}/docs/diploma-report:/doc" -w /doc diploma-latex-builder:latest latexmk -xelatex -interaction=nonstopmode main.tex
+```
+
+### Windows (PowerShell)
+
+```powershell
+docker run --rm -v "${PWD}\docs\diploma-report:/doc" -w /doc diploma-latex-builder:latest latexmk -xelatex -interaction=nonstopmode main.tex
+```
+
+Или с использованием переменной окружения:
+
+```powershell
+$projectRoot = (Get-Location).Path
+docker run --rm -v "$projectRoot\docs\diploma-report:/doc" -w /doc diploma-latex-builder:latest latexmk -xelatex -interaction=nonstopmode main.tex
 ```
 
 После завершения итоговый PDF будет здесь:
