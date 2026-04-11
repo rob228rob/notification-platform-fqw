@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="gradleHome" value="" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/libs" />
+            <option value="$PROJECT_DIR$/libs/proto-common" />
+            <option value="$PROJECT_DIR$/libs/proto-facade" />
+            <option value="$PROJECT_DIR$/libs/proto-history" />
+            <option value="$PROJECT_DIR$/libs/proto-profile" />
+            <option value="$PROJECT_DIR$/libs/proto-templates" />
+            <option value="$PROJECT_DIR$/services" />
+            <option value="$PROJECT_DIR$/services/custom-loader" />
+            <option value="$PROJECT_DIR$/services/history-writer" />
+            <option value="$PROJECT_DIR$/services/notification-facade" />
+            <option value="$PROJECT_DIR$/services/notification-mail-sender" />
+            <option value="$PROJECT_DIR$/services/notification-sms-sender" />
+            <option value="$PROJECT_DIR$/services/profile-consent" />
+            <option value="$PROJECT_DIR$/services/scheduler-delivery" />
+            <option value="$PROJECT_DIR$/services/template-registry" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/services/notification-mail-sender" />
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>

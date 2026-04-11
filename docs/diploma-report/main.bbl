@@ -1,0 +1,610 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.2 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global}
+    \entry{kafka_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{title}{Apache Kafka Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://kafka.apache.org/documentation/
+      \endverb
+      \verb{url}
+      \verb https://kafka.apache.org/documentation/
+      \endverb
+    \endentry
+    \entry{kleppmann_ddia}{book}{}
+      \name{author}{1}{}{%
+        {{hash=34b8d5b1d29d175527a6642f3ec8a76d}{%
+           family={Kleppmann},
+           familyi={K\bibinitperiod},
+           given={Martin},
+           giveni={M\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Sebastopol}%
+      }
+      \list{publisher}{1}{%
+        {O'Reilly Media}%
+      }
+      \strng{namehash}{34b8d5b1d29d175527a6642f3ec8a76d}
+      \strng{fullhash}{34b8d5b1d29d175527a6642f3ec8a76d}
+      \strng{bibnamehash}{34b8d5b1d29d175527a6642f3ec8a76d}
+      \strng{authorbibnamehash}{34b8d5b1d29d175527a6642f3ec8a76d}
+      \strng{authornamehash}{34b8d5b1d29d175527a6642f3ec8a76d}
+      \strng{authorfullhash}{34b8d5b1d29d175527a6642f3ec8a76d}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Designing Data-Intensive Applications}
+      \field{year}{2017}
+    \endentry
+    \entry{newman_microservices}{book}{}
+      \name{author}{1}{}{%
+        {{hash=b6be43602c2787d279f8522a7d9713db}{%
+           family={Newman},
+           familyi={N\bibinitperiod},
+           given={Sam},
+           giveni={S\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Sebastopol}%
+      }
+      \list{publisher}{1}{%
+        {O'Reilly Media}%
+      }
+      \strng{namehash}{b6be43602c2787d279f8522a7d9713db}
+      \strng{fullhash}{b6be43602c2787d279f8522a7d9713db}
+      \strng{bibnamehash}{b6be43602c2787d279f8522a7d9713db}
+      \strng{authorbibnamehash}{b6be43602c2787d279f8522a7d9713db}
+      \strng{authornamehash}{b6be43602c2787d279f8522a7d9713db}
+      \strng{authorfullhash}{b6be43602c2787d279f8522a7d9713db}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{edition}{2}
+      \field{title}{Building Microservices}
+      \field{year}{2021}
+    \endentry
+    \entry{richardson_patterns}{book}{}
+      \name{author}{1}{}{%
+        {{hash=d0740bcf48754b8fa2cd3549a1d73461}{%
+           family={Richardson},
+           familyi={R\bibinitperiod},
+           given={Chris},
+           giveni={C\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Shelter Island}%
+      }
+      \list{publisher}{1}{%
+        {Manning Publications}%
+      }
+      \strng{namehash}{d0740bcf48754b8fa2cd3549a1d73461}
+      \strng{fullhash}{d0740bcf48754b8fa2cd3549a1d73461}
+      \strng{bibnamehash}{d0740bcf48754b8fa2cd3549a1d73461}
+      \strng{authorbibnamehash}{d0740bcf48754b8fa2cd3549a1d73461}
+      \strng{authornamehash}{d0740bcf48754b8fa2cd3549a1d73461}
+      \strng{authorfullhash}{d0740bcf48754b8fa2cd3549a1d73461}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Microservices Patterns}
+      \field{year}{2018}
+    \endentry
+    \entry{nygard_releaseit}{book}{}
+      \name{author}{1}{}{%
+        {{hash=7517211d7d5cad5693ec6ca951302ccc}{%
+           family={Nygard},
+           familyi={N\bibinitperiod},
+           given={Michael\bibnamedelima T.},
+           giveni={M\bibinitperiod\bibinitdelim T\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Raleigh}%
+      }
+      \list{publisher}{1}{%
+        {Pragmatic Bookshelf}%
+      }
+      \strng{namehash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{fullhash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{bibnamehash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{authorbibnamehash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{authornamehash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{authorfullhash}{7517211d7d5cad5693ec6ca951302ccc}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{edition}{2}
+      \field{title}{Release It! Design and Deploy Production-Ready Software}
+      \field{year}{2018}
+    \endentry
+    \entry{kafka_design_semantics}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labeltitlesource}{title}
+      \field{title}{Apache Kafka: Design -- Message Delivery Semantics}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://kafka.apache.org/40/design/design/
+      \endverb
+      \verb{url}
+      \verb https://kafka.apache.org/40/design/design/
+      \endverb
+    \endentry
+    \entry{kafka_producer_configs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labeltitlesource}{title}
+      \field{title}{Apache Kafka: Producer Configs}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://kafka.apache.org/40/configuration/producer-configs/
+      \endverb
+      \verb{url}
+      \verb https://kafka.apache.org/40/configuration/producer-configs/
+      \endverb
+    \endentry
+    \entry{postgres_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labeltitlesource}{title}
+      \field{title}{PostgreSQL Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.postgresql.org/docs/current/
+      \endverb
+      \verb{url}
+      \verb https://www.postgresql.org/docs/current/
+      \endverb
+    \endentry
+    \entry{postgres_select_skip_locked}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labeltitlesource}{title}
+      \field{title}{PostgreSQL: SELECT}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.postgresql.org/docs/current/sql-select.html
+      \endverb
+      \verb{url}
+      \verb https://www.postgresql.org/docs/current/sql-select.html
+      \endverb
+    \endentry
+    \entry{spring_jdbc_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labeltitlesource}{title}
+      \field{title}{Spring Framework JDBC: Choosing an Approach for JDBC Database Access}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.spring.io/spring-framework/reference/data-access/jdbc/choose-style.html
+      \endverb
+      \verb{url}
+      \verb https://docs.spring.io/spring-framework/reference/data-access/jdbc/choose-style.html
+      \endverb
+    \endentry
+    \entry{grpc_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labeltitlesource}{title}
+      \field{title}{gRPC Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://grpc.io/docs/
+      \endverb
+      \verb{url}
+      \verb https://grpc.io/docs/
+      \endverb
+    \endentry
+    \entry{flyway_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labeltitlesource}{title}
+      \field{title}{Redgate Flyway Documentation}
+      \field{urlday}{11}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://documentation.red-gate.com/flyway
+      \endverb
+      \verb{url}
+      \verb https://documentation.red-gate.com/flyway
+      \endverb
+    \endentry
+    \entry{redis_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labeltitlesource}{title}
+      \field{title}{Redis Documentation}
+      \field{urlday}{11}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://redis.io/docs/
+      \endverb
+      \verb{url}
+      \verb https://redis.io/docs/
+      \endverb
+    \endentry
+    \entry{c4model}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labeltitlesource}{title}
+      \field{title}{The C4 Model for Software Architecture}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://c4model.com/
+      \endverb
+      \verb{url}
+      \verb https://c4model.com/
+      \endverb
+    \endentry
+    \entry{structurizr_dsl_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labeltitlesource}{title}
+      \field{title}{Structurizr DSL Documentation}
+      \field{urlday}{11}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.structurizr.com/dsl
+      \endverb
+      \verb{url}
+      \verb https://docs.structurizr.com/dsl
+      \endverb
+    \endentry
+    \entry{gost_732017}{online}{}
+      \list{language}{1}{%
+        {russian}%
+      }
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{labeltitlesource}{title}
+      \field{title}{ГОСТ 7.32-2017. Система стандартов по информации, библиотечному и издательскому делу. Отчет о научно-исследовательской работе. Структура и правила оформления}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.cntd.ru/document/1200157208
+      \endverb
+      \verb{url}
+      \verb https://docs.cntd.ru/document/1200157208
+      \endverb
+    \endentry
+    \entry{gost_r_705_2008}{online}{}
+      \list{language}{1}{%
+        {russian}%
+      }
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{labeltitlesource}{title}
+      \field{title}{ГОСТ Р 7.0.5-2008. Система стандартов по информации, библиотечному и издательскому делу. Библиографическая ссылка. Общие требования и правила составления}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.cntd.ru/document/1200063713
+      \endverb
+      \verb{url}
+      \verb https://docs.cntd.ru/document/1200063713
+      \endverb
+    \endentry
+    \entry{gost_r_70100_2018}{online}{}
+      \list{language}{1}{%
+        {russian}%
+      }
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{labeltitlesource}{title}
+      \field{title}{ГОСТ Р 7.0.100-2018. Система стандартов по информации, библиотечному и издательскому делу. Библиографическая запись. Библиографическое описание. Общие требования и правила составления}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.cntd.ru/document/1200161674
+      \endverb
+      \verb{url}
+      \verb https://docs.cntd.ru/document/1200161674
+      \endverb
+    \endentry
+    \entry{rabbitmq_reliability}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{labeltitlesource}{title}
+      \field{title}{RabbitMQ Reliability Guide}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.rabbitmq.com/docs/reliability
+      \endverb
+      \verb{url}
+      \verb https://www.rabbitmq.com/docs/reliability
+      \endverb
+    \endentry
+    \entry{spring_actuator_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{title}{Spring Boot Actuator}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.spring.io/spring-boot/reference/actuator/
+      \endverb
+      \verb{url}
+      \verb https://docs.spring.io/spring-boot/reference/actuator/
+      \endverb
+    \endentry
+    \entry{micrometer_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{title}{Micrometer Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.micrometer.io/micrometer/reference/
+      \endverb
+      \verb{url}
+      \verb https://docs.micrometer.io/micrometer/reference/
+      \endverb
+    \endentry
+    \entry{prometheus_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{title}{Prometheus Documentation: Overview}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://prometheus.io/docs/introduction/overview/
+      \endverb
+      \verb{url}
+      \verb https://prometheus.io/docs/introduction/overview/
+      \endverb
+    \endentry
+    \entry{opentelemetry_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{title}{OpenTelemetry Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://opentelemetry.io/docs/
+      \endverb
+      \verb{url}
+      \verb https://opentelemetry.io/docs/
+      \endverb
+    \endentry
+    \entry{rfc6749}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labeltitlesource}{title}
+      \field{title}{RFC 6749: The OAuth 2.0 Authorization Framework}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.rfc-editor.org/rfc/rfc6749
+      \endverb
+      \verb{url}
+      \verb https://www.rfc-editor.org/rfc/rfc6749
+      \endverb
+    \endentry
+    \entry{rfc7519}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labeltitlesource}{title}
+      \field{title}{RFC 7519: JSON Web Token (JWT)}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.rfc-editor.org/rfc/rfc7519
+      \endverb
+      \verb{url}
+      \verb https://www.rfc-editor.org/rfc/rfc7519
+      \endverb
+    \endentry
+    \entry{rfc8446}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labeltitlesource}{title}
+      \field{title}{RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.rfc-editor.org/rfc/rfc8446
+      \endverb
+      \verb{url}
+      \verb https://www.rfc-editor.org/rfc/rfc8446
+      \endverb
+    \endentry
+    \entry{spring_boot_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labeltitlesource}{title}
+      \field{title}{Spring Boot Reference Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.spring.io/spring-boot/reference/
+      \endverb
+      \verb{url}
+      \verb https://docs.spring.io/spring-boot/reference/
+      \endverb
+    \endentry
+    \entry{docker_compose_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labeltitlesource}{title}
+      \field{title}{Docker Compose Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.docker.com/compose/
+      \endverb
+      \verb{url}
+      \verb https://docs.docker.com/compose/
+      \endverb
+    \endentry
+    \entry{github_actions_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labeltitlesource}{title}
+      \field{title}{GitHub Actions Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.github.com/actions
+      \endverb
+      \verb{url}
+      \verb https://docs.github.com/actions
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

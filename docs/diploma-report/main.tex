@@ -1,0 +1,54 @@
+\documentclass[bachelor, fontsize=14]{diploma}
+\usepackage{xcolor}
+
+\student{Батоян Роберт Левонович}
+\group{М8О-407Б-22}
+\theme{Отказоустойчивая распределённая платформа мультиканальной гарантированной доставки уведомлений в микросервисной архитектуре}
+
+\supervisor{Булакина Мария Борисовна}
+\firstConsultant{Филимонов Николай Сергеевич}
+\reviewer{}
+
+\faculty{<<Компьютерные науки и прикладная математика>>}
+\department{406}
+\speciality{01.03.02 <<Прикладная математика и информатика>>}
+\profile{Информатика}
+
+\departmentFullName{Кафедра 406 <<Вычислительная математика и программирование>>}
+\headOfDepartment{}
+
+\date{\uline{\hspace{24pt}} июня 2026 года}
+
+\input{contents/glossary}
+\input{contents/terms}
+
+\addbibresource{main.bib}
+\newcommand{\assumption}[1]{\textcolor{red}{\textbf{Допущение:} #1}}
+
+\begin{document}
+    \maketitle
+    \setcounter{page}{2}
+
+    \include{contents/0-abstract}
+
+    \tableofcontents
+    \termsanddefenitions
+    \listofabbreviations
+
+    \include{contents/1-introduction}
+    \include{contents/2-system-analysis}
+    \include{contents/3-architecture}
+    \include{contents/4-implementation}
+    \include{contents/5-deployment-testing}
+    \include{contents/6-economic-evaluation}
+    \include{contents/7-conclusion}
+
+    \printbibliography
+
+    \appendix
+    \include{contents/8-appendix-contracts}
+    \include{contents/9-appendix-kafka}
+    \include{contents/10-appendix-data-model}
+    \include{contents/11-appendix-observability}
+    \include{contents/12-appendix-assumptions}
+\end{document}

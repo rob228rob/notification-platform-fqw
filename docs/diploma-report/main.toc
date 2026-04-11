@@ -1,0 +1,113 @@
+\babel@toc {russian}{}\relax 
+\contentsline {structure}{\numberline {}ТЕРМИНЫ~И~ОПРЕДЕЛЕНИЯ}{7}{structure.1}%
+\contentsline {structure}{\numberline {}ПЕРЕЧЕНЬ~СОКРАЩЕНИЙ~И~ОБОЗНАЧЕНИЙ}{8}{structure.2}%
+\contentsline {structure}{\numberline {}ВВЕДЕНИЕ}{9}{structure.3}%
+\contentsline {section}{\numberline {1}Аналитическая глава, постановка задачи и требования}{14}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Платформа уведомлений как прикладная распределённая система}{14}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Проблемы прямой синхронной схемы доставки}{14}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Доменная модель уведомительного процесса}{15}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}Архитектурные варианты и обоснование выбора}{15}{subsection.1.4}%
+\contentsline {subsection}{\numberline {1.5}Сравнение транспортов и брокеров}{16}{subsection.1.5}%
+\contentsline {subsection}{\numberline {1.6}Варианты работы с профилем получателя}{16}{subsection.1.6}%
+\contentsline {subsection}{\numberline {1.7}Постановка задачи}{17}{subsection.1.7}%
+\contentsline {subsubsection}{\numberline {1.7.1}Функциональные требования}{18}{subsubsection.1.7.1}%
+\contentsline {subsubsection}{\numberline {1.7.2}Нефункциональные требования}{19}{subsubsection.1.7.2}%
+\contentsline {subsubsection}{\numberline {1.7.3}Требования к надёжности и обработке ошибок}{19}{subsubsection.1.7.3}%
+\contentsline {subsubsection}{\numberline {1.7.4}Требования к данным и хранению}{20}{subsubsection.1.7.4}%
+\contentsline {subsection}{\numberline {1.8}Типовые сценарии использования}{20}{subsection.1.8}%
+\contentsline {subsection}{\numberline {1.9}Выводы по разделу}{21}{subsection.1.9}%
+\contentsline {section}{\numberline {2}Проектирование архитектуры распределённой платформы}{22}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Архитектурные принципы}{22}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Контейнерная декомпозиция}{23}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Границы ответственности и модель данных верхнего уровня}{23}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Поток данных при создании события}{23}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Поток данных при запуске доставки}{24}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.6}Поток данных от планировщика к канальному сервису}{25}{subsection.2.6}%
+\contentsline {subsection}{\numberline {2.7}Поток данных в канальных сервисах}{26}{subsection.2.7}%
+\contentsline {subsubsection}{\numberline {2.7.1}Этап транспортного приёма}{26}{subsubsection.2.7.1}%
+\contentsline {subsubsection}{\numberline {2.7.2}Этап планирования доставки}{26}{subsubsection.2.7.2}%
+\contentsline {subsubsection}{\numberline {2.7.3}Этап фактической отправки}{26}{subsubsection.2.7.3}%
+\contentsline {subsection}{\numberline {2.8}Архитектура обмена через Kafka}{27}{subsection.2.8}%
+\contentsline {subsection}{\numberline {2.9}Границы транзакций и механизмы надёжности}{27}{subsection.2.9}%
+\contentsline {subsubsection}{\numberline {2.9.1}Выходящий журнал}{27}{subsubsection.2.9.1}%
+\contentsline {subsubsection}{\numberline {2.9.2}Входящий журнал}{28}{subsubsection.2.9.2}%
+\contentsline {subsubsection}{\numberline {2.9.3}Идемпотентность}{28}{subsubsection.2.9.3}%
+\contentsline {subsection}{\numberline {2.10}Архитектура профиля получателя}{28}{subsection.2.10}%
+\contentsline {subsection}{\numberline {2.11}Архитектура наблюдаемости и контроля качества}{28}{subsection.2.11}%
+\contentsline {subsection}{\numberline {2.12}Архитектура безопасности}{29}{subsection.2.12}%
+\contentsline {subsection}{\numberline {2.13}Выводы по разделу}{29}{subsection.2.13}%
+\contentsline {section}{\numberline {3}Реализация системы, моделирование данных и контракты взаимодействия}{34}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Технологический стек и модульная структура}{34}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Моделирование реляционных данных}{35}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Схема фасада}{35}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Схемы канальных сервисов}{35}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Схемы шаблонов, планировщика и истории}{36}{subsubsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.3}Модель профиля получателя в Redis}{36}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Контракты gRPC}{37}{subsection.3.4}%
+\contentsline {subsubsection}{\numberline {3.4.1}Контракт фасада}{37}{subsubsection.3.4.1}%
+\contentsline {subsubsection}{\numberline {3.4.2}Контракт реестра шаблонов}{37}{subsubsection.3.4.2}%
+\contentsline {subsubsection}{\numberline {3.4.3}Контракты профиля получателя и истории}{38}{subsubsection.3.4.3}%
+\contentsline {subsection}{\numberline {3.5}Реализация рендеринга шаблонов}{38}{subsection.3.5}%
+\contentsline {subsection}{\numberline {3.6}Реализация фасадного пайплайна}{39}{subsection.3.6}%
+\contentsline {subsubsection}{\numberline {3.6.1}Создание события}{39}{subsubsection.3.6.1}%
+\contentsline {subsubsection}{\numberline {3.6.2}Запуск доставки}{39}{subsubsection.3.6.2}%
+\contentsline {subsection}{\numberline {3.7}Реализация sender-сервисов}{40}{subsection.3.7}%
+\contentsline {subsubsection}{\numberline {3.7.1}Почтовый контур}{40}{subsubsection.3.7.1}%
+\contentsline {subsubsection}{\numberline {3.7.2}SMS-контур}{40}{subsubsection.3.7.2}%
+\contentsline {subsection}{\numberline {3.8}Реализация сервиса истории}{41}{subsection.3.8}%
+\contentsline {subsection}{\numberline {3.9}Конфигурация и эксплуатационные ограничения текущей реализации}{41}{subsection.3.9}%
+\contentsline {subsection}{\numberline {3.10}Выводы по разделу}{42}{subsection.3.10}%
+\contentsline {section}{\numberline {4}Развёртывание, эксплуатация и тестирование}{43}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Организация развёртывания}{43}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Автоматизация выкладки}{43}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Средства наблюдаемости}{44}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Цели тестирования}{44}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Методика проверки}{45}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Контрольные критерии успешности}{45}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.7}Проверка отказоустойчивости}{46}{subsection.4.7}%
+\contentsline {subsection}{\numberline {4.8}Нагрузочный прогон как проверка качества пайплайна}{46}{subsection.4.8}%
+\contentsline {subsection}{\numberline {4.9}Качественный анализ метрик}{47}{subsection.4.9}%
+\contentsline {subsection}{\numberline {4.10}Интерпретация результатов}{48}{subsection.4.10}%
+\contentsline {subsection}{\numberline {4.11}Выводы по разделу}{48}{subsection.4.11}%
+\contentsline {section}{\numberline {5}Технико-экономическая оценка и анализ эксплуатационных рисков}{49}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Подход к технико-экономической оценке}{49}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Основные статьи затрат}{49}{subsection.5.2}%
+\contentsline {subsubsection}{\numberline {5.2.1}Затраты на разработку}{49}{subsubsection.5.2.1}%
+\contentsline {subsubsection}{\numberline {5.2.2}Инфраструктурные затраты}{50}{subsubsection.5.2.2}%
+\contentsline {subsubsection}{\numberline {5.2.3}Эксплуатационные затраты}{50}{subsubsection.5.2.3}%
+\contentsline {subsection}{\numberline {5.3}Экономический эффект от архитектурных решений}{51}{subsection.5.3}%
+\contentsline {subsubsection}{\numberline {5.3.1}Эффект от разделения жизненного цикла}{51}{subsubsection.5.3.1}%
+\contentsline {subsubsection}{\numberline {5.3.2}Эффект от outbox/inbox-подхода}{51}{subsubsection.5.3.2}%
+\contentsline {subsubsection}{\numberline {5.3.3}Эффект от централизованного профиля получателя}{51}{subsubsection.5.3.3}%
+\contentsline {subsubsection}{\numberline {5.3.4}Эффект от наблюдаемости}{51}{subsubsection.5.3.4}%
+\contentsline {subsection}{\numberline {5.4}Сравнительная оценка вариантов}{51}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}Анализ рисков информационной безопасности}{52}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}Влияние архитектуры на стоимость сопровождения}{53}{subsection.5.6}%
+\contentsline {subsection}{\numberline {5.7}Выводы по разделу}{53}{subsection.5.7}%
+\contentsline {structure}{\numberline {}ЗАКЛЮЧЕНИЕ}{55}{structure.4}%
+\contentsline {structure}{\numberline {}СПИСОК~ИСПОЛЬЗОВАННЫХ~ИСТОЧНИКОВ}{58}{structure.5}%
+\contentsline {section}{ПРИЛОЖЕНИЕ~А~{Контракты сервисного взаимодействия}}{61}{structure.5}%
+\contentsline {subsection}{\numberline {0.8}Контракт фасада уведомлений}{61}{subsection.Alph0.8}%
+\contentsline {subsection}{\numberline {0.9}Контракт реестра шаблонов}{62}{subsection.Alph0.9}%
+\contentsline {subsection}{\numberline {0.10}Контракт профиля получателя}{62}{subsection.Alph0.10}%
+\contentsline {subsection}{\numberline {0.11}Контракт сервиса истории}{62}{subsection.Alph0.11}%
+\contentsline {subsection}{\numberline {0.12}Совместимость и эволюция контрактов}{63}{subsection.Alph0.12}%
+\contentsline {section}{ПРИЛОЖЕНИЕ~Б~{Kafka-топики и поток сообщений}}{64}{Item.254}%
+\contentsline {subsection}{\numberline {0.13}Основные топики платформы}{64}{subsection.Alph0.13}%
+\contentsline {subsection}{\numberline {0.14}Формат интеграционного сообщения}{64}{subsection.Alph0.14}%
+\contentsline {subsection}{\numberline {0.15}Поток EventCreated}{65}{subsection.Alph0.15}%
+\contentsline {subsection}{\numberline {0.16}Поток TriggerDispatch}{65}{subsection.Alph0.16}%
+\contentsline {subsection}{\numberline {0.17}Поток статусных событий}{65}{subsection.Alph0.17}%
+\contentsline {subsection}{\numberline {0.18}Архитектурные свойства Kafka-слоя}{66}{subsection.Alph0.18}%
+\contentsline {section}{ПРИЛОЖЕНИЕ~В~{Модель данных и хранилища}}{67}{Item.274}%
+\contentsline {subsection}{\numberline {0.19}Схемы PostgreSQL}{67}{subsection.Alph0.19}%
+\contentsline {subsection}{\numberline {0.20}Ключевые ограничения и идентификаторы}{67}{subsection.Alph0.20}%
+\contentsline {subsection}{\numberline {0.21}Служебные журналы}{68}{subsection.Alph0.21}%
+\contentsline {subsection}{\numberline {0.22}Redis-модель профиля получателя}{68}{subsection.Alph0.22}%
+\contentsline {subsection}{\numberline {0.23}Связь между уровнями данных}{68}{subsection.Alph0.23}%
+\contentsline {section}{ПРИЛОЖЕНИЕ~Г~{Артефакты наблюдаемости и метрик качества}}{70}{Item.295}%
+\contentsline {section}{ПРИЛОЖЕНИЕ~Д~{Допущения, ограничения и проверка полноты рукописи}}{74}{Item.299}%
+\contentsline {subsection}{\numberline {0.24}Проверка полноты обязательных частей}{74}{subsection.Alph0.24}%
+\contentsline {subsection}{\numberline {0.25}Критические допущения и ограничения}{74}{subsection.Alph0.25}%
+\contentsline {subsection}{\numberline {0.26}Проверка целостности текста}{74}{subsection.Alph0.26}%
+\contentsfinish 

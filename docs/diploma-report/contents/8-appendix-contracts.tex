@@ -1,0 +1,155 @@
+\appendixsection{Контракты сервисного взаимодействия}
+\label{app:contracts}
+
+\subsection{Контракт фасада уведомлений}
+
+Фасадный gRPC-сервис NotificationFacade представляет внешний прикладной API
+системы. Его методы сгруппированы по назначению в
+таблице~\ref{tab:appendix-facade-contracts}.
+
+\begin{table}[h]
+    \centering
+    \footnotesize
+    \renewcommand{\arraystretch}{1.15}
+    \caption{Методы сервиса NotificationFacade}
+    \label{tab:appendix-facade-contracts}
+    \begin{tabular}{|L{0.33\textwidth}|L{0.53\textwidth}|}
+        \hline
+        \textbf{Метод} & \textbf{Назначение} \\
+        \hline
+        CreateNotificationEvent & Создание события уведомления с ключом идемпотентности, стратегией отправки и payload. \\
+        \hline
+        UpdateNotificationEvent & Изменение редактируемых полей события по update\_mask. \\
+        \hline
+        CancelNotificationEvent & Перевод события в состояние отмены. \\
+        \hline
+        GetNotificationEvent & Получение текущего состояния события. \\
+        \hline
+        ListNotificationEvents & Постраничный просмотр событий клиента. \\
+        \hline
+        SetAudience & Полная замена описания аудитории события. \\
+        \hline
+        AddRecipients & Добавление получателей к явной аудитории. \\
+        \hline
+        RemoveRecipients & Удаление получателей из явной аудитории. \\
+        \hline
+        GetAudience & Чтение текущей аудитории события. \\
+        \hline
+        TriggerDispatch & Создание запуска доставки и публикация канальной dispatch-команды. \\
+        \hline
+        GetDispatch & Получение информации о конкретном запуске доставки. \\
+        \hline
+        ListDispatches & Получение списка запусков по событию. \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Ключевые входные атрибуты фасадного API:
+\begin{enumerate}
+    \item client\_id --- идентификатор клиента, связанный с вызывающей стороной;
+    \item idempotency\_key --- ключ защиты от повторной обработки;
+    \item template\_id и template\_version --- ссылка на шаблон;
+    \item preferred\_channel --- предпочитаемый канал доставки;
+    \item payload --- словарь параметров для рендера и отправки;
+    \item audience --- описание аудитории или явный список получателей;
+    \item strategy --- немедленная либо отложенная отправка.
+\end{enumerate}
+
+\subsection{Контракт реестра шаблонов}
+
+Сервис TemplateRegistry реализует методы, приведённые в
+таблице~\ref{tab:appendix-template-contracts}.
+
+\begin{table}[h]
+    \centering
+    \footnotesize
+    \renewcommand{\arraystretch}{1.15}
+    \caption{Методы сервиса TemplateRegistry}
+    \label{tab:appendix-template-contracts}
+    \begin{tabular}{|L{0.28\textwidth}|L{0.58\textwidth}|}
+        \hline
+        \textbf{Метод} & \textbf{Назначение} \\
+        \hline
+        CreateTemplate & Создание карточки шаблона и начальной версии. \\
+        \hline
+        UpdateTemplate & Добавление новой версии или изменение активной версии шаблона. \\
+        \hline
+        GetTemplate & Получение полного описания шаблона и версий. \\
+        \hline
+        ListTemplates & Постраничный просмотр шаблонов клиента. \\
+        \hline
+        RenderPreview & Рендер subject/body для выбранной версии и канала на основании payload. \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Практически наиболее значимым для текущей архитектуры является именно
+RenderPreview, поскольку он используется фасадом для инъекции готового текста
+в payload события ещё до канальной отправки.
+
+\subsection{Контракт профиля получателя}
+
+Сервис ProfileConsentService предоставляет инфраструктурный API проверки
+получателя и канала. Его методы приведены в
+таблице~\ref{tab:appendix-profile-contracts}.
+
+\begin{table}[h]
+    \centering
+    \footnotesize
+    \renewcommand{\arraystretch}{1.15}
+    \caption{Методы сервиса ProfileConsentService}
+    \label{tab:appendix-profile-contracts}
+    \begin{tabular}{|L{0.33\textwidth}|L{0.53\textwidth}|}
+        \hline
+        \textbf{Метод} & \textbf{Назначение} \\
+        \hline
+        GetRecipientProfile & Получение полного профиля одного получателя. \\
+        \hline
+        BatchGetRecipientProfiles & Получение профилей группы получателей. \\
+        \hline
+        CheckRecipientChannel & Проверка допустимости канала, возврат allowed, reason\_code, preferred\_channel и destination. \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Именно CheckRecipientChannel используется sender-сервисами на критическом пути
+планирования доставки.
+
+\subsection{Контракт сервиса истории}
+
+Сервис NotificationHistoryService выполняет чтение агрегированной истории и
+сводок, как показано в таблице~\ref{tab:appendix-history-contracts}.
+
+\begin{table}[h]
+    \centering
+    \footnotesize
+    \renewcommand{\arraystretch}{1.15}
+    \caption{Методы сервиса NotificationHistoryService}
+    \label{tab:appendix-history-contracts}
+    \begin{tabular}{|L{0.36\textwidth}|L{0.50\textwidth}|}
+        \hline
+        \textbf{Метод} & \textbf{Назначение} \\
+        \hline
+        ListClientHistory & Постраничный просмотр истории по клиенту. \\
+        \hline
+        GetRecipientDeliverySummary & Получение сводки по одному получателю за окно времени. \\
+        \hline
+        BatchGetRecipientDeliverySummaries & Получение набора сводок по группе получателей. \\
+        \hline
+    \end{tabular}
+\end{table}
+
+В sender-сервисах summary используется как дополнительное бизнес-ограничение на
+частоту доставки в пределах заданного окна времени.
+
+\subsection{Совместимость и эволюция контрактов}
+
+Все перечисленные сервисы используют protobuf-контракты, что даёт два важных
+инженерных свойства:
+\begin{enumerate}
+    \item строгую типизацию сообщений и единый машинно-читаемый источник API;
+    \item безопасную эволюцию за счёт добавления новых необязательных полей без
+    нарушения обратной совместимости существующих клиентов \cite{grpc_docs}.
+\end{enumerate}
+
+
