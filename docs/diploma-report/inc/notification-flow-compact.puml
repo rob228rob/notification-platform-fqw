@@ -1,0 +1,38 @@
+@startuml
+title Модель функционирования платформы уведомлений
+
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam state {
+  BackgroundColor #F8F9FA
+  BorderColor #2F3B52
+  FontColor #1F2937
+}
+
+[*] --> EventCreated : CreateNotificationEvent
+
+state "Событие уведомления" as EventCreated
+EventCreated : статус: DRAFT / SCHEDULED
+
+EventCreated --> DispatchStarted : TriggerDispatch
+EventCreated --> EventCancelled : Cancel (до запуска)
+
+state "Запуск доставки" as DispatchStarted
+DispatchStarted : статус: PENDING
+DispatchStarted --> ChannelDelivery : fan-out по каналам
+
+state "Канальная доставка" as ChannelDelivery
+ChannelDelivery : PENDING -> SENDING
+ChannelDelivery : итог: SENT / FAILED / SKIPPED
+ChannelDelivery : RETRY (при временной ошибке)
+
+ChannelDelivery --> HistoryRecorded : публикация статуса
+
+state "История доставки" as HistoryRecorded
+HistoryRecorded : фиксация DeliveryStatus
+HistoryRecorded : источник для отчётности/summary
+
+EventCancelled --> [*]
+HistoryRecorded --> [*]
+
+@enduml

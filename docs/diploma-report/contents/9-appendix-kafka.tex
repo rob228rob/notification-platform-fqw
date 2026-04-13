@@ -1,11 +1,15 @@
 \appendixsection{Kafka-топики и поток сообщений}
 \label{app:kafka}
 
+\subsection{Назначение приложения}
+
+Приложение фиксирует рабочую карту Kafka-топиков, используемых в реализации.
+Здесь оставлены только устойчивые элементы маршрута сообщений без внутренней
+служебной детализации обработчиков.
+
 \subsection{Основные топики платформы}
 
-Kafka используется как транспорт асинхронного обмена между фасадом, планировщиком,
-sender-сервисами и сервисом истории. Актуальная карта топиков приведена в
-таблице~\ref{tab:appendix-kafka-topics}.
+Актуальная карта топиков приведена в таблице~\ref{tab:appendix-kafka-topics}.
 
 \begin{table}[h]
     \centering
@@ -15,15 +19,15 @@ sender-сервисами и сервисом истории. Актуальна
     \label{tab:appendix-kafka-topics}
     \begin{tabular}{|L{0.24\textwidth}|L{0.20\textwidth}|L{0.20\textwidth}|L{0.24\textwidth}|}
         \hline
-        \textbf{Топик} & \textbf{Продюсер} & \textbf{Консьюмер} & \textbf{Основные типы событий} \\
+        \textbf{Топик} & \textbf{Продюсер} & \textbf{Консьюмер} & \textbf{Основные события} \\
         \hline
         notification.facade.events & Notification Facade & Mail Sender, SMS Sender & EventCreated \\
         \hline
-        notification.facade.dispatches & Notification Facade & Нет выделенного бизнес-потребителя в текущем коде & События по dispatch \\
+        notification.facade.dispatches & Notification Facade & Не используется как основной прикладной поток в текущей версии & События запуска доставки \\
         \hline
         notification.mail.dispatches & Notification Facade, Scheduler Delivery & Mail Sender & MailDispatchRequested \\
         \hline
-        notification.mail.dispatches.scheduled & Notification Facade & Scheduler Delivery & MailDispatchRequested с будущим planned\_send\_at \\
+        notification.mail.dispatches.scheduled & Notification Facade & Scheduler Delivery & Отложенные почтовые запуски \\
         \hline
         notification.sms.dispatches & Notification Facade & SMS Sender & SmsDispatchRequested \\
         \hline
@@ -34,76 +38,28 @@ sender-сервисами и сервисом истории. Актуальна
     \end{tabular}
 \end{table}
 
-\subsection{Формат интеграционного сообщения}
+\subsection{Укрупнённая схема потоков}
 
-Сообщения, публикуемые из outbox, имеют единый логический конверт:
+В текущем контуре используются три устойчивых класса потоков:
 \begin{enumerate}
-    \item outboxId --- идентификатор записи выходящего журнала;
-    \item aggregateType --- тип агрегата, например notification\_event, mail\_dispatch, sms\_delivery;
-    \item aggregateId --- идентификатор агрегата;
-    \item eventType --- прикладной тип события;
-    \item payload --- полезная нагрузка бизнес-события;
-    \item headers --- служебные заголовки, включая message\_id и дополнительные идентификаторы;
-    \item createdAt --- время создания outbox-записи.
+    \item события жизненного цикла уведомления;
+    \item команды канальной доставки (немедленные и отложенные);
+    \item статусные события доставки для контура истории.
 \end{enumerate}
 
-Унификация формата позволяет sender-сервисам и history-writer использовать
-одинаковую схему десериализации и входящего хранения, а также делает трассировку
-сообщений устойчивой к расширению числа событий.
+Формат интеграционного сообщения унифицирован, что упрощает трассировку и
+поддерживает расширение набора событий без перестройки транспортного слоя.
 
-\subsection{Поток EventCreated}
+\subsection{Инженерные свойства Kafka-слоя}
 
-Поток событий создания уведомления организован следующим образом:
+Использование Kafka в системе обеспечивает:
 \begin{enumerate}
-    \item фасад создаёт запись notification\_event;
-    \item в outbox добавляется сообщение EventCreated типа notification\_event;
-    \item relay фасада публикует сообщение в notification.facade.events;
-    \item Mail Sender и SMS Sender читают сообщение, сохраняют его во входящий журнал и далее строят собственные записи доставки только для своего канала.
+    \item разделение времени приёма команды и времени фактической обработки доставки;
+    \item независимое масштабирование producer- и consumer-контуров;
+    \item контролируемую повторную обработку при частичных отказах;
+    \item наблюдаемость по producer- и listener-метрикам.
 \end{enumerate}
 
-Такой подход позволяет sender-сервисам реагировать на факт создания события, не
-завися от немедленного вызова TriggerDispatch.
-
-\subsection{Поток TriggerDispatch}
-
-После вызова TriggerDispatch фасад создаёт запись dispatch, snapshot аудитории
-и канальную outbox-команду:
-\begin{enumerate}
-    \item для email --- MailDispatchRequested;
-    \item для SMS --- SmsDispatchRequested.
-\end{enumerate}
-
-Если email-запуск отложен, OutboxRelayService направляет сообщение в
-notification.mail.dispatches.scheduled; если момент отправки уже наступил, оно
-сразу публикуется в notification.mail.dispatches. Для SMS отдельного отложенного
-топика в текущей реализации нет.
-
-\subsection{Поток статусных событий}
-
-После обработки доставки sender-сервисы публикуют статусные сообщения через
-собственные outbox-журналы:
-\begin{enumerate}
-    \item Mail Sender формирует MailDeliveryStatusChanged и публикует его в notification.mail.delivery-statuses;
-    \item SMS Sender формирует SmsDeliveryStatusChanged и публикует его в notification.sms.delivery-statuses;
-    \item History Writer читает оба топика и нормализует запись в delivery\_history.
-\end{enumerate}
-
-За счёт такой схемы сервис истории полностью отделён от sender-логики и не
-вмешивается в принятие решения о доставке. Он работает как отдельный
-асинхронный потребитель фактов доставки.
-
-\subsection{Архитектурные свойства Kafka-слоя}
-
-Использование Kafka в данной системе обеспечивает:
-\begin{enumerate}
-    \item разделение времени приёма команды и времени фактической канальной доставки;
-    \item возможность повторной обработки без глобальной транзакции;
-    \item масштабирование producer- и consumer-частей независимо друг от друга;
-    \item явную наблюдаемость через producer- и listener-метрики Micrometer.
-\end{enumerate}
-
-При этом Kafka не заменяет прикладную идемпотентность. Модель доставки системы
-остаётся at-least-once, поэтому защита от дублей реализуется в прикладном слое
-через уникальные ограничения и входящие журналы \cite{kafka_docs,kafka_design_semantics}.
-
-
+Прикладная модель доставки остаётся at-least-once, поэтому защита от дублей
+обеспечивается в прикладном слое через idempotency и ограничения данных
+\cite{kafka_docs,kafka_design_semantics}.

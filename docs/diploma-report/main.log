@@ -1,6 +1,6 @@
-This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  11 APR 2026 21:20
+This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  12 APR 2026 21:44
 entering extended mode
- restricted \write18 enabled.
+ \write18 enabled.
  %&-line parsing enabled.
 **main.tex
 (./main.tex
@@ -1523,10 +1523,10 @@ Package: relsize 2013/03/29 ver 4.1
 \algocf@algobox=\box87
 )))
 runsystem(xindy -I xindy -L russian -M main -C utf8 -t main.glg -o main.gls mai
-n.glo)...disabled (restricted).
+n.glo)...executed.
 
 runsystem(xindy -I xindy -L russian -M main -C utf8 -t main.glg-abr -o main.gls
--abr main.glo-abr)...disabled (restricted).
+-abr main.glo-abr)...executed.
 
 \glswrite=\write4
 \glo@main@file=\write5
@@ -1550,8 +1550,7 @@ Package csquotes Info: Redefining alias 'default' -> 'russian'.
 (./contents/6-economic-evaluation.aux) (./contents/7-conclusion.aux)
 (./contents/8-appendix-contracts.aux) (./contents/9-appendix-kafka.aux)
 (./contents/10-appendix-data-model.aux)
-(./contents/11-appendix-observability.aux)
-(./contents/12-appendix-assumptions.aux))
+(./contents/11-appendix-observability.aux))
 \openout1 = `main.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 28.
@@ -1759,14 +1758,14 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 
 
 
-] [4] [5])
+] [4])
 \tf@toc=\write7
 \openout7 = `main.toc'.
 
- [6] [7
+ [5] [6
 
 
-] [8
+] [7] [8
 
 
 ]
@@ -1777,197 +1776,203 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 
 
 
-] [10] [11] [12]) [13]
+] [10] [11]) [12]
 \openout2 = `contents/2-system-analysis.aux'.
 
 
-(./contents/2-system-analysis.tex [14
-
-
-
-
-] [15]
-LaTeX Font Info:    Calculating math sizes for size <11.66681> on input line 97
-.
-
-Overfull \hbox (3.04285pt too wide) in paragraph at lines 97--110
- [][] 
- []
-
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-
-Overfull \hbox (3.05719pt too wide) in paragraph at lines 128--139
- [][] 
- []
-
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-[16] [17] [18] [19] [20]) [21]
-\openout2 = `contents/3-architecture.aux'.
-
- (./contents/3-architecture.tex
-File: inc/structurizr-system-context.png Graphic file (type bmp)
-<inc/structurizr-system-context.png>
- [22
+(./contents/2-system-analysis.tex [13
 
 
 
 
 ]
+LaTeX Font Info:    Calculating math sizes for size <11.66681> on input line 66
+.
+
+Overfull \hbox (3.04285pt too wide) in paragraph at lines 66--79
+ [][] 
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[14]
+Overfull \hbox (3.05719pt too wide) in paragraph at lines 93--104
+ [][] 
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[15] [16] [17] [18]) [19]
+\openout2 = `contents/3-architecture.aux'.
+
+ (./contents/3-architecture.tex
+File: inc/structurizr-system-context.png Graphic file (type bmp)
+<inc/structurizr-system-context.png>
 File: inc/structurizr-containers-current.png Graphic file (type bmp)
 <inc/structurizr-containers-current.png>
 
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[23]
+[20
+
+
+
+
+] [21]
 File: inc/structurizr-create-event-flow.png Graphic file (type bmp)
 <inc/structurizr-create-event-flow.png>
- [24] [25] [26]
-Overfull \hbox (7.19475pt too wide) in paragraph at lines 240--240
+File: inc/FunctionModel_UML.png Graphic file (type bmp)
+<inc/FunctionModel_UML.png>
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[22]
+Overfull \hbox (7.19475pt too wide) in paragraph at lines 175--175
 []|\TU/TimesNewRoman(0)/m/n/11.66681 notification.facade.dispatches|  
  []
 
 
-Overfull \hbox (47.06583pt too wide) in paragraph at lines 244--244
+Overfull \hbox (47.06583pt too wide) in paragraph at lines 179--179
 []|\TU/TimesNewRoman(0)/m/n/11.66681 notification.mail.dispatches.scheduled|  
  []
 
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-[27] [28]) [29] [30] [31] [32] [33]
+[23] [24]) [25] [26] [27] [28] [29]
 \openout2 = `contents/4-implementation.aux'.
 
- (./contents/4-implementation.tex [34
+ (./contents/4-implementation.tex [30
 
 
 
 
 ]
-[35] [36] [37] [38] [39] [40] [41]) [42]
+[31] [32]) [33] [34]
 \openout2 = `contents/5-deployment-testing.aux'.
 
  (./contents/5-deployment-testing.tex
-[43
-
-
-
-
-] [44]
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[45] [46] [47]) [48]
+[35
+
+
+
+
+] [36] [37]) [38]
 \openout2 = `contents/6-economic-evaluation.aux'.
 
- (./contents/6-economic-evaluation.tex [49
+ (./contents/6-economic-evaluation.tex [39
 
 
-
-
-] [50] [51]
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-[52] [53]) [54]
-\openout2 = `contents/7-conclusion.aux'.
-
- (./contents/7-conclusion.tex [55
-
-
-
-
-
-]) [56] [57] [58
-
-
-
-
-] [59] [60]
-\openout2 = `contents/8-appendix-contracts.aux'.
-
-
-(./contents/8-appendix-contracts.tex [61
 
 
 ]
-Overfull \hbox (13.06776pt too wide) in paragraph at lines 137--137
-[]|\TU/TimesNewRoman(0)/m/n/11.66681 BatchGetRecipientDeliverySummaries|  
- []
-
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[62]) [63]
+[40]) [41]
+\openout2 = `contents/7-conclusion.aux'.
+
+ (./contents/7-conclusion.tex) [42
+
+
+
+
+
+] [43
+
+
+
+
+] [44] [45]
+\openout2 = `contents/8-appendix-contracts.aux'.
+
+
+(./contents/8-appendix-contracts.tex [46
+
+
+]
+Overfull \hbox (13.06776pt too wide) in paragraph at lines 104--104
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 BatchGetRecipientDeliverySummaries|  
+ []
+
+) [47]
 \openout2 = `contents/9-appendix-kafka.aux'.
 
  (./contents/9-appendix-kafka.tex
-Overfull \hbox (7.17705pt too wide) in paragraph at lines 20--20
+Overfull \hbox (7.17705pt too wide) in paragraph at lines 24--24
 []|\TU/TimesNewRoman(0)/m/n/11.66681 notification.facade.events|  
  []
 
 
-Overfull \hbox (25.97041pt too wide) in paragraph at lines 22--22
+Overfull \hbox (25.97041pt too wide) in paragraph at lines 26--26
 []|\TU/TimesNewRoman(0)/m/n/11.66681 notification.facade.dispatches|  
  []
 
 
-Overfull \hbox (16.27464pt too wide) in paragraph at lines 24--24
+Overfull \hbox (16.27464pt too wide) in paragraph at lines 28--28
 []|\TU/TimesNewRoman(0)/m/n/11.66681 notification.mail.dispatches|  
  []
 
 
-Overfull \hbox (65.84149pt too wide) in paragraph at lines 26--26
+Overfull \hbox (65.84149pt too wide) in paragraph at lines 30--30
 []|\TU/TimesNewRoman(0)/m/n/11.66681 notification.mail.dispatches.scheduled|  
  []
 
 
-Overfull \hbox (13.69406pt too wide) in paragraph at lines 28--28
+Overfull \hbox (13.69406pt too wide) in paragraph at lines 32--32
 []|\TU/TimesNewRoman(0)/m/n/11.66681 notification.sms.dispatches|  
  []
 
 
-Overfull \hbox (9.78613pt too wide) in paragraph at lines 30--30
+Overfull \hbox (9.78613pt too wide) in paragraph at lines 34--34
 []|\TU/TimesNewRoman(0)/m/n/11.66681 notification.mail.delivery- 
  []
 
 
-Overfull \hbox (20.17119pt too wide) in paragraph at lines 30--31
+Overfull \hbox (20.17119pt too wide) in paragraph at lines 34--35
 []|\TU/TimesNewRoman(0)/m/n/11.66681 MailDeliveryStatusChanged|  
  []
 
 
-Overfull \hbox (7.20554pt too wide) in paragraph at lines 32--32
+Overfull \hbox (7.20554pt too wide) in paragraph at lines 36--36
 []|\TU/TimesNewRoman(0)/m/n/11.66681 notification.sms.delivery- 
  []
 
 
-Overfull \hbox (18.24pt too wide) in paragraph at lines 32--33
+Overfull \hbox (18.24pt too wide) in paragraph at lines 36--37
 []|\TU/TimesNewRoman(0)/m/n/11.66681 SmsDeliveryStatusChanged|  
  []
 
-[64
+[48
 
 
 
 
-] [65]) [66]
+]) [49]
 \openout2 = `contents/10-appendix-data-model.aux'.
 
- (./contents/10-appendix-data-model.tex [67
+ (./contents/10-appendix-data-model.tex [50
 
 
 
 
 ]
+Overfull \hbox (110.22385pt too wide) in paragraph at lines 102--102
+[]          \TU/CourierNew(0)/m/n/14 "body": "Здравствуйте, {{name}}. Новый ста
+тус: {{status}}."[] 
+ []
 
-LaTeX Warning: `h' float specifier changed to `ht'.
+[51]
+Overfull \hbox (9.40744pt too wide) in paragraph at lines 102--102
+[]          \TU/CourierNew(0)/m/n/14 "body": "Заказ {{orderId}}: статус {{statu
+s}}."[] 
+ []
 
-[68]) [69]
+[52]) [53]
 \openout2 = `contents/11-appendix-observability.aux'.
 
  (./contents/11-appendix-observability.tex
@@ -1979,27 +1984,15 @@ File: inc/kafka_avg_latency.png Graphic file (type bmp)
 <inc/kafka_avg_latency.png>
 File: inc/kafka_consume_rps.png Graphic file (type bmp)
 <inc/kafka_consume_rps.png>
- [70
+ [54
 
 
 
 
-] [71] [72]) [73
+] [55] [56]) [57
 
 ]
-\openout2 = `contents/12-appendix-assumptions.aux'.
 
-
-(./contents/12-appendix-assumptions.tex
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-[74
-
-
-
-
-]) [75] [76] 
 AED: lastpage setting LastPage
 (./main.aux (./contents/0-abstract.aux) (./contents/1-introduction.aux)
 (./contents/2-system-analysis.aux) (./contents/3-architecture.aux)
@@ -2007,19 +2000,19 @@ AED: lastpage setting LastPage
 (./contents/6-economic-evaluation.aux) (./contents/7-conclusion.aux)
 (./contents/8-appendix-contracts.aux) (./contents/9-appendix-kafka.aux)
 (./contents/10-appendix-data-model.aux)
-(./contents/11-appendix-observability.aux)
-(./contents/12-appendix-assumptions.aux))
+(./contents/11-appendix-observability.aux))
 Package logreq Info: Writing requests to 'main.run.xml'.
 \openout1 = `main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 42711 strings out of 478025
- 864158 string characters out of 5841685
- 2035787 words of memory out of 5000000
- 61940 multiletter control sequences out of 15000+600000
- 526165 words of font info for 133 fonts, out of 8000000 for 9000
+ 42945 strings out of 478025
+ 868478 string characters out of 5841685
+ 2033936 words of memory out of 5000000
+ 62179 multiletter control sequences out of 15000+600000
+ 526173 words of font info for 134 fonts, out of 8000000 for 9000
  682 hyphenation exceptions out of 8191
- 138i,11n,134p,2343b,5635s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 138i,11n,134p,2343b,5636s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.pdf (76 pages).
+Output written on main.xdv (57 pages, 841048 bytes).
+n main.pdf (57 pages).

@@ -1,129 +1,138 @@
 \appendixsection{Модель данных и хранилища}
 \label{app:data-model}
 
-\subsection{Схемы PostgreSQL}
+\subsection{Назначение приложения}
 
-Распределение основных таблиц по схемам PostgreSQL приведено в
-таблице~\ref{tab:appendix-schemas}.
+Приложение фиксирует целевую модель хранения данных платформы после перехода
+template-registry на MongoDB. Полные DDL- и миграционные артефакты оставлены
+в исходном коде репозитория.
+
+\subsection{Гибридная модель хранения}
+
+В текущей версии используется три хранилища:
+\begin{enumerate}
+    \item PostgreSQL для операционных контуров событий, запусков доставки и истории;
+    \item MongoDB для шаблонов уведомлений и их версий;
+    \item Redis для коммуникационного профиля получателя.
+\end{enumerate}
+
+Распределение контуров по хранилищам приведено в таблице~\ref{tab:appendix-storage-layout}.
 
 \begin{table}[h]
     \centering
     \footnotesize
     \renewcommand{\arraystretch}{1.15}
-    \caption{Основные схемы и таблицы PostgreSQL}
-    \label{tab:appendix-schemas}
-    \begin{tabular}{|L{0.18\textwidth}|L{0.28\textwidth}|L{0.42\textwidth}|}
+    \caption{Распределение данных по хранилищам}
+    \label{tab:appendix-storage-layout}
+    \begin{tabular}{|L{0.22\textwidth}|L{0.32\textwidth}|L{0.36\textwidth}|}
         \hline
-        \textbf{Схема} & \textbf{Таблицы} & \textbf{Назначение} \\
+        \textbf{Хранилище} & \textbf{Контуры} & \textbf{Назначение} \\
         \hline
-        nf\_fac & notification\_event, event\_audience, event\_recipient, dispatch, dispatch\_target, outbox\_message & Управление жизненным циклом события и запусков доставки. \\
+        PostgreSQL & nf\_fac, nf\_sched, nf\_mail, nf\_sms, nf\_hist & Операционные данные, outbox/inbox-журналы, статусы и история доставки. \\
         \hline
-        nf\_tpl & template, template\_version & Хранение карточек шаблонов, активной версии и канального содержимого. \\
+        MongoDB & template-registry (`templates`) & Шаблоны, версии шаблонов, канальные части шаблона, активная версия. \\
         \hline
-        nf\_sched & scheduled\_delivery\_task & Хранение отложенных почтовых задач и их состояний публикации. \\
-        \hline
-        nf\_mail & consumer\_inbox\_message, recipient\_mail\_settings, mail\_delivery, mail\_delivery\_attempt, outbox\_message & Почтовый входящий журнал, доставки, попытки и статусный outbox. \\
-        \hline
-        nf\_sms & consumer\_inbox\_message, sms\_delivery, sms\_delivery\_attempt, outbox\_message & SMS-входящий журнал, доставки, попытки и статусный outbox. \\
-        \hline
-        nf\_hist & delivery\_history & История статусов доставки по каналам. \\
+        Redis & profile-consent & Профиль получателя, ограничения каналов, адресные атрибуты. \\
         \hline
     \end{tabular}
 \end{table}
 
-\subsection{Ключевые ограничения и идентификаторы}
+\subsection{Коллекция шаблонов в MongoDB}
 
-Наиболее важные ограничения реляционной модели:
+Сервис template-registry использует одну коллекцию `templates`.
+Каждый документ включает:
 \begin{enumerate}
-    \item уникальность события фасада по client\_id + idempotency\_key;
-    \item уникальность запуска доставки по event\_id + idempotency\_key;
-    \item уникальность фактической доставки по комбинации запуска, получателя и канала;
-    \item уникальность записей о попытках по номеру попытки для конкретной доставки;
-    \item идемпотентность записи истории по outbox\_id.
+    \item метаданные шаблона (`templateId`, `clientId`, `name`, `description`, `status`);
+    \item номер активной версии `activeVersion`;
+    \item idempotency-ключ создания `createIdempotencyKey`;
+    \item массив `versions`, содержащий версии и канальные представления;
+    \item технические поля (`createdAt`, `updatedAt`, `schemaVersion`, `revision`).
 \end{enumerate}
 
-Эти ограничения закрывают два класса риска: появление дублей при сетевом повторе
-и нарушение согласованности при конкурентной обработке нескольких batch-потоков.
+\subsection{Индексы и ограничения MongoDB}
+
+Для коллекции `templates` применяются индексы:
+\begin{enumerate}
+    \item уникальный составной индекс `(clientId, templateId)`;
+    \item уникальный sparse-индекс `(clientId, createIdempotencyKey)`;
+    \item индекс `(clientId, updatedAt)` для `ListTemplates`.
+\end{enumerate}
+
+Целостность состава версии (допустимые каналы, непрерывность версий,
+корректность `activeVersion`) обеспечивается на уровне прикладной логики
+сервиса template-registry.
+
+\subsection{Пример документа шаблона}
+
+Ниже приведён обезличенный пример документа коллекции `templates`,
+используемого в тестовом контуре:
+
+\begin{verbatim}
+{
+  "templateId": "9fbf6f6a-7ef1-4f5a-bf9f-95cb9d0d4e2f",
+  "clientId": "2e08a6f8-1fc5-4eb7-bb9a-c54c5a3028af",
+  "name": "order-status",
+  "description": "Шаблон уведомления о статусе заказа",
+  "status": "TEMPLATE_STATUS_PUBLISHED",
+  "activeVersion": 3,
+  "createIdempotencyKey": "create-order-status-v1",
+  "schemaVersion": 1,
+  "versions": [
+    {
+      "version": 3,
+      "engine": "TEMPLATE_ENGINE_HANDLEBARS",
+      "contents": [
+        {
+          "channel": "CHANNEL_EMAIL",
+          "subject": "Заказ {{orderId}} обновлён",
+          "body": "Здравствуйте, {{name}}. Новый статус: {{status}}."
+        },
+        {
+          "channel": "CHANNEL_SMS",
+          "subject": "",
+          "body": "Заказ {{orderId}}: статус {{status}}."
+        }
+      ],
+      "createdAt": "2026-04-13T11:10:34Z"
+    }
+  ],
+  "createdAt": "2026-04-13T09:00:11Z",
+  "updatedAt": "2026-04-13T11:10:34Z"
+}
+\end{verbatim}
+
+\subsection{Ключевые ограничения данных}
+
+Критичные ограничения модели:
+\begin{enumerate}
+    \item уникальность события по паре \texttt{client\_id} и \texttt{idempotency\_key} в командном контуре;
+    \item уникальность запуска доставки в границах события;
+    \item уникальность факта канальной доставки для ключевой бизнес-комбинации;
+    \item уникальность шаблона по паре `(clientId, templateId)` в MongoDB;
+    \item уникальность идемпотентного создания шаблона по `(clientId, createIdempotencyKey)`.
+\end{enumerate}
 
 \subsection{Служебные журналы}
 
-С точки зрения архитектуры хранения особое значение имеют две группы таблиц:
+Для контролируемого обмена и обработки используются два класса служебных данных:
 \begin{enumerate}
-    \item outbox\_message во фасаде и sender-сервисах;
-    \item consumer\_inbox\_message в sender-сервисах.
+    \item исходящие журналы интеграционных событий;
+    \item входящие журналы потреблённых сообщений.
 \end{enumerate}
 
-Таблицы outbox содержат:
-\begin{enumerate}
-    \item тип агрегата;
-    \item идентификатор агрегата;
-    \item тип события;
-    \item payload и headers в JSON-виде;
-    \item время создания;
-    \item признаки аренды, повтора и подтверждения публикации.
-\end{enumerate}
-
-Таблицы inbox содержат:
-\begin{enumerate}
-    \item идентификатор входящего сообщения;
-    \item тип агрегата и тип события;
-    \item полезную нагрузку;
-    \item статус обработки (NEW, PROCESSING, PROCESSED, FAILED);
-    \item время приёма и время завершения.
-\end{enumerate}
+Их совместное применение обеспечивает трассируемость и восстановление обработки
+после частичных сбоев без потери состояния.
 
 \subsection{Redis-модель профиля получателя}
 
-В profile-consent используется Redis-хеш. Состав полей приведён в
-таблице~\ref{tab:appendix-redis-profile}.
-
-\begin{table}[h]
-    \centering
-    \footnotesize
-    \renewcommand{\arraystretch}{1.15}
-    \caption{Поля профиля получателя в Redis}
-    \label{tab:appendix-redis-profile}
-    \begin{tabular}{|L{0.34\textwidth}|L{0.50\textwidth}|}
-        \hline
-        \textbf{Поле} & \textbf{Смысл} \\
-        \hline
-        active & Признак активности получателя. \\
-        \hline
-        preferred\_channel & Предпочитаемый канал коммуникации. \\
-        \hline
-        email.enabled & Разрешён ли email-канал. \\
-        \hline
-        email.blacklisted & Заблокирован ли email-канал. \\
-        \hline
-        email.destination & Адрес электронной почты. \\
-        \hline
-        sms.enabled & Разрешён ли SMS-канал. \\
-        \hline
-        sms.blacklisted & Заблокирован ли SMS-канал. \\
-        \hline
-        sms.destination & Номер телефона. \\
-        \hline
-        push.enabled & Разрешён ли push-канал. \\
-        \hline
-        push.blacklisted & Заблокирован ли push-канал. \\
-        \hline
-        push.destination & Идентификатор push-адресата или устройства. \\
-        \hline
-        updated\_at & Время последнего обновления профиля. \\
-        \hline
-    \end{tabular}
-\end{table}
-
-\subsection{Связь между уровнями данных}
-
-Архитектура хранения выстроена так, чтобы каждый уровень решал собственную задачу:
+Профиль получателя хранится в Redis-хеше и включает:
 \begin{enumerate}
-    \item PostgreSQL хранит устойчивое доменное состояние, журналы и историю;
-    \item Redis хранит оперативный профиль получателя;
-    \item Kafka переносит состояние между сервисами в виде событийных сообщений.
+    \item признак активности;
+    \item предпочитаемый канал;
+    \item атрибуты доступности и адресации для email, SMS и push;
+    \item метку актуальности профиля.
 \end{enumerate}
 
-Такое распределение ролей позволяет не смешивать транзакционные данные, кэш
-получателя и транспорт межсервисного обмена в одном технологическом слое.
-
-
+Доступ к модели профиля выполняется только через выделенный сервисный контракт,
+что исключает прямую зависимость остальных сервисов от внутреннего формата
+хранилища.
