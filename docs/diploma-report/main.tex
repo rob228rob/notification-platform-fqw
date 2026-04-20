@@ -1,5 +1,4 @@
 \documentclass[bachelor, fontsize=14]{diploma}
-\usepackage{xcolor}
 
 \student{Батоян Роберт Левонович}
 \group{М8О-407Б-22}
@@ -23,7 +22,6 @@
 \input{contents/terms}
 
 \addbibresource{main.bib}
-\newcommand{\assumption}[1]{\textcolor{red}{\textbf{Допущение:} #1}}
 
 \begin{document}
     \maketitle
@@ -46,9 +44,5 @@
     \printbibliography
 
     \appendix
-    \include{contents/8-appendix-contracts}
-    \include{contents/9-appendix-kafka}
-    \include{contents/10-appendix-data-model}
-    \include{contents/11-appendix-observability}
-    % \include{contents/12-appendix-assumptions} % УДАЛИТЬ ПЕРЕД ФИНАЛЬНОЙ СДАЧЕЙ
+    \include{contents/8-appendix-repository-qr}
 \end{document}

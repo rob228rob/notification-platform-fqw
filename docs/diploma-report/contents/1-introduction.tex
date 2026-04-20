@@ -43,10 +43,10 @@
 В интеграционных мануалах и инженерной литературе есть ряд паттернов, которые применимы к
 построению событийных распределённых систем, а именно: transactional outbox,
 transactional inbox, idempotency, retry и eventual consistency
-\cite{richardson_patterns,kleppmann_ddia,nygard_releaseit}. Технологические
+\cite{richardson_patterns,kleppmann_ddia,nygard_releaseit,hohpe_woolf_eip}. Технологические
 аспекты их применения раскрыты в документации Apache Kafka, PostgreSQL,
 MongoDB, Spring Framework и gRPC
-\cite{kafka_docs,kafka_design_semantics,kafka_producer_configs,postgres_docs,postgres_select_skip_locked,mongodb_docs,mongodb_indexes_docs,grpc_docs}.
+\cite{kafka_docs,kafka_in_action,rogov_postgresql17_internals,mongodb_docs,grpc_docs,spring_boot_docs}.
 
 Однако для предметной области уведомлений недостаточно использовать отдельные
 паттерны и технологии изолированно. Требуется их согласованное взаимодействие в
@@ -86,9 +86,9 @@ MongoDB, Spring Framework и gRPC
     \item сравнительный анализ архитектурных вариантов и транспортов межсервисного обмена;
     \item проектирование гибридной модели хранения, включающей реляционную модель
     операционных данных, документоориентированную модель шаблонов и модель хранения
-    профиля получателя \cite{postgres_docs,mongodb_docs,redis_docs};
+    профиля получателя \cite{rogov_postgresql17_internals,mongodb_docs};
     \item архитектурное моделирование с использованием C4-подхода и Structurizr DSL
-    \cite{c4model,structurizr_dsl_docs};
+    \cite{structurizr_dsl_docs};
     \item экспериментальная проверка корректности и устойчивости системы по метрикам,
     журналам и данным истории доставки.
 \end{enumerate}
@@ -123,14 +123,4 @@ MongoDB, Spring Framework и gRPC
 Структура и оформление пояснительной записки выполнены с опорой на ГОСТ 7.32-2017,
 а библиографические ссылки и описание источников оформлены в соответствии с
 ГОСТ Р 7.0.5-2008 и ГОСТ Р 7.0.100-2018
-\cite{gost_732017,gost_r_705_2008,gost_r_70100_2018}.
-
-\subsection*{Служебный список допущений}
-
-\begin{enumerate}
-    \item \assumption{В текущий LaTeX-проект не включены отдельные файлы задания на ВКР
-    и календарного плана; в комплекте для защиты они должны быть приложены как
-    внешние документы.}
-    \item \assumption{В рамках данной ВКР границы реализации ограничены email- и
-    SMS-каналами; иные каналы доставки рассматриваются как направление расширения.}
-\end{enumerate}
+.
