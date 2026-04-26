@@ -22,47 +22,45 @@
 \contentsline {subsection}{\numberline {2.3}Верхнеуровневая модель данных и сервисных границ}{23}{subsection.2.3}%
 \contentsline {subsection}{\numberline {2.4}Верхнеуровневые потоки данных}{24}{subsection.2.4}%
 \contentsline {subsubsection}{\numberline {2.4.1}Поток приёма команды и регистрации события}{24}{subsubsection.2.4.1}%
-\contentsline {subsubsection}{\numberline {2.4.2}Поток запуска доставки}{27}{subsubsection.2.4.2}%
+\contentsline {subsubsection}{\numberline {2.4.2}Поток запуска доставки}{26}{subsubsection.2.4.2}%
 \contentsline {subsubsection}{\numberline {2.4.3}Поток отложенной доставки}{27}{subsubsection.2.4.3}%
 \contentsline {subsubsection}{\numberline {2.4.4}Поток канальной обработки и истории}{27}{subsubsection.2.4.4}%
-\contentsline {subsection}{\numberline {2.5}Kafka-архитектура событийного контура}{28}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.5}Kafka-архитектура событийного контура}{27}{subsection.2.5}%
 \contentsline {subsubsection}{\numberline {2.5.1}Маршрут событийного потока}{28}{subsubsection.2.5.1}%
-\contentsline {subsubsection}{\numberline {2.5.2}Соглашения Kafka-контура}{29}{subsubsection.2.5.2}%
+\contentsline {subsubsection}{\numberline {2.5.2}Соглашения Kafka-контура}{28}{subsubsection.2.5.2}%
 \contentsline {subsection}{\numberline {2.6}Механизмы надёжности на архитектурном уровне}{29}{subsection.2.6}%
 \contentsline {subsection}{\numberline {2.7}Архитектура профиля получателя}{29}{subsection.2.7}%
-\contentsline {subsection}{\numberline {2.8}Архитектура наблюдаемости}{30}{subsection.2.8}%
-\contentsline {subsection}{\numberline {2.9}Архитектура безопасности}{30}{subsection.2.9}%
-\contentsline {subsection}{\numberline {2.10}Выводы по разделу}{30}{subsection.2.10}%
-\contentsline {section}{\numberline {3}Реализация системы, моделирование данных и контракты взаимодействия}{32}{section.3}%
-\contentsline {subsection}{\numberline {3.1}Технологический стек и модульная структура}{32}{subsection.3.1}%
+\contentsline {subsection}{\numberline {2.8}Архитектура наблюдаемости}{29}{subsection.2.8}%
+\contentsline {subsection}{\numberline {2.9}Выводы по разделу}{30}{subsection.2.9}%
+\contentsline {section}{\numberline {3}Реализация системы, моделирование данных и контракты взаимодействия}{31}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Технологический стек и модульная структура}{31}{subsection.3.1}%
 \contentsline {subsection}{\numberline {3.2}Моделирование данных}{32}{subsection.3.2}%
 \contentsline {subsubsection}{\numberline {3.2.1}Реляционная модель}{32}{subsubsection.3.2.1}%
-\contentsline {subsubsection}{\numberline {3.2.2}Документоориентированная модель шаблонов}{34}{subsubsection.3.2.2}%
-\contentsline {subsubsection}{\numberline {3.2.3}Модель профиля получателя}{34}{subsubsection.3.2.3}%
-\contentsline {subsection}{\numberline {3.3}Контракты взаимодействия}{35}{subsection.3.3}%
-\contentsline {subsubsection}{\numberline {3.3.1}Контракты управления событиями и доставкой}{35}{subsubsection.3.3.1}%
-\contentsline {subsubsection}{\numberline {3.3.2}Контракты шаблонов, профиля и истории}{35}{subsubsection.3.3.2}%
-\contentsline {subsubsection}{\numberline {3.3.3}Расположение контрактов в кодовой базе}{36}{subsubsection.3.3.3}%
-\contentsline {subsubsection}{\numberline {3.3.4}Событийные контракты}{36}{subsubsection.3.3.4}%
-\contentsline {subsection}{\numberline {3.4}Ключевые механизмы реализации}{36}{subsection.3.4}%
-\contentsline {subsection}{\numberline {3.5}Выводы по разделу}{37}{subsection.3.5}%
-\contentsline {section}{\numberline {4}Развёртывание, эксплуатация и тестирование}{39}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Схема развёртывания и контур проверки}{39}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Процедура проверки}{39}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Критерии успешности}{40}{subsection.4.3}%
-\contentsline {subsection}{\numberline {4.4}Результаты функциональной и сквозной проверки}{40}{subsection.4.4}%
-\contentsline {subsection}{\numberline {4.5}Результаты нагрузочного прогона}{41}{subsection.4.5}%
+\contentsline {subsubsection}{\numberline {3.2.2}Документоориентированная модель шаблонов}{33}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Модель профиля получателя}{33}{subsubsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.3}Контракты взаимодействия}{34}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}Контракты управления событиями и доставкой}{34}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}Контракты шаблонов, профиля и истории}{34}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3}Событийные контракты}{35}{subsubsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.4}Ключевые механизмы реализации}{35}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Выводы по разделу}{36}{subsection.3.5}%
+\contentsline {section}{\numberline {4}Развёртывание, эксплуатация и тестирование}{38}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Схема развёртывания и контур проверки}{38}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Процедура проверки}{38}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Критерии успешности}{39}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Результаты функциональной и сквозной проверки}{39}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Результаты нагрузочного прогона}{40}{subsection.4.5}%
 \contentsline {subsection}{\numberline {4.6}Состав метрик и источник артефактов}{44}{subsection.4.6}%
-\contentsline {subsection}{\numberline {4.7}Интерпретация и инженерные выводы}{45}{subsection.4.7}%
-\contentsline {subsection}{\numberline {4.8}Выводы по разделу}{46}{subsection.4.8}%
-\contentsline {section}{\numberline {5}Технико-экономическая оценка и анализ эксплуатационных рисков}{47}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Подход к оценке}{47}{subsection.5.1}%
-\contentsline {subsection}{\numberline {5.2}Факторы затрат}{47}{subsection.5.2}%
-\contentsline {subsection}{\numberline {5.3}Связь архитектурных решений с экономическим эффектом}{47}{subsection.5.3}%
-\contentsline {subsection}{\numberline {5.4}Сравнительная оценка вариантов}{48}{subsection.5.4}%
-\contentsline {subsection}{\numberline {5.5}Эксплуатационные риски и меры снижения}{49}{subsection.5.5}%
-\contentsline {subsection}{\numberline {5.6}Выводы по разделу}{49}{subsection.5.6}%
-\contentsline {structure}{\numberline {}ЗАКЛЮЧЕНИЕ}{50}{structure.4}%
-\contentsline {structure}{\numberline {}СПИСОК~ИСПОЛЬЗОВАННЫХ~ИСТОЧНИКОВ}{52}{structure.5}%
-\contentsline {section}{ПРИЛОЖЕНИЕ~А~{Репозиторий проекта}}{53}{structure.5}%
+\contentsline {subsection}{\numberline {4.7}Интерпретация и инженерные выводы}{44}{subsection.4.7}%
+\contentsline {subsection}{\numberline {4.8}Выводы по разделу}{45}{subsection.4.8}%
+\contentsline {section}{\numberline {5}Технико-экономическая оценка и анализ эксплуатационных рисков}{46}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Подход к оценке}{46}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Факторы затрат}{46}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Связь архитектурных решений с экономическим эффектом}{46}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Сравнительная оценка вариантов}{47}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}Эксплуатационные риски и меры снижения}{48}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}Выводы по разделу}{48}{subsection.5.6}%
+\contentsline {structure}{\numberline {}ЗАКЛЮЧЕНИЕ}{49}{structure.4}%
+\contentsline {structure}{\numberline {}СПИСОК~ИСПОЛЬЗОВАННЫХ~ИСТОЧНИКОВ}{51}{structure.5}%
+\contentsline {section}{ПРИЛОЖЕНИЕ~А~{Репозиторий проекта}}{52}{structure.5}%
 \contentsfinish 
