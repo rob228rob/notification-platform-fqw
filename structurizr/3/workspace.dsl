@@ -81,11 +81,15 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
     views {
         systemContext platform "SystemContextCurrent" "System context of the current notification platform implementation." {
             include *
+            exclude platform.prometheus
+            exclude platform.grafana
             autolayout lr
         }
 
         container platform "ContainersCurrent" "Container view of the current notification platform implementation." {
             include *
+            exclude platform.prometheus
+            exclude platform.grafana
             autolayout lr
         }
 

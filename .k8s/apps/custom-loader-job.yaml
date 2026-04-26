@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: custom-loader
+spec:
+  suspend: true
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: custom-loader
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: custom-loader
+          image: custom-loader:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOADER_MODE
+              value: seed-and-load
+            - name: LOADER_USERS
+              value: "10000"
+            - name: LOADER_THREADS
+              value: "10"
+            - name: LOADER_QPS_START
+              value: "25"
+            - name: LOADER_QPS_END
+              value: "90"
+            - name: LOADER_DURATION_SECONDS
+              value: "1800"
+            - name: FACADE_HOST
+              value: notification-facade
+            - name: FACADE_PORT
+              value: "9090"
+            - name: FACADE_PLAINTEXT
+              value: "true"
+            - name: REDIS_HOST
+              value: redis
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_USER
+              value: redisuser
+            - name: REDIS_PASSWORD
+              value: redisuserpassword
+            - name: REDIS_KEY_PREFIX
+              value: "profile-consent:recipient:"

@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-facade
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-facade
+  template:
+    metadata:
+      labels:
+        app: notification-facade
+    spec:
+      containers:
+        - name: notification-facade
+          image: notification-facade:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8910
+              name: http
+            - containerPort: 9090
+              name: grpc
+          env:
+            - name: SERVER_PORT
+              value: "8910"
+            - name: GRPC_SERVER_PORT
+              value: "9090"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: POSTGRESQL_URL
+              value: jdbc:postgresql://postgres:5432/main_db?currentSchema=nf_fac
+            - name: POSTGRESQL_USER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: username
+            - name: POSTGRESQL_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+            - name: TEMPLATE_REGISTRY_HOST
+              value: template-registry
+            - name: TEMPLATE_REGISTRY_PORT
+              value: "9090"
+            - name: TEMPLATE_REGISTRY_PLAINTEXT
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8910
+            initialDelaySeconds: 25
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8910
+            initialDelaySeconds: 45
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-facade
+spec:
+  selector:
+    app: notification-facade
+  ports:
+    - name: http
+      port: 8910
+      targetPort: 8910
+    - name: grpc
+      port: 9090
+      targetPort: 9090
+  type: ClusterIP

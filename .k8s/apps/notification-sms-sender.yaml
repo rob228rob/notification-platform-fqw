@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-sms-sender
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-sms-sender
+  template:
+    metadata:
+      labels:
+        app: notification-sms-sender
+    spec:
+      containers:
+        - name: notification-sms-sender
+          image: notification-sms-sender:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8914
+              name: http
+          env:
+            - name: SERVER_PORT
+              value: "8914"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: SMS_SENDER_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/main_db?currentSchema=nf_sms
+            - name: SMS_SENDER_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: username
+            - name: SMS_SENDER_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+            - name: PROFILE_CONSENT_HOST
+              value: profile-consent
+            - name: PROFILE_CONSENT_PORT
+              value: "9096"
+            - name: NOTIFICATION_HISTORY_HOST
+              value: history-writer
+            - name: NOTIFICATION_HISTORY_PORT
+              value: "9091"
+            - name: SMS_GATEWAY_LOG_ONLY
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8914
+            initialDelaySeconds: 25
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8914
+            initialDelaySeconds: 45
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-sms-sender
+spec:
+  selector:
+    app: notification-sms-sender
+  ports:
+    - name: http
+      port: 8914
+      targetPort: 8914
+  type: ClusterIP

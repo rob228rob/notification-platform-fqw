@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: template-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: template-registry
+  template:
+    metadata:
+      labels:
+        app: template-registry
+    spec:
+      containers:
+        - name: template-registry
+          image: template-registry:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8916
+              name: http
+            - containerPort: 9090
+              name: grpc
+          env:
+            - name: SERVER_PORT
+              value: "8916"
+            - name: GRPC_SERVER_PORT
+              value: "9090"
+            - name: MONGODB_URI
+              value: mongodb://mongo:27017/template_registry
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8916
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8916
+            initialDelaySeconds: 40
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: template-registry
+spec:
+  selector:
+    app: template-registry
+  ports:
+    - name: http
+      port: 8916
+      targetPort: 8916
+    - name: grpc
+      port: 9090
+      targetPort: 9090
+  type: ClusterIP
