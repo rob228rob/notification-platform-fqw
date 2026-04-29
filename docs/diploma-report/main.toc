@@ -1,0 +1,66 @@
+\babel@toc {russian}{}\relax 
+\contentsline {structure}{\numberline {}ТЕРМИНЫ~И~ОПРЕДЕЛЕНИЯ}{6}{structure.1}%
+\contentsline {structure}{\numberline {}ПЕРЕЧЕНЬ~СОКРАЩЕНИЙ~И~ОБОЗНАЧЕНИЙ}{8}{structure.2}%
+\contentsline {structure}{\numberline {}ВВЕДЕНИЕ}{9}{structure.3}%
+\contentsline {section}{\numberline {1}Аналитическая глава, постановка задачи и требования}{13}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Предметная область и особенности уведомительного процесса}{13}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Проблемы прямых синхронных подходов}{13}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Аналитическая декомпозиция жизненного цикла уведомления}{14}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}Сравнение архитектурных вариантов}{14}{subsection.1.4}%
+\contentsline {subsection}{\numberline {1.5}Сравнение транспортов межсервисного взаимодействия}{15}{subsection.1.5}%
+\contentsline {subsection}{\numberline {1.6}Сравнение вариантов работы с профилем получателя}{16}{subsection.1.6}%
+\contentsline {subsection}{\numberline {1.7}Постановка задачи}{16}{subsection.1.7}%
+\contentsline {subsubsection}{\numberline {1.7.1}Функциональные требования}{17}{subsubsection.1.7.1}%
+\contentsline {subsubsection}{\numberline {1.7.2}Нефункциональные требования}{17}{subsubsection.1.7.2}%
+\contentsline {subsubsection}{\numberline {1.7.3}Требования к надёжности и обработке ошибок}{17}{subsubsection.1.7.3}%
+\contentsline {subsubsection}{\numberline {1.7.4}Требования к данным и хранению}{18}{subsubsection.1.7.4}%
+\contentsline {subsection}{\numberline {1.8}Типовые сценарии использования}{19}{subsection.1.8}%
+\contentsline {subsection}{\numberline {1.9}Выводы по разделу}{19}{subsection.1.9}%
+\contentsline {section}{\numberline {2}Проектирование архитектуры распределённой платформы}{20}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Архитектурные принципы}{20}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Контейнерная декомпозиция и границы ответственности}{21}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Верхнеуровневая модель данных и сервисных границ}{23}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Верхнеуровневые потоки данных}{24}{subsection.2.4}%
+\contentsline {subsubsection}{\numberline {2.4.1}Поток приёма команды и регистрации события}{24}{subsubsection.2.4.1}%
+\contentsline {subsubsection}{\numberline {2.4.2}Поток запуска доставки}{26}{subsubsection.2.4.2}%
+\contentsline {subsubsection}{\numberline {2.4.3}Поток отложенной доставки}{27}{subsubsection.2.4.3}%
+\contentsline {subsubsection}{\numberline {2.4.4}Поток канальной обработки и истории}{27}{subsubsection.2.4.4}%
+\contentsline {subsection}{\numberline {2.5}Kafka-архитектура событийного контура}{27}{subsection.2.5}%
+\contentsline {subsubsection}{\numberline {2.5.1}Маршрут событийного потока}{28}{subsubsection.2.5.1}%
+\contentsline {subsubsection}{\numberline {2.5.2}Соглашения Kafka-контура}{28}{subsubsection.2.5.2}%
+\contentsline {subsection}{\numberline {2.6}Механизмы надёжности на архитектурном уровне}{29}{subsection.2.6}%
+\contentsline {subsection}{\numberline {2.7}Архитектура профиля получателя}{29}{subsection.2.7}%
+\contentsline {subsection}{\numberline {2.8}Архитектура наблюдаемости}{29}{subsection.2.8}%
+\contentsline {subsection}{\numberline {2.9}Выводы по разделу}{30}{subsection.2.9}%
+\contentsline {section}{\numberline {3}Реализация системы, моделирование данных и контракты взаимодействия}{31}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Технологический стек и модульная структура}{31}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Моделирование данных}{32}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Реляционная модель}{32}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Документоориентированная модель шаблонов}{33}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Модель профиля получателя}{33}{subsubsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.3}Контракты взаимодействия}{34}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}Контракты управления событиями и доставкой}{34}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}Контракты шаблонов, профиля и истории}{34}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3}Событийные контракты}{35}{subsubsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.4}Ключевые механизмы реализации}{35}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Выводы по разделу}{36}{subsection.3.5}%
+\contentsline {section}{\numberline {4}Развёртывание, эксплуатация и тестирование}{38}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Схема развёртывания и контур проверки}{38}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Процедура проверки}{38}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Критерии успешности}{39}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Результаты функциональной и сквозной проверки}{39}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Результаты нагрузочного прогона}{40}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Состав метрик и источник артефактов}{44}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.7}Интерпретация и инженерные выводы}{44}{subsection.4.7}%
+\contentsline {subsection}{\numberline {4.8}Выводы по разделу}{45}{subsection.4.8}%
+\contentsline {section}{\numberline {5}Технико-экономическая оценка и анализ эксплуатационных рисков}{46}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Подход к оценке}{46}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Факторы затрат}{46}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Связь архитектурных решений с экономическим эффектом}{46}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Сравнительная оценка вариантов}{47}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}Эксплуатационные риски и меры снижения}{48}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}Выводы по разделу}{48}{subsection.5.6}%
+\contentsline {structure}{\numberline {}ЗАКЛЮЧЕНИЕ}{49}{structure.4}%
+\contentsline {structure}{\numberline {}СПИСОК~ИСПОЛЬЗОВАННЫХ~ИСТОЧНИКОВ}{51}{structure.5}%
+\contentsline {section}{ПРИЛОЖЕНИЕ~А~{Репозиторий проекта}}{52}{structure.5}%
+\contentsfinish 

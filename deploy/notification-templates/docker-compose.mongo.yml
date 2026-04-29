@@ -1,0 +1,13 @@
+services:
+  templates-registry-mongo:
+    image: mongo:7.0
+    container_name: templates-registry-mongo
+    ports:
+      - "37017:27017"
+    volumes:
+      - mongo_data_templates:/data/db
+    networks:
+      - shared
+
+volumes:
+  mongo_data_templates:

@@ -22,13 +22,13 @@
 
 Рекомендуемый способ, потому что не требует локально установленного TeX.
 
-### Linux / macOS
+### Linux / mac
 
 ```bash
 docker run --rm -v "${PWD}/docs/diploma-report:/doc" -w /doc diploma-latex-builder:latest latexmk -xelatex -interaction=nonstopmode main.tex
 ```
 
-### Windows (PowerShell)
+### Windows
 
 ```powershell
 docker run --rm -v "${PWD}\docs\diploma-report:/doc" -w /doc diploma-latex-builder:latest latexmk -xelatex -interaction=nonstopmode main.tex
@@ -54,23 +54,15 @@ cd docs/diploma-report
 latexmk -xelatex -interaction=nonstopmode main.tex
 ```
 
-## Вариант без команд: Overleaf
-
+## Вариант без команд (Overleaf)
 Можно обойтись без локальных команд и собирать PDF прямо в Overleaf.
 
-Флоу такой:
+Флоу простй:
 
 1. Открыть проект в Overleaf.
-2. Загрузить туда содержимое папки `docs/diploma-report`.
-3. Убедиться, что главным файлом выбран `main.tex`.
-4. Нажать `Recompile`.
-
-Если этот же проект уже существует в Overleaf, достаточно обновлять изменённые:
-
-- `.tex` файлы;
-- `main.bib`;
-- изображения;
-- файлы стилей.
+2. Загрузить туда содержимое папки docs/diploma-report
+3. Убедиться, что главным файлом выбран main.tex.
+4. Нажать Recompile.
 
 ## Очистка временных файлов
 

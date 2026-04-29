@@ -1,0 +1,426 @@
+### 0) Проверка: server reflection (просто чтобы понять, что порт живой)
+GRPC localhost:9090/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "host": "localhost",
+  "list_services": ""
+}
+
+###
+
+### CreateNotificationEvent (SCHEDULED) — sendAt строкой
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/CreateNotificationEvent
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "idempotencyKey": "idem-create-002",
+  "templateId": "reminder",
+  "templateVersion": 2,
+  "priority": "DELIVERY_PRIORITY_HIGH",
+  "preferredChannel": "CHANNEL_PUSH",
+  "strategy": {
+    "kind": "STRATEGY_KIND_SCHEDULED",
+    "sendAt": "2026-02-25T00:30:00Z"
+  },
+  "payload": { "title": "Reminder", "body": "Don't forget!" },
+  "audience": { "kind": "AUDIENCE_KIND_EXPLICIT", "snapshotOnDispatch": true }
+}
+
+
+### 1) CreateNotificationEvent (IMMEDIATE)
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/CreateNotificationEvent
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "idempotencyKey": "idem-create-001",
+  "templateId": "welcome-email",
+  "templateVersion": 1,
+  "priority": "DELIVERY_PRIORITY_NORMAL",
+  "preferredChannel": "CHANNEL_EMAIL",
+  "strategy": {
+    "kind": "STRATEGY_KIND_IMMEDIATE"
+  },
+  "payload": {
+    "firstName": "Armen",
+    "promo": "WELCOME10"
+  },
+  "audience": {
+    "kind": "AUDIENCE_KIND_EXPLICIT",
+    "snapshotOnDispatch": true,
+    "recipientId": [
+      "user-1001",
+      "user-1002"
+    ]
+  }
+}
+
+###
+
+### 2) CreateNotificationEvent (SCHEDULED)
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/CreateNotificationEvent
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "idempotencyKey": "idem-create-002",
+  "templateId": "reminder",
+  "templateVersion": 2,
+  "priority": "DELIVERY_PRIORITY_HIGH",
+  "preferredChannel": "CHANNEL_PUSH",
+  "strategy": {
+    "kind": "STRATEGY_KIND_SCHEDULED",
+    "sendAt": { "seconds": 1772000000, "nanos": 0 }
+  },
+  "payload": {
+    "title": "Reminder",
+    "body": "Don't forget!"
+  },
+  "audience": {
+    "kind": "AUDIENCE_KIND_EXPLICIT",
+    "snapshotOnDispatch": true
+  }
+}
+
+###
+
+### 3) GetNotificationEvent (подставь event_id из CreateEventResponse)
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/GetNotificationEvent
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "eventId": "{{event_id}}"
+}
+
+###
+
+### 4) UpdateNotificationEvent (FieldMask: priority + payload)
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/UpdateNotificationEvent
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "eventId": "{{event_id}}",
+  "updateMask": { "paths": ["priority", "payload"] },
+  "priority": "DELIVERY_PRIORITY_LOW",
+  "payload": {
+    "firstName": "Armen",
+    "promo": "WELCOME20"
+  }
+}
+
+###
+
+### 5) SetAudience (переключить на GROUPS — если реализовано, иначе получишь FAILED_PRECONDITION/UNIMPLEMENTED)
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/SetAudience
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "eventId": "{{event_id}}",
+  "audience": {
+    "kind": "AUDIENCE_KIND_GROUPS",
+    "snapshotOnDispatch": true,
+    "groupId": ["group-vip", "group-new-users"]
+  }
+}
+
+###
+
+### 6) SetAudience (EXPLICIT пустая, потом добавим через AddRecipients)
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/SetAudience
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "eventId": "{{event_id}}",
+  "audience": {
+    "kind": "AUDIENCE_KIND_EXPLICIT",
+    "snapshotOnDispatch": true
+  }
+}
+
+###
+
+### 7) AddRecipients (батч)
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/AddRecipients
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "eventId": "{{event_id}}",
+  "idempotencyKey": "idem-addrecipients-001",
+  "recipientId": ["user-2001", "user-2002", "user-2003"]
+}
+
+###
+
+### 8) GetAudience
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/GetAudience
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "eventId": "{{event_id}}"
+}
+
+###
+
+### 9) RemoveRecipients
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/RemoveRecipients
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "eventId": "{{event_id}}",
+  "recipientId": ["user-2002"]
+}
+
+###
+
+### 10) TriggerDispatch (MANUAL / IMMEDIATE event — создаст dispatch)
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/TriggerDispatch
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "eventId": "{{event_id}}",
+  "idempotencyKey": "idem-dispatch-001"
+}
+
+###
+
+### 11) GetDispatch (подставь dispatch_id из TriggerDispatchResponse)
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/GetDispatch
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "dispatchId": "{{dispatch_id}}"
+}
+
+###
+
+### 12) ListDispatches (по event_id)
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/ListDispatches
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "eventId": "{{event_id}}",
+  "page": 0,
+  "size": 20
+}
+
+###
+
+### 13) ListNotificationEvents (по клиенту из auth)
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/ListNotificationEvents
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "page": 0,
+  "size": 20,
+  "statusFilter": "EVENT_STATUS_UNSPECIFIED"
+}
+
+###
+
+### 14) CancelNotificationEvent (event_id)
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/CancelNotificationEvent
+Content-Type: application/grpc
+TE: trailers
+# authorization: Bearer {{jwt}}
+
+{
+  "eventId": "{{event_id}}",
+  "reason": "test cancel"
+}
+
+###
+### =========================
+### MAIL FLOW: 3 new events -> audience -> dispatch -> Kafka
+### Запускать сверху вниз. IntelliJ HTTP Client сохранит `event_id_*` и `dispatch_id_*`.
+### =========================
+
+### A1) CreateNotificationEvent
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/CreateNotificationEvent
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "idempotencyKey": "mail-batch-{{$timestamp}}-1",
+  "templateId": "welcome-email",
+  "templateVersion": 1,
+  "priority": "DELIVERY_PRIORITY_NORMAL",
+  "preferredChannel": "CHANNEL_EMAIL",
+  "strategy": {
+    "kind": "STRATEGY_KIND_IMMEDIATE"
+  },
+  "payload": {
+    "campaign": "spring-batch-a1",
+    "title": "Welcome A1",
+    "body": "First mail event from grpc curl"
+  },
+  "audience": {
+    "kind": "AUDIENCE_KIND_EXPLICIT",
+    "snapshotOnDispatch": true
+  }
+}
+> {% client.global.set("event_id_1", response.body.eventId); %}
+
+###
+### A2) AddRecipients
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/AddRecipients
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "eventId": "{{event_id_1}}",
+  "idempotencyKey": "mail-batch-add-{{$timestamp}}-1",
+  "recipientId": [
+    "mail-user-1001",
+    "mail-user-1002"
+  ]
+}
+
+###
+### A3) TriggerDispatch -> создаст dispatch и отправит mail_dispatch в Kafka
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/TriggerDispatch
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "eventId": "{{event_id_1}}",
+  "idempotencyKey": "mail-batch-dispatch-{{$timestamp}}-1"
+}
+> {% client.global.set("dispatch_id_1", response.body.dispatchId); %}
+
+###
+### B1) CreateNotificationEvent
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/CreateNotificationEvent
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "idempotencyKey": "mail-batch-{{$timestamp}}-2",
+  "templateId": "promo-email",
+  "templateVersion": 1,
+  "priority": "DELIVERY_PRIORITY_HIGH",
+  "preferredChannel": "CHANNEL_EMAIL",
+  "strategy": {
+    "kind": "STRATEGY_KIND_IMMEDIATE"
+  },
+  "payload": {
+    "campaign": "spring-batch-b1",
+    "title": "Promo B1",
+    "body": "Second mail event from grpc curl",
+    "promoCode": "WELCOME15"
+  },
+  "audience": {
+    "kind": "AUDIENCE_KIND_EXPLICIT",
+    "snapshotOnDispatch": true
+  }
+}
+> {% client.global.set("event_id_2", response.body.eventId); %}
+
+###
+### B2) AddRecipients
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/AddRecipients
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "eventId": "{{event_id_2}}",
+  "idempotencyKey": "mail-batch-add-{{$timestamp}}-2",
+  "recipientId": [
+    "mail-user-1003",
+    "mail-user-1004",
+    "mail-user-1005"
+  ]
+}
+
+###
+### B3) TriggerDispatch
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/TriggerDispatch
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "eventId": "{{event_id_2}}",
+  "idempotencyKey": "mail-batch-dispatch-{{$timestamp}}-2"
+}
+> {% client.global.set("dispatch_id_2", response.body.dispatchId); %}
+
+###
+### C1) CreateNotificationEvent
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/CreateNotificationEvent
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "idempotencyKey": "mail-batch-{{$timestamp}}-3",
+  "templateId": "digest-email",
+  "templateVersion": 2,
+  "priority": "DELIVERY_PRIORITY_LOW",
+  "preferredChannel": "CHANNEL_EMAIL",
+  "strategy": {
+    "kind": "STRATEGY_KIND_IMMEDIATE"
+  },
+  "payload": {
+    "campaign": "spring-batch-c1",
+    "title": "Digest C1",
+    "body": "Third mail event from grpc curl"
+  },
+  "audience": {
+    "kind": "AUDIENCE_KIND_EXPLICIT",
+    "snapshotOnDispatch": true
+  }
+}
+> {% client.global.set("event_id_3", response.body.eventId); %}
+
+###
+### C2) AddRecipients
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/AddRecipients
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "eventId": "{{event_id_3}}",
+  "idempotencyKey": "mail-batch-add-{{$timestamp}}-3",
+  "recipientId": [
+    "mail-user-1006",
+    "mail-user-1007"
+  ]
+}
+
+###
+### C3) TriggerDispatch
+GRPC localhost:9090/notification.facade.v1.NotificationFacade/TriggerDispatch
+Content-Type: application/grpc
+TE: trailers
+
+{
+  "eventId": "{{event_id_3}}",
+  "idempotencyKey": "mail-batch-dispatch-{{$timestamp}}-3"
+}
+> {% client.global.set("dispatch_id_3", response.body.dispatchId); %}

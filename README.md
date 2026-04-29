@@ -1,167 +1,68 @@
 # Notification Platform
 
-## Назначение
+Платформа предназначена для приёма событий уведомлений, запуска рассылки по каналам и фиксации итогов доставки. Репозиторий содержит код сервисов, контракты взаимодействия, инфраструктурные конфиги и материалы ВКР.
 
-Проект реализует два ключевых сервиса:
+![Легенда архитектурных элементов](structurizr/meta/diploma-ContainersCurrent-key.png)
+![Контейнерная схема платформы](structurizr/meta/diploma-ContainersCurrent.png)
 
-- `notification-facade` — API и orchestration-слой для создания notification events, управления аудиторией, запуска dispatch и публикации событий в Kafka через outbox.
-- `notification-mail-sender` — асинхронный mail delivery processor: принимает события из Kafka, пишет их в inbox, применяет бизнес-правила, планирует доставки в БД и выполняет отправку через mail gateway.
+## Состав системы
 
-## Сервисы
+`notification-facade`  
+Точка входа для клиентских запросов. Принимает события, формирует задания на доставку и публикует сообщения в Kafka через outbox.
 
-### `notification-facade`
+`template-registry`  
+Сервис шаблонов уведомлений. Хранит шаблоны и версии, отдаёт данные для рендеринга.
 
-Основные сценарии:
+`profile-consent`  
+Проверка статуса получателя и согласий на каналы доставки. Использует Redis как быстрое хранилище профилей.
 
-- Создание notification event через gRPC `CreateNotificationEvent`
-- Добавление получателей через `AddRecipients`
-- Запуск dispatch через `TriggerDispatch`
-- Публикация событий из локальной БД в Kafka через outbox relay
+`notification-mail-sender`  
+Обработка mail-доставки: приём событий из Kafka, планирование, отправка, публикация статусов.
 
-Публикуемые Kafka-события:
+`notification-sms-sender`  
+Обработка SMS-доставки по тому же принципу: приём задач, отправка, публикация статусов.
 
-- `notification_event / EventCreated` в topic `notification.facade.events`
-- `mail_dispatch / MailDispatchRequested` в topic `notification.mail.dispatches`
+`scheduler-delivery`  
+Обрабатывает отложенные задания и переводит их в активные dispatch-события.
 
-### `notification-mail-sender`
+`history-writer`  
+Фиксирует статусы доставок и отдаёт историю/сводные данные для отчётности.
 
-Основные сценарии:
+`custom-loader`  
+Нагрузочный генератор: подготавливает тестовые профили и создаёт поток событий для прогонов.
 
-- Чтение `notification_event / EventCreated` из Kafka
-- Чтение `mail_dispatch / MailDispatchRequested` из Kafka
-- Идемпотентная запись входящих событий в `nf.consumer_inbox_message`
-- Отложенная обработка inbox через scheduler-воркеры
-- Применение business rules перед постановкой mail delivery
-- Выполнение отправки через `MailGateway`
+## Сквозной поток данных
 
-## Потоки данных
+1. Клиент отправляет событие в `notification-facade`.
+2. Facade публикует событие/dispatch в Kafka.
+3. Канальные сервисы (`notification-mail-sender`, `notification-sms-sender`) читают сообщения, проверяют профиль получателя через `profile-consent`, выполняют доставку.
+4. Статусы доставки публикуются в Kafka.
+5. `history-writer` сохраняет итоги и предоставляет данные для сводок.
 
-### 1. Event creation flow
+## Инфраструктура
 
-1. Клиент вызывает `CreateNotificationEvent` в `notification-facade`
-2. `notification-facade` сохраняет event в своей БД
-3. Outbox relay публикует `notification_event / EventCreated` в Kafka topic `notification.facade.events`
-4. `notification-mail-sender` читает событие через `NotificationEventConsumer`
-5. Consumer пишет событие в `nf.consumer_inbox_message`
-6. `NotificationEventWorkflow` раз в `10000ms` подбирает `NEW` inbox rows
-7. Workflow валидирует payload, применяет business rules и создаёт запись в `nf.mail_delivery`
-8. `MailDispatchWorkflow` подбирает `PENDING` доставки и вызывает `MailGateway.send(...)`
-9. `LoggingMailGateway` пишет `MAIL send ...` в лог
+Основной локальный контур:
+- Kafka + Zookeeper
+- PostgreSQL
+- MongoDB
+- Redis
+- Prometheus
+- Grafana
 
-### 2. Dispatch flow
+Запуск:
 
-1. Клиент вызывает `TriggerDispatch` в `notification-facade`
-2. `notification-facade` создаёт dispatch и пишет `mail_dispatch / MailDispatchRequested` в outbox
-3. Outbox relay публикует сообщение в Kafka topic `notification.mail.dispatches`
-4. `notification-mail-sender` читает событие через `MailNotificationConsumer`
-5. Consumer пишет событие в `nf.consumer_inbox_message`
-6. `MailDispatchWorkflow` подбирает `NEW` inbox rows типа `mail_dispatch / MailDispatchRequested`
-7. Для каждого recipient применяются business rules
-8. Разрешённые доставки пишутся в `nf.mail_delivery` со статусом `PENDING`
-9. Запрещённые доставки пишутся в `nf.mail_delivery` со статусом `SKIPPED`
-10. Delivery worker берёт `PENDING/RETRY` и отправляет через `MailGateway`
+```powershell
+cd deploy
+docker-compose up -d
+```
 
-## Гарантии и идемпотентность
+Остановка:
 
-### Kafka consumer inbox
+```powershell
+docker-compose down
+```
 
-- Все входящие события сначала пишутся в `nf.consumer_inbox_message`
-- `message_id` — UUID из контракта события
-- Дубликаты режутся на уровне БД
-- Kafka consumer не выполняет бизнес-логику и не отправляет mail напрямую
-
-### Delivery deduplication
-
-- Все попытки доставки планируются в `nf.mail_delivery`
-- Основной ключ доставки: `(dispatch_id, recipient_id, channel)`
-- Дополнительно используется `idempotency_key`
-- Это исключает повторную постановку одной и той же доставки
-
-### Retry model
-
-- Повторные попытки выполняются из БД
-- Статусы доставки хранятся в `nf.mail_delivery`
-- История попыток хранится в `nf.mail_delivery_attempt`
-
-## Business rules
-
-Проверки выполняются в `MailDeliveryPlanService`.
-
-Текущие правила:
-
-- проверка `active`
-- проверка `email_consent`
-- ограничение по количеству доставок за окно `delivery.mail.counting-window`
-- fallback на дефолтные recipient settings, если запись в `nf.recipient_mail_settings` не найдена
-
-Поведение при отсутствии recipient settings:
-
-- используется кодовый default:
-  - `emailConsent = true`
-  - `active = true`
-  - `maxDeliveriesPerDay = delivery.mail.default-max-deliveries`
-
-## Схема БД
-
-### `notification-facade`
-
-Facade хранит собственные сущности:
-
-- `notification_event`
-- `event_audience`
-- `event_recipient`
-- `dispatch`
-- `dispatch_target`
-- `nf.outbox_message`
-
-Facade не зависит от таблиц `notification-mail-sender`.
-
-### `notification-mail-sender`
-
-Mail sender хранит только свои локальные таблицы:
-
-- `nf.consumer_inbox_message`
-- `nf.recipient_mail_settings`
-- `nf.mail_delivery`
-- `nf.mail_delivery_attempt`
-
-## Kafka topics
-
-- `notification.facade.events` — envelope для `notification_event / EventCreated`
-- `notification.mail.dispatches` — envelope для `mail_dispatch / MailDispatchRequested`
-- `notification.facade.dispatches` — общий dispatch topic, в mail-sender сейчас не используется
-
-## Конфигурация
-
-### `notification-facade`
-
-Основной конфиг:
-
-- `services/notification-facade/src/main/resources/application.yaml`
-
-Критичные параметры:
-
-- `outbox.relay.enabled`
-- `outbox.relay.topics.events`
-- `outbox.relay.topics.mail-dispatches`
-- `spring.kafka.bootstrap-servers`
-
-### `notification-mail-sender`
-
-Основной конфиг:
-
-- `services/notification-mail-sender/src/main/resources/application.yaml`
-
-Критичные параметры:
-
-- `delivery.mail.inbox-fixed-delay`
-- `delivery.mail.delivery-fixed-delay`
-- `delivery.notification-event.fixed-delay`
-- `delivery.mail.default-max-deliveries`
-- `delivery.mail.max-attempts`
-- `spring.kafka.bootstrap-servers`
-
-## Сборка
+## Запуск сервисов
 
 Сборка всего проекта:
 
@@ -169,47 +70,37 @@ Mail sender хранит только свои локальные таблицы
 .\gradlew build
 ```
 
-Сборка только facade:
-
-```powershell
-.\gradlew :services:notification-facade:compileJava
-```
-
-Сборка только mail-sender:
-
-```powershell
-.\gradlew :services:notification-mail-sender:compileJava
-```
-
-## Подъём инфраструктуры
-
-Docker compose находится в `deploy/docker-compose.yaml`.
-
-Поднять инфраструктуру:
-
-```powershell
-cd deploy
-docker compose up -d
-```
-
-Поднимаются:
-
-- Postgres для `notification-facade`
-- Postgres для `notification-mail-sender`
-- Kafka
-- Zookeeper
-- общая docker network
-
-## Локальный запуск сервисов
-
-Запуск `notification-facade`:
+Запуск отдельного сервиса:
 
 ```powershell
 .\gradlew :services:notification-facade:bootRun
-```
-
-Запуск `notification-mail-sender`:
-
-```powershell
 .\gradlew :services:notification-mail-sender:bootRun
+.\gradlew :services:notification-sms-sender:bootRun
+.\gradlew :services:template-registry:bootRun
+.\gradlew :services:profile-consent:bootRun
+.\gradlew :services:history-writer:bootRun
+.\gradlew :services:scheduler-delivery:bootRun
 ```
+
+## Нагрузочные артефакты
+
+Примеры графиков из последних прогонов лежат в `services/custom-loader/src/main/resources/grafana_07042026`.
+
+![Kafka publish RPS](services/custom-loader/src/main/resources/grafana_07042026/kafka_publish_rps.png)
+![Server RPS](services/custom-loader/src/main/resources/grafana_07042026/server_rps.png)
+
+Дополнительно:
+- `kafka_consume_rps.png`
+- `kafka_avg_latency.png`
+- `kafka_consume_avg_lat.png`
+- `grpc_p50_lat.png`
+- `grpc_processing_avg.png`
+
+## Структура репозитория
+
+- `services/` — бизнес-сервисы платформы
+- `libs/` — protobuf-контракты
+- `deploy/` — docker-compose и конфиги инфраструктуры
+- `structurizr/` — архитектурные диаграммы
+- `docs/` — материалы ВКР и отчёта
+- `.k8s/` — Kubernetes/k3d-манифесты
