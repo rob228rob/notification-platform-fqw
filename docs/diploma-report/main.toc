@@ -37,13 +37,13 @@
 \contentsline {subsection}{\numberline {3.2}Моделирование данных}{32}{subsection.3.2}%
 \contentsline {subsubsection}{\numberline {3.2.1}Реляционная модель}{32}{subsubsection.3.2.1}%
 \contentsline {subsubsection}{\numberline {3.2.2}Документоориентированная модель шаблонов}{33}{subsubsection.3.2.2}%
-\contentsline {subsubsection}{\numberline {3.2.3}Модель профиля получателя}{33}{subsubsection.3.2.3}%
-\contentsline {subsection}{\numberline {3.3}Контракты взаимодействия}{34}{subsection.3.3}%
-\contentsline {subsubsection}{\numberline {3.3.1}Контракты управления событиями и доставкой}{34}{subsubsection.3.3.1}%
-\contentsline {subsubsection}{\numberline {3.3.2}Контракты шаблонов, профиля и истории}{34}{subsubsection.3.3.2}%
-\contentsline {subsubsection}{\numberline {3.3.3}Событийные контракты}{35}{subsubsection.3.3.3}%
-\contentsline {subsection}{\numberline {3.4}Ключевые механизмы реализации}{35}{subsection.3.4}%
-\contentsline {subsection}{\numberline {3.5}Выводы по разделу}{36}{subsection.3.5}%
+\contentsline {subsubsection}{\numberline {3.2.3}Модель профиля получателя}{35}{subsubsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.3}Контракты взаимодействия}{35}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}Контракты управления событиями и доставкой}{35}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}Контракты шаблонов, профиля и истории}{36}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3}Событийные контракты}{36}{subsubsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.4}Ключевые механизмы реализации}{37}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Выводы по разделу}{37}{subsection.3.5}%
 \contentsline {section}{\numberline {4}Развёртывание, эксплуатация и тестирование}{38}{section.4}%
 \contentsline {subsection}{\numberline {4.1}Схема развёртывания и контур проверки}{38}{subsection.4.1}%
 \contentsline {subsection}{\numberline {4.2}Процедура проверки}{38}{subsection.4.2}%
