@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  30 APR 2026 09:03
+This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  2 MAY 2026 20:51
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1547,8 +1547,7 @@ Package csquotes Info: Redefining alias 'default' -> 'russian'.
 (./contents/0-abstract.aux) (./contents/1-introduction.aux)
 (./contents/2-system-analysis.aux) (./contents/3-architecture.aux)
 (./contents/4-implementation.aux) (./contents/5-deployment-testing.aux)
-(./contents/6-economic-evaluation.aux) (./contents/7-conclusion.aux)
-(./contents/8-appendix-repository-qr.aux))
+(./contents/7-conclusion.aux) (./contents/8-appendix-repository-qr.aux))
 \openout1 = `main.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 26.
@@ -1778,60 +1777,126 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 \openout2 = `contents/2-system-analysis.aux'.
 
 
-(./contents/2-system-analysis.tex [13
+(./contents/2-system-analysis.tex
+File: inc/structurizr-create-event-flow.png Graphic file (type bmp)
+<inc/structurizr-create-event-flow.png>
+ [13
 
 
 
 
-] [14]
-LaTeX Font Info:    Calculating math sizes for size <11.66681> on input line 64
+] [14] [15]
+LaTeX Font Info:    Calculating math sizes for size <11.66681> on input line 83
 .
+ [16]
+Overfull \hbox (2.75427pt too wide) in paragraph at lines 123--123
+[]|\TU/TimesNewRoman(0)/b/n/11.66681 Сохранность 
+ []
 
-Overfull \hbox (3.04285pt too wide) in paragraph at lines 64--77
+
+Overfull \hbox (33.19736pt too wide) in paragraph at lines 123--123
+[]|\TU/TimesNewRoman(0)/b/n/11.66681 Масштабирование 
+ []
+
+
+Overfull \hbox (7.41222pt too wide) in paragraph at lines 123--124
+[]|\TU/TimesNewRoman(0)/b/n/11.66681 Диагностика|  
+ []
+
+
+Overfull \hbox (6.00139pt too wide) in paragraph at lines 125--125
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 Дедупликация 
+ []
+
+
+Overfull \hbox (19.3772pt too wide) in paragraph at lines 125--125
+\TU/TimesNewRoman(0)/m/n/11.66681 масштабируются 
+ []
+
+
+Overfull \hbox (16.1073pt too wide) in paragraph at lines 127--127
+\TU/TimesNewRoman(0)/m/n/11.66681 контролируются 
+ []
+
+
+Overfull \hbox (4.52594pt too wide) in paragraph at lines 127--127
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 Независимого 
+ []
+
+
+Overfull \hbox (23.56996pt too wide) in paragraph at lines 127--127
+\TU/TimesNewRoman(0)/m/n/11.66681 масштабирования 
+ []
+
+
+Overfull \hbox (11.06949pt too wide) in paragraph at lines 127--128
+\TU/TimesNewRoman(0)/m/n/11.66681 сопровождать, 
+ []
+
+
+Overfull \hbox (17.4042pt too wide) in paragraph at lines 129--130
+\TU/TimesNewRoman(0)/m/n/11.66681 распределённая 
+ []
+
+
+Overfull \hbox (0.69208pt too wide) in paragraph at lines 131--131
+\TU/TimesNewRoman(0)/m/n/11.66681 deduplication, 
+ []
+
+
+Overfull \hbox (19.3772pt too wide) in paragraph at lines 131--131
+\TU/TimesNewRoman(0)/m/n/11.66681 масштабируются 
+ []
+
+
+Overfull \hbox (9.07431pt too wide) in paragraph at lines 121--134
  [][] 
  []
 
-[15]
-Overfull \hbox (3.05719pt too wide) in paragraph at lines 91--102
+[17]
+Overfull \hbox (3.05719pt too wide) in paragraph at lines 154--167
  [][] 
  []
 
-[16]
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-[17] [18]) [19]
+[18] [19] [20]) [21]
 \openout2 = `contents/3-architecture.aux'.
 
  (./contents/3-architecture.tex
 File: inc/structurizr-system-context.png Graphic file (type bmp)
 <inc/structurizr-system-context.png>
- [20
+ [22
 
 
 
 
 ]
-File: inc/structurizr-containers-current.png Graphic file (type bmp)
-<inc/structurizr-containers-current.png>
- [21] [22] [23] [24]
-File: inc/structurizr-create-event-flow.png Graphic file (type bmp)
-<inc/structurizr-create-event-flow.png>
-File: inc/FunctionModel_UML.png Graphic file (type bmp)
-<inc/FunctionModel_UML.png>
-
-[25] [26]
-LaTeX Font Info:    Calculating math sizes for size <9.3334> on input line 175.
-
-
-Overfull \hbox (3.05002pt too wide) in paragraph at lines 175--192
- [][] 
+Overfull \hbox (16.56847pt too wide) in paragraph at lines 45--45
+ []\TU/TimesNewRoman(0)/m/n/11.66681 notification.facade.events 
  []
 
 
+Overfull \hbox (25.66606pt too wide) in paragraph at lines 45--45
+ []\TU/TimesNewRoman(0)/m/n/11.66681 notification.mail.dispatches 
+ []
+
+
+Overfull \hbox (23.7178pt too wide) in paragraph at lines 45--45
+ []\TU/TimesNewRoman(0)/m/n/11.66681 notification.mail.scheduled 
+ []
+
+
+Overfull \hbox (23.08548pt too wide) in paragraph at lines 45--45
+ []\TU/TimesNewRoman(0)/m/n/11.66681 notification.sms.dispatches 
+ []
+
+[23] [24] [25]
+File: inc/structurizr-create-event-flow.png Graphic file (type bmp)
+<inc/structurizr-create-event-flow.png>
+ [26]
+
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[27] [28]) [29] [30]
+[27] [28] [29]) [30]
 \openout2 = `contents/4-implementation.aux'.
 
  (./contents/4-implementation.tex [31
@@ -1839,16 +1904,15 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 
 
 
-] [32]
-File: inc/mongo-template-data.png Graphic file (type bmp)
-<inc/mongo-template-data.png>
- [33] [34]
-[35]
-Overfull \hbox (22.45918pt too wide) in paragraph at lines 181--181
-\TU/TimesNewRoman(0)/m/n/11.66681 BatchGetRecipientDeliverySummaries|  
+]
+Overfull \hbox (3.05002pt too wide) in paragraph at lines 37--56
+ [][] 
  []
 
-[36]) [37]
+[32]
+File: inc/mongo-template-data.png Graphic file (type bmp)
+<inc/mongo-template-data.png>
+ [33] [34] [35] [36]) [37]
 \openout2 = `contents/5-deployment-testing.aux'.
 
  (./contents/5-deployment-testing.tex [38
@@ -1856,36 +1920,32 @@ Overfull \hbox (22.45918pt too wide) in paragraph at lines 181--181
 
 
 
-] [39] [40]
+]
+[39]
 File: inc/server_rps.png Graphic file (type bmp)
 <inc/server_rps.png>
- [41]
 File: inc/grpc_p50_lat.png Graphic file (type bmp)
 <inc/grpc_p50_lat.png>
+ [40]
 File: inc/kafka_avg_latency.png Graphic file (type bmp)
 <inc/kafka_avg_latency.png>
+ [41]
 File: inc/kafka_consume_rps.png Graphic file (type bmp)
 <inc/kafka_consume_rps.png>
  [42]
-[43] [44]) [45]
-\openout2 = `contents/6-economic-evaluation.aux'.
-
- (./contents/6-economic-evaluation.tex [46
+Overfull \vbox (47.39302pt too high) has occurred while \output is active []
 
 
-
-
-] [47]) [48]
+[43]) [44]
 \openout2 = `contents/7-conclusion.aux'.
 
-
-(./contents/7-conclusion.tex [49
-
+ (./contents/7-conclusion.tex [45
 
 
 
 
-]) [50] [51
+
+]) [46] [47
 
 
 
@@ -1897,7 +1957,7 @@ File: inc/kafka_consume_rps.png Graphic file (type bmp)
 (./contents/8-appendix-repository-qr.tex
 File: inc/QR_diploma_batoyan.png Graphic file (type bmp)
 <inc/QR_diploma_batoyan.png>
-) [52
+) [48
 
 
 ]
@@ -1906,19 +1966,18 @@ AED: lastpage setting LastPage
 (./main.aux (./contents/0-abstract.aux) (./contents/1-introduction.aux)
 (./contents/2-system-analysis.aux) (./contents/3-architecture.aux)
 (./contents/4-implementation.aux) (./contents/5-deployment-testing.aux)
-(./contents/6-economic-evaluation.aux) (./contents/7-conclusion.aux)
-(./contents/8-appendix-repository-qr.aux))
+(./contents/7-conclusion.aux) (./contents/8-appendix-repository-qr.aux))
 Package logreq Info: Writing requests to 'main.run.xml'.
 \openout1 = `main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 42831 strings out of 478025
- 863080 string characters out of 5841685
- 2020834 words of memory out of 5000000
- 62077 multiletter control sequences out of 15000+600000
- 530838 words of font info for 155 fonts, out of 8000000 for 9000
+ 42952 strings out of 478025
+ 864122 string characters out of 5841685
+ 2020044 words of memory out of 5000000
+ 62214 multiletter control sequences out of 15000+600000
+ 526173 words of font info for 134 fonts, out of 8000000 for 9000
  682 hyphenation exceptions out of 8191
- 138i,11n,134p,2324b,5656s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 138i,14n,134p,2324b,5656s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.pdf (52 pages).
+Output written on main.pdf (48 pages).
