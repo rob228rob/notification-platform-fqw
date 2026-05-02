@@ -7,8 +7,5 @@ kafka:
     password: kafka
 
 # бд разворачивается локально в докере
-postgresql:
-  url: jdbc:postgresql://localhost:25432/main_db?currentSchema=nf_tpl
-  user:
-    username: user
-    password: password
+mongodb:
+  uri: mongodb://localhost:27017/template_registry

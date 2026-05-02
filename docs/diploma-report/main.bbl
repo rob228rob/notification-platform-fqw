@@ -1,0 +1,330 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.2 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global}
+    \entry{kafka_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labeltitlesource}{title}
+      \field{title}{Apache Kafka Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://kafka.apache.org/documentation/
+      \endverb
+      \verb{url}
+      \verb https://kafka.apache.org/documentation/
+      \endverb
+    \endentry
+    \entry{kleppmann_ddia}{book}{}
+      \name{author}{1}{}{%
+        {{hash=34b8d5b1d29d175527a6642f3ec8a76d}{%
+           family={Kleppmann},
+           familyi={K\bibinitperiod},
+           given={Martin},
+           giveni={M\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Sebastopol}%
+      }
+      \list{publisher}{1}{%
+        {O'Reilly Media}%
+      }
+      \strng{namehash}{34b8d5b1d29d175527a6642f3ec8a76d}
+      \strng{fullhash}{34b8d5b1d29d175527a6642f3ec8a76d}
+      \strng{bibnamehash}{34b8d5b1d29d175527a6642f3ec8a76d}
+      \strng{authorbibnamehash}{34b8d5b1d29d175527a6642f3ec8a76d}
+      \strng{authornamehash}{34b8d5b1d29d175527a6642f3ec8a76d}
+      \strng{authorfullhash}{34b8d5b1d29d175527a6642f3ec8a76d}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Designing Data-Intensive Applications: The Big Ideas Behind Reliable, Scalable, and Maintainable Systems}
+      \field{year}{2017}
+    \endentry
+    \entry{newman_microservices}{book}{}
+      \name{author}{1}{}{%
+        {{hash=b6be43602c2787d279f8522a7d9713db}{%
+           family={Newman},
+           familyi={N\bibinitperiod},
+           given={Sam},
+           giveni={S\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Sebastopol}%
+      }
+      \list{publisher}{1}{%
+        {O'Reilly Media}%
+      }
+      \strng{namehash}{b6be43602c2787d279f8522a7d9713db}
+      \strng{fullhash}{b6be43602c2787d279f8522a7d9713db}
+      \strng{bibnamehash}{b6be43602c2787d279f8522a7d9713db}
+      \strng{authorbibnamehash}{b6be43602c2787d279f8522a7d9713db}
+      \strng{authornamehash}{b6be43602c2787d279f8522a7d9713db}
+      \strng{authorfullhash}{b6be43602c2787d279f8522a7d9713db}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{edition}{2}
+      \field{title}{Building Microservices: Designing Fine-Grained Systems}
+      \field{year}{2021}
+    \endentry
+    \entry{richardson_patterns}{book}{}
+      \name{author}{1}{}{%
+        {{hash=d0740bcf48754b8fa2cd3549a1d73461}{%
+           family={Richardson},
+           familyi={R\bibinitperiod},
+           given={Chris},
+           giveni={C\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Shelter Island}%
+      }
+      \list{publisher}{1}{%
+        {Manning Publications}%
+      }
+      \strng{namehash}{d0740bcf48754b8fa2cd3549a1d73461}
+      \strng{fullhash}{d0740bcf48754b8fa2cd3549a1d73461}
+      \strng{bibnamehash}{d0740bcf48754b8fa2cd3549a1d73461}
+      \strng{authorbibnamehash}{d0740bcf48754b8fa2cd3549a1d73461}
+      \strng{authornamehash}{d0740bcf48754b8fa2cd3549a1d73461}
+      \strng{authorfullhash}{d0740bcf48754b8fa2cd3549a1d73461}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Microservices Patterns}
+      \field{year}{2018}
+    \endentry
+    \entry{nygard_releaseit}{book}{}
+      \name{author}{1}{}{%
+        {{hash=7517211d7d5cad5693ec6ca951302ccc}{%
+           family={Nygard},
+           familyi={N\bibinitperiod},
+           given={Michael\bibnamedelima T.},
+           giveni={M\bibinitperiod\bibinitdelim T\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Raleigh}%
+      }
+      \list{publisher}{1}{%
+        {Pragmatic Bookshelf}%
+      }
+      \strng{namehash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{fullhash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{bibnamehash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{authorbibnamehash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{authornamehash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{authorfullhash}{7517211d7d5cad5693ec6ca951302ccc}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{edition}{2}
+      \field{title}{Release It! Design and Deploy Production-Ready Software}
+      \field{year}{2018}
+    \endentry
+    \entry{hohpe_woolf_eip}{book}{}
+      \name{author}{2}{}{%
+        {{hash=2ed2f5feceafdf9a03a27134da39d3d0}{%
+           family={Hohpe},
+           familyi={H\bibinitperiod},
+           given={Gregor},
+           giveni={G\bibinitperiod}}}%
+        {{hash=8ea1767d5a1edce116c79b82a83c54da}{%
+           family={Woolf},
+           familyi={W\bibinitperiod},
+           given={Bobby},
+           giveni={B\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Boston}%
+      }
+      \list{publisher}{1}{%
+        {Addison-Wesley}%
+      }
+      \strng{namehash}{ddf3be6dfde807c1811cbd3352154f04}
+      \strng{fullhash}{ddf3be6dfde807c1811cbd3352154f04}
+      \strng{bibnamehash}{ddf3be6dfde807c1811cbd3352154f04}
+      \strng{authorbibnamehash}{ddf3be6dfde807c1811cbd3352154f04}
+      \strng{authornamehash}{ddf3be6dfde807c1811cbd3352154f04}
+      \strng{authorfullhash}{ddf3be6dfde807c1811cbd3352154f04}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions}
+      \field{year}{2003}
+    \endentry
+    \entry{kafka_in_action}{book}{}
+      \name{author}{3}{}{%
+        {{hash=a455860ac15b7d587b4b8307ece48a28}{%
+           family={Scott},
+           familyi={S\bibinitperiod},
+           given={Dylan},
+           giveni={D\bibinitperiod}}}%
+        {{hash=3296381af2cec0c058ca6828c176f444}{%
+           family={Gamov},
+           familyi={G\bibinitperiod},
+           given={Viktor},
+           giveni={V\bibinitperiod}}}%
+        {{hash=e89c91b1e870e0293e3e726ffe9512c5}{%
+           family={Klein},
+           familyi={K\bibinitperiod},
+           given={Dave},
+           giveni={D\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Shelter Island}%
+      }
+      \list{publisher}{1}{%
+        {Manning Publications}%
+      }
+      \strng{namehash}{6c52ddafca1e6a577282938099c25c67}
+      \strng{fullhash}{6c52ddafca1e6a577282938099c25c67}
+      \strng{bibnamehash}{6c52ddafca1e6a577282938099c25c67}
+      \strng{authorbibnamehash}{6c52ddafca1e6a577282938099c25c67}
+      \strng{authornamehash}{6c52ddafca1e6a577282938099c25c67}
+      \strng{authorfullhash}{6c52ddafca1e6a577282938099c25c67}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Kafka in Action}
+      \field{year}{2022}
+    \endentry
+    \entry{rogov_postgresql17_internals}{book}{}
+      \name{author}{1}{}{%
+        {{hash=0f6bc473488c56906be6e7e457f16243}{%
+           family={Рогов},
+           familyi={Р\bibinitperiod},
+           given={Егор\bibnamedelima В.},
+           giveni={Е\bibinitperiod\bibinitdelim В\bibinitperiod}}}%
+      }
+      \list{language}{1}{%
+        {russian}%
+      }
+      \list{location}{1}{%
+        {Москва}%
+      }
+      \list{publisher}{1}{%
+        {ДМК Пресс}%
+      }
+      \strng{namehash}{0f6bc473488c56906be6e7e457f16243}
+      \strng{fullhash}{0f6bc473488c56906be6e7e457f16243}
+      \strng{bibnamehash}{0f6bc473488c56906be6e7e457f16243}
+      \strng{authorbibnamehash}{0f6bc473488c56906be6e7e457f16243}
+      \strng{authornamehash}{0f6bc473488c56906be6e7e457f16243}
+      \strng{authorfullhash}{0f6bc473488c56906be6e7e457f16243}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{isbn}{978-5-93700-372-0}
+      \field{title}{PostgreSQL 17 изнутри}
+      \field{year}{2025}
+    \endentry
+    \entry{mongodb_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labeltitlesource}{title}
+      \field{title}{MongoDB Manual}
+      \field{urlday}{13}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.mongodb.com/docs/manual/
+      \endverb
+      \verb{url}
+      \verb https://www.mongodb.com/docs/manual/
+      \endverb
+    \endentry
+    \entry{grpc_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labeltitlesource}{title}
+      \field{title}{gRPC Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://grpc.io/docs/
+      \endverb
+      \verb{url}
+      \verb https://grpc.io/docs/
+      \endverb
+    \endentry
+    \entry{spring_boot_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labeltitlesource}{title}
+      \field{title}{Spring Boot Reference Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.spring.io/spring-boot/reference/
+      \endverb
+      \verb{url}
+      \verb https://docs.spring.io/spring-boot/reference/
+      \endverb
+    \endentry
+    \entry{structurizr_dsl_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labeltitlesource}{title}
+      \field{title}{Structurizr DSL Documentation}
+      \field{urlday}{11}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.structurizr.com/dsl
+      \endverb
+      \verb{url}
+      \verb https://docs.structurizr.com/dsl
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

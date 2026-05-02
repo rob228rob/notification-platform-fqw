@@ -18,12 +18,10 @@ spring:
 
   config:
     import: classpath:creds/user-creds.yaml
-
-  flyway:
-    locations: classpath:db/migration
-#  autoconfigure:
-#    exclude:
-#      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+  data:
+    mongodb:
+      uri: ${mongodb.uri}
+      auto-index-creation: true
   kafka:
     bootstrap-servers: ${kafka.bootstrap.servers:localhost:9093}
     consumer:
@@ -57,31 +55,6 @@ spring:
       security:
         protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
       auto-create: true
-  jpa:
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-        use_sql_comments: true
-    show-sql: false
-    hibernate:
-      # set update or create to first startup
-      ddl-auto: none
-
-  datasource:
-    driver-class-name: org.postgresql.Driver
-    url: ${postgresql.url}
-    password: ${postgresql.user.password}
-    username: ${postgresql.user.username}
-
-  batch:
-    jdbc:
-      initialize-schema: always
-
-  liquibase:
-    enabled: true
-    change-log: classpath:db/changelog/db.changelog-master.yaml
-
   task:
     scheduling:
       pool:
@@ -103,20 +76,12 @@ server:
 logging:
   level:
     root: INFO
-    ru.batoyan.vkr.notification.facade: DEBUG
+    ru.batoyan.vkr.notification.templates: DEBUG
     com.mai.proj: DEBUG
-    liquibase: DEBUG
     org:
       springframework:
-        jdbc: DEBUG
-        orm: DEBUG
-        orm.jpa.JpaTransactionManager: DEBUG
+        data.mongodb.core.MongoTemplate: INFO
         security: INFO
-      hibernate:
-        jpa: DEBUG
-        tool.hbm2ddl: DEBUG
-        SQL: DEBUG
-        type.descriptor.sql.BasicBinder: INFO
 
 
 management:

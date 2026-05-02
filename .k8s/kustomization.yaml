@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: notification-platform
+
+resources:
+  - namespace.yaml
+  - infra/postgres.yaml
+  - infra/redis.yaml
+  - infra/mongo.yaml
+  - infra/zookeeper.yaml
+  - infra/kafka.yaml
+  - infra/prometheus.yaml
+  - infra/grafana.yaml
+  - apps/template-registry.yaml
+  - apps/profile-consent.yaml
+  - apps/history-writer.yaml
+  - apps/notification-facade.yaml
+  - apps/notification-mail-sender.yaml
+  - apps/notification-sms-sender.yaml
+  - apps/scheduler-delivery.yaml
+  - apps/custom-loader-job.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: notification-platform
+

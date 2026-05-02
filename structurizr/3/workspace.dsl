@@ -81,11 +81,27 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
     views {
         systemContext platform "SystemContextCurrent" "System context of the current notification platform implementation." {
             include *
+            exclude platform.prometheus
+            exclude platform.grafana
             autolayout lr
         }
 
         container platform "ContainersCurrent" "Container view of the current notification platform implementation." {
             include *
+            exclude platform.prometheus
+            exclude platform.grafana
+            autolayout lr
+        }
+
+        container platform "ServicesPresentation" "High-level service architecture for presentation: processing services and Kafka only." {
+            include platform.facade
+            include platform.templateRegistry
+            include platform.profileConsent
+            include platform.schedulerDelivery
+            include platform.mailSender
+            include platform.smsSender
+            include platform.historyWriter
+            include platform.kafka
             autolayout lr
         }
 
@@ -118,6 +134,26 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             platform.mailSender -> platform.kafka "Publish MailDeliveryStatusChanged"
             platform.kafka -> platform.historyWriter "Consume delivery status"
             platform.historyWriter -> platform.postgres "Persist delivery_history"
+            autolayout lr
+        }
+
+        dynamic platform "ProcessingFlowPresentation" "Notification processing flow for presentation: Facade -> Kafka -> Sender -> History." {
+            clientSystem -> platform.facade "CreateNotificationEvent / TriggerDispatch"
+            platform.facade -> platform.kafka "Publish notification event"
+            platform.kafka -> platform.mailSender "Consume event/dispatch"
+            platform.mailSender -> platform.kafka "Publish delivery status"
+            platform.kafka -> platform.historyWriter "Consume delivery status"
+            autolayout lr
+        }
+
+        dynamic platform "SchedulingFlowPresentation" "Delayed dispatch flow for presentation: Facade -> Kafka -> Scheduler -> Kafka -> Sender -> History." {
+            clientSystem -> platform.facade "TriggerDispatch (delayed)"
+            platform.facade -> platform.kafka "Publish MailDispatchRequested (scheduled)"
+            platform.kafka -> platform.schedulerDelivery "Consume scheduled dispatch"
+            platform.schedulerDelivery -> platform.kafka "Republish due dispatch"
+            platform.kafka -> platform.mailSender "Consume due dispatch"
+            platform.mailSender -> platform.kafka "Publish delivery status"
+            platform.kafka -> platform.historyWriter "Consume delivery status"
             autolayout lr
         }
 

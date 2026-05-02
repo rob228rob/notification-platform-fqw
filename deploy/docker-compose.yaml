@@ -8,6 +8,7 @@ include:
   #  - './minio/docker-compose.s3.yml'
   #    кафка развернута в облаке -- not really
   - './kafka/docker-compose.kafka.yml'
+  - './mongo/docker-compose.mongo.yml'
   - './networks/docker-compose.networks.yml'
   #  - './app/docker-compose.app.yaml'
   - './redis/docker-compose.redis.yaml'

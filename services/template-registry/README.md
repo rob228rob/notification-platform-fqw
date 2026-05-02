@@ -1,33 +1,31 @@
 # template-registry
 
 ## Назначение
-Хранилище и рендер шаблонов уведомлений (версионирование + preview рендер по payload)
+Сервис хранит шаблоны уведомлений, их версии и выполняет preview-рендер по payload.
 
-## Входящие интерфейсы
+## API
+Proto-контракт: `libs/proto-templates/src/main/proto/notification/templates/v1/templates.proto`.
 
-### gRPC API
-Proto: `libs/proto-templates/src/main/proto/notification/templates/v1/templates.proto`
+Реализованы методы:
+- `CreateTemplate`
+- `UpdateTemplate`
+- `GetTemplate`
+- `ListTemplates`
+- `RenderPreview`
 
-Сервис: `notification.templates.v1.TemplateRegistry`
+## Модель хранения (MongoDB)
+- Коллекция: `templates`.
+- Документ содержит:
+  - метаданные шаблона (`templateId`, `clientId`, `name`, `status`, `activeVersion`);
+  - `createIdempotencyKey` для идемпотентного создания;
+  - массив версий `versions` с каналами и контентом.
+- Индексы:
+  - уникальный `(clientId, templateId)`;
+  - уникальный `(clientId, createIdempotencyKey)` (sparse);
+  - `(clientId, updatedAt)` для пагинации и сортировки.
 
-Методы:
-- `CreateTemplate` создать шаблон (v1).
-- `UpdateTemplate` создать новую версию шаблона.
-- `GetTemplate` получить шаблон и версию (explicit или active).
-- `ListTemplates` пагинированный список шаблонов.
-- `RenderPreview` рендер subject/body для `template_id + version + channel + payload`.
+## Рендеринг
+`RenderPreview` выбирает нужную версию (явную или `activeVersion`), канал и рендерит `subject/body` через выбранный `TemplateEngine`.
 
 ## Kafka
-- Входящих обработчиков нет.
-- Исходящей доменной публикации нет.
-
-## Контракт рендера ( для интеграции)
-`RenderPreviewRequest`:
-- `template_id`
-- `version` (если `0`, используется active version)
-- `channel`
-- `payload: map<string,string>`
-
-`RenderPreviewResponse`:
-- `subject`
-- `body`
+Сервис не публикует и не потребляет доменные события в текущей реализации.

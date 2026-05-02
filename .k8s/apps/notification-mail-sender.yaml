@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-mail-sender
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-mail-sender
+  template:
+    metadata:
+      labels:
+        app: notification-mail-sender
+    spec:
+      containers:
+        - name: notification-mail-sender
+          image: notification-mail-sender:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8911
+              name: http
+          env:
+            - name: SERVER_PORT
+              value: "8911"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: POSTGRESQL_URL
+              value: jdbc:postgresql://postgres:5432/main_db?currentSchema=nf_mail
+            - name: POSTGRESQL_USER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: username
+            - name: POSTGRESQL_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+            - name: PROFILE_CONSENT_HOST
+              value: profile-consent
+            - name: PROFILE_CONSENT_PORT
+              value: "9096"
+            - name: NOTIFICATION_HISTORY_HOST
+              value: history-writer
+            - name: NOTIFICATION_HISTORY_PORT
+              value: "9091"
+            - name: MAIL_GATEWAY_LOG_ONLY
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8911
+            initialDelaySeconds: 25
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8911
+            initialDelaySeconds: 45
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-mail-sender
+spec:
+  selector:
+    app: notification-mail-sender
+  ports:
+    - name: http
+      port: 8911
+      targetPort: 8911
+  type: ClusterIP

@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: profile-consent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: profile-consent
+  template:
+    metadata:
+      labels:
+        app: profile-consent
+    spec:
+      containers:
+        - name: profile-consent
+          image: profile-consent:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8913
+              name: http
+            - containerPort: 9096
+              name: grpc
+          env:
+            - name: SERVER_PORT
+              value: "8913"
+            - name: PROFILE_CONSENT_GRPC_PORT
+              value: "9096"
+            - name: PROFILE_CONSENT_REDIS_HOST
+              value: redis
+            - name: PROFILE_CONSENT_REDIS_PORT
+              value: "6379"
+            - name: PROFILE_CONSENT_REDIS_USERNAME
+              value: redisuser
+            - name: PROFILE_CONSENT_REDIS_PASSWORD
+              value: redisuserpassword
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8913
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8913
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: profile-consent
+spec:
+  selector:
+    app: profile-consent
+  ports:
+    - name: http
+      port: 8913
+      targetPort: 8913
+    - name: grpc
+      port: 9096
+      targetPort: 9096
+  type: ClusterIP

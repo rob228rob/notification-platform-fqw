@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduler-delivery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scheduler-delivery
+  template:
+    metadata:
+      labels:
+        app: scheduler-delivery
+    spec:
+      containers:
+        - name: scheduler-delivery
+          image: scheduler-delivery:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8915
+              name: http
+          env:
+            - name: SERVER_PORT
+              value: "8915"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: POSTGRESQL_URL
+              value: jdbc:postgresql://postgres:5432/main_db?currentSchema=nf_sched
+            - name: POSTGRESQL_USER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: username
+            - name: POSTGRESQL_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8915
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8915
+            initialDelaySeconds: 40
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduler-delivery
+spec:
+  selector:
+    app: scheduler-delivery
+  ports:
+    - name: http
+      port: 8915
+      targetPort: 8915
+  type: ClusterIP
