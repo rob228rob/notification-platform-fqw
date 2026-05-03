@@ -1,0 +1,148 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: clickhouse-credentials
+type: Opaque
+stringData:
+  username: default
+  password: ""
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-init
+data:
+  001-create-history-tables.sql: |
+    CREATE DATABASE IF NOT EXISTS notification_history;
+    CREATE TABLE IF NOT EXISTS notification_history.delivery_status_history
+    (
+        event_date Date,
+        occurred_at Nullable(DateTime64(3, 'UTC')),
+        ingested_at DateTime64(3, 'UTC'),
+        created_at DateTime64(3, 'UTC'),
+        client_id String,
+        event_id String,
+        dispatch_id String,
+        recipient_id String,
+        aggregate_id String,
+        channel LowCardinality(String),
+        provider LowCardinality(String),
+        delivery_id String,
+        status LowCardinality(String),
+        previous_status LowCardinality(String),
+        reason_code LowCardinality(String),
+        reason_message String,
+        attempt_no UInt16,
+        max_attempts UInt16,
+        is_final UInt8,
+        next_attempt_at Nullable(DateTime64(3, 'UTC')),
+        scheduled_at Nullable(DateTime64(3, 'UTC')),
+        sent_at Nullable(DateTime64(3, 'UTC')),
+        failed_at Nullable(DateTime64(3, 'UTC')),
+        latency_ms Nullable(UInt64),
+        provider_message_id String,
+        template_id String,
+        template_version UInt32,
+        priority UInt8,
+        correlation_id String,
+        idempotency_key String,
+        kafka_topic String,
+        kafka_partition Int32,
+        kafka_offset Int64,
+        aggregate_type String,
+        event_type String,
+        outbox_id Int64,
+        destination String,
+        payload_hash String,
+        payload_json String,
+        headers_json String,
+        metadata_json String
+    )
+    ENGINE = MergeTree
+    PARTITION BY toYYYYMM(event_date)
+    ORDER BY (client_id, event_id, recipient_id, channel, occurred_at, delivery_id, outbox_id);
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clickhouse-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clickhouse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clickhouse
+  template:
+    metadata:
+      labels:
+        app: clickhouse
+    spec:
+      containers:
+        - name: clickhouse
+          image: clickhouse/clickhouse-server:24.8
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8123
+              name: http
+            - containerPort: 9000
+              name: native
+          env:
+            - name: CLICKHOUSE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: clickhouse-credentials
+                  key: username
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: clickhouse-credentials
+                  key: password
+          readinessProbe:
+            exec:
+              command: ["clickhouse-client", "--query", "SELECT 1"]
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["clickhouse-client", "--query", "SELECT 1"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d/001-create-history-tables.sql
+              subPath: 001-create-history-tables.sql
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: clickhouse-data
+        - name: init
+          configMap:
+            name: clickhouse-init
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse
+spec:
+  selector:
+    app: clickhouse
+  ports:
+    - name: http
+      port: 8123
+      targetPort: 8123
+    - name: native
+      port: 9000
+      targetPort: 9000
+  type: ClusterIP

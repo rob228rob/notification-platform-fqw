@@ -2,6 +2,7 @@ package ru.batoyan.vkr.notification.history.writer.history;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +12,7 @@ import org.springframework.stereotype.Component;
 public class DeliveryHistoryConsumer {
 
     private final DeliveryStatusEventParser eventParser;
-    private final DeliveryHistoryRepository repository;
+    private final DeliveryHistoryStore repository;
 
     @KafkaListener(
             topics = {
@@ -20,10 +21,11 @@ public class DeliveryHistoryConsumer {
             },
             groupId = "${spring.kafka.consumer.group-id}"
     )
-    public void onMessage(String rawMessage) {
-        var event = eventParser.parse(rawMessage);
+    public void onMessage(ConsumerRecord<String, String> record) {
+        var event = eventParser.parse(record.value())
+                .withKafkaMetadata(record.topic(), record.partition(), record.offset());
         var stored = repository.save(event);
-        log.info("Delivery history consumed outboxId={}, eventType={}, aggregateId={}, statusStored={}, payload={}",
-                event.outboxId(), event.eventType(), event.aggregateId(), stored, event.payload());
+        log.info("Delivery history consumed outboxId={}, eventType={}, aggregateId={}, topic={}, partition={}, offset={}, statusStored={}",
+                event.outboxId(), event.eventType(), event.aggregateId(), event.kafkaTopic(), event.kafkaPartition(), event.kafkaOffset(), stored);
     }
 }

@@ -6,6 +6,7 @@ namespace: notification-platform
 resources:
   - namespace.yaml
   - infra/postgres.yaml
+  - infra/clickhouse.yaml
   - infra/redis.yaml
   - infra/mongo.yaml
   - infra/zookeeper.yaml
@@ -23,4 +24,3 @@ resources:
 
 commonLabels:
   app.kubernetes.io/part-of: notification-platform
-

@@ -2,6 +2,7 @@ package ru.batoyan.vkr.notification.history.writer.history;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -23,11 +24,13 @@ import java.util.Map;
 
 @Repository
 @RequiredArgsConstructor
-public class DeliveryHistoryRepository {
+@ConditionalOnProperty(name = "history.storage.type", havingValue = "postgres")
+public class DeliveryHistoryRepository implements DeliveryHistoryStore {
 
     private final NamedParameterJdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
 
+    @Override
     public boolean save(DeliveryStatusEvent event) {
         var payload = event.payload();
         var sql = """
@@ -69,6 +72,7 @@ public class DeliveryHistoryRepository {
                 .addValue("headers_json", writeJson(event.headers()))) > 0;
     }
 
+    @Override
     public long countByClientId(String clientId) {
         var total = jdbc.queryForObject("""
                 select count(*)
@@ -78,6 +82,7 @@ public class DeliveryHistoryRepository {
         return total == null ? 0 : total;
     }
 
+    @Override
     public List<DeliveryStatusKafkaEvent> listByClientId(String clientId, int page, int size) {
         return jdbc.query("""
                 select *
@@ -91,6 +96,7 @@ public class DeliveryHistoryRepository {
                 .addValue("offset", page * size), (rs, rowNum) -> toKafkaEvent(rs));
     }
 
+    @Override
     public RecipientDeliverySummary getRecipientSummary(String recipientId, int lookbackHours) {
         return getRecipientSummaries(List.of(recipientId), lookbackHours).getOrDefault(
                 recipientId,
@@ -98,6 +104,7 @@ public class DeliveryHistoryRepository {
         );
     }
 
+    @Override
     public Map<String, RecipientDeliverySummary> getRecipientSummaries(List<String> recipientIds, int lookbackHours) {
         if (recipientIds == null || recipientIds.isEmpty()) {
             return Collections.emptyMap();

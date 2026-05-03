@@ -28,17 +28,23 @@ spec:
               value: "9091"
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: kafka:9092
-            - name: POSTGRESQL_URL
-              value: jdbc:postgresql://postgres:5432/main_db?currentSchema=nf_hist
-            - name: POSTGRESQL_USER_USERNAME
+            - name: HISTORY_STORAGE_TYPE
+              value: clickhouse
+            - name: HISTORY_CLICKHOUSE_URL
+              value: jdbc:clickhouse://clickhouse:8123/notification_history
+            - name: HISTORY_CLICKHOUSE_DATABASE
+              value: notification_history
+            - name: HISTORY_CLICKHOUSE_TABLE
+              value: delivery_status_history
+            - name: HISTORY_CLICKHOUSE_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: postgres-credentials
+                  name: clickhouse-credentials
                   key: username
-            - name: POSTGRESQL_USER_PASSWORD
+            - name: HISTORY_CLICKHOUSE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: postgres-credentials
+                  name: clickhouse-credentials
                   key: password
           readinessProbe:
             httpGet:

@@ -4,51 +4,53 @@
 \contentsline {structure}{\numberline {}ВВЕДЕНИЕ}{9}{structure.3}%
 \contentsline {section}{\numberline {1}Анализ предметной области и постановка задачи}{13}{section.1}%
 \contentsline {subsection}{\numberline {1.1}Уведомление как распределённый процесс}{13}{subsection.1.1}%
-\contentsline {subsection}{\numberline {1.2}Гарантированность доставки и границы ответственности платформы}{14}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.2}Гарантированность доставки и границы ответственности}{14}{subsection.1.2}%
 \contentsline {subsection}{\numberline {1.3}Мультиканальность платформы уведомлений}{14}{subsection.1.3}%
 \contentsline {subsection}{\numberline {1.4}Проблемы прямого синхронного подхода}{15}{subsection.1.4}%
-\contentsline {subsection}{\numberline {1.5}Требования к платформе}{16}{subsection.1.5}%
-\contentsline {subsection}{\numberline {1.6}Критерии сравнения архитектурных вариантов}{16}{subsection.1.6}%
-\contentsline {subsection}{\numberline {1.7}Сравнение архитектурных вариантов}{17}{subsection.1.7}%
-\contentsline {subsection}{\numberline {1.8}Сравнение транспортов межсервисного взаимодействия}{18}{subsection.1.8}%
-\contentsline {subsection}{\numberline {1.9}Варианты работы с профилем получателя}{20}{subsection.1.9}%
-\contentsline {subsection}{\numberline {1.10}Сценарии использования}{21}{subsection.1.10}%
-\contentsline {section}{\numberline {2}Проектирование архитектуры распределённой платформы}{22}{section.2}%
-\contentsline {subsection}{\numberline {2.1}Архитектурные принципы}{22}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}Контейнерная декомпозиция и границы ответственности}{23}{subsection.2.2}%
-\contentsline {subsection}{\numberline {2.3}Верхнеуровневая модель данных и сервисных границ}{24}{subsection.2.3}%
-\contentsline {subsection}{\numberline {2.4}Верхнеуровневые потоки данных}{26}{subsection.2.4}%
-\contentsline {subsubsection}{\numberline {2.4.1}Поток приёма команды и регистрации события}{26}{subsubsection.2.4.1}%
-\contentsline {subsubsection}{\numberline {2.4.2}Поток запуска доставки}{26}{subsubsection.2.4.2}%
-\contentsline {subsubsection}{\numberline {2.4.3}Поток отложенной доставки}{27}{subsubsection.2.4.3}%
-\contentsline {subsubsection}{\numberline {2.4.4}Поток канальной обработки и истории}{27}{subsubsection.2.4.4}%
-\contentsline {subsection}{\numberline {2.5}Kafka-архитектура событийного контура}{27}{subsection.2.5}%
-\contentsline {subsubsection}{\numberline {2.5.1}Маршрут событийного потока}{28}{subsubsection.2.5.1}%
-\contentsline {subsection}{\numberline {2.6}Механизмы надёжности на архитектурном уровне}{28}{subsection.2.6}%
-\contentsline {subsection}{\numberline {2.7}Архитектура профиля получателя}{29}{subsection.2.7}%
-\contentsline {subsection}{\numberline {2.8}Архитектура шаблонного контура}{29}{subsection.2.8}%
-\contentsline {subsection}{\numberline {2.9}Архитектура наблюдаемости}{30}{subsection.2.9}%
-\contentsline {subsection}{\numberline {2.10}Безопасность}{30}{subsection.2.10}%
-\contentsline {section}{\numberline {3}Реализация системы, моделирование данных и контракты взаимодействия}{31}{section.3}%
-\contentsline {subsection}{\numberline {3.1}Технологический стек и модульная структура}{31}{subsection.3.1}%
-\contentsline {subsection}{\numberline {3.2}Моделирование данных}{31}{subsection.3.2}%
-\contentsline {subsubsection}{\numberline {3.2.1}Владение данными по сервисным контурам}{31}{subsubsection.3.2.1}%
-\contentsline {subsubsection}{\numberline {3.2.2}Документоориентированная модель шаблонов}{32}{subsubsection.3.2.2}%
-\contentsline {subsubsection}{\numberline {3.2.3}Модель профиля получателя}{35}{subsubsection.3.2.3}%
-\contentsline {subsection}{\numberline {3.3}Контракты взаимодействия}{35}{subsection.3.3}%
-\contentsline {subsubsection}{\numberline {3.3.1}Контракты управления событиями и доставкой}{35}{subsubsection.3.3.1}%
-\contentsline {subsubsection}{\numberline {3.3.2}Контракты шаблонов, профиля и истории}{35}{subsubsection.3.3.2}%
-\contentsline {subsubsection}{\numberline {3.3.3}Событийные контракты}{36}{subsubsection.3.3.3}%
-\contentsline {subsection}{\numberline {3.4}Ключевые механизмы реализации}{36}{subsection.3.4}%
-\contentsline {section}{\numberline {4}Развёртывание, эксплуатация и экспериментальная проверка}{38}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Стенд и контур проверки}{38}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Методика проверки}{38}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Критерии успешности}{39}{subsection.4.3}%
-\contentsline {subsection}{\numberline {4.4}Проверенные сценарии}{39}{subsection.4.4}%
-\contentsline {subsection}{\numberline {4.5}Артефакты метрик}{40}{subsection.4.5}%
-\contentsline {subsection}{\numberline {4.6}Результаты нагрузочного прогона}{42}{subsection.4.6}%
-\contentsline {subsection}{\numberline {4.7}Интерпретация результатов}{44}{subsection.4.7}%
-\contentsline {structure}{\numberline {}ЗАКЛЮЧЕНИЕ}{45}{structure.4}%
-\contentsline {structure}{\numberline {}СПИСОК~ИСПОЛЬЗОВАННЫХ~ИСТОЧНИКОВ}{47}{structure.5}%
-\contentsline {section}{ПРИЛОЖЕНИЕ~А~{Репозиторий проекта}}{48}{structure.5}%
+\contentsline {subsection}{\numberline {1.5}Анализ аналогов и типовых подходов}{15}{subsection.1.5}%
+\contentsline {subsection}{\numberline {1.6}Требования к платформе}{17}{subsection.1.6}%
+\contentsline {subsection}{\numberline {1.7}Критерии сравнения архитектурных вариантов}{18}{subsection.1.7}%
+\contentsline {subsection}{\numberline {1.8}Сравнение архитектурных вариантов}{20}{subsection.1.8}%
+\contentsline {subsection}{\numberline {1.9}Сравнение транспортов межсервисного взаимодействия}{21}{subsection.1.9}%
+\contentsline {subsection}{\numberline {1.10}Варианты работы с профилем получателя}{23}{subsection.1.10}%
+\contentsline {subsection}{\numberline {1.11}Сценарии использования}{24}{subsection.1.11}%
+\contentsline {section}{\numberline {2}Проектирование архитектуры распределённой платформы}{25}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Архитектурные принципы}{25}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Контейнерная декомпозиция и границы ответственности}{26}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Верхнеуровневая модель данных и сервисных границ}{28}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Верхнеуровневые потоки данных}{29}{subsection.2.4}%
+\contentsline {subsubsection}{\numberline {2.4.1}Поток приёма команды и регистрации события}{29}{subsubsection.2.4.1}%
+\contentsline {subsubsection}{\numberline {2.4.2}Поток запуска доставки}{30}{subsubsection.2.4.2}%
+\contentsline {subsubsection}{\numberline {2.4.3}Поток отложенной доставки}{31}{subsubsection.2.4.3}%
+\contentsline {subsubsection}{\numberline {2.4.4}Поток канальной обработки и истории}{32}{subsubsection.2.4.4}%
+\contentsline {subsection}{\numberline {2.5}Kafka-архитектура событийного контура}{34}{subsection.2.5}%
+\contentsline {subsubsection}{\numberline {2.5.1}Маршрут событийного потока}{34}{subsubsection.2.5.1}%
+\contentsline {subsection}{\numberline {2.6}Механизмы надёжности на архитектурном уровне}{35}{subsection.2.6}%
+\contentsline {subsection}{\numberline {2.7}Архитектура профиля получателя}{35}{subsection.2.7}%
+\contentsline {subsection}{\numberline {2.8}Архитектура шаблонного контура}{36}{subsection.2.8}%
+\contentsline {subsection}{\numberline {2.9}Архитектура наблюдаемости}{36}{subsection.2.9}%
+\contentsline {subsection}{\numberline {2.10}Безопасность}{37}{subsection.2.10}%
+\contentsline {section}{\numberline {3}Реализация системы, моделирование данных и контракты взаимодействия}{38}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Технологический стек и модульная структура}{38}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Моделирование данных}{38}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Владение данными по сервисным контурам}{38}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Документоориентированная модель шаблонов}{39}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Модель профиля получателя}{42}{subsubsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.3}Контракты взаимодействия}{42}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}Контракты управления событиями и доставкой}{42}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}Контракты шаблонов, профиля и истории}{42}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3}Событийные контракты}{43}{subsubsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.4}Ключевые механизмы реализации}{43}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Развёртывание, эксплуатация и экспериментальная проверка}{45}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Стенд и контур проверки}{45}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Методика проверки}{46}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Критерии успешности}{47}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Проверка механизмов повторной обработки}{47}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Проверенные сценарии}{49}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Артефакты метрик}{49}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.7}Результаты нагрузочного прогона}{52}{subsection.4.7}%
+\contentsline {subsection}{\numberline {4.8}Интерпретация результатов}{54}{subsection.4.8}%
+\contentsline {structure}{\numberline {}ЗАКЛЮЧЕНИЕ}{56}{structure.4}%
+\contentsline {structure}{\numberline {}СПИСОК~ИСПОЛЬЗОВАННЫХ~ИСТОЧНИКОВ}{58}{structure.5}%
+\contentsline {section}{ПРИЛОЖЕНИЕ~А~{Репозиторий проекта}}{59}{structure.5}%
 \contentsfinish 

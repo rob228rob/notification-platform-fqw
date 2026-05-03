@@ -1,7 +1,7 @@
 # history-writer
 
 ## Назначение
-Сервис собирает историю доставок из Kafka и хранит её как read model в `nf_hist.delivery_history`.
+Сервис собирает историю доставок из Kafka и хранит её как read model в ClickHouse.
 Поверх этой истории сервис предоставляет gRPC API:
 - для чтения истории по `client_id`;
 - для получения краткой сводки по `recipient_id/recipient_ids` за ограниченное окно времени.
@@ -13,7 +13,7 @@
 - `notification.mail.delivery-statuses`
 - `notification.sms.delivery-statuses`
 
-События доставки сохраняются в общую историческую таблицу с полями:
+События доставки сохраняются в аналитическую таблицу с полями:
 - `dispatch_id`
 - `event_id`
 - `client_id`
@@ -23,6 +23,8 @@
 - `attempt_no`
 - `error_message`
 - `occurred_at`
+- `kafka_topic / kafka_partition / kafka_offset`
+- `payload_json / headers_json`
 
 ## gRPC API
 Proto:
@@ -45,14 +47,13 @@ Proto:
 Неуспешными считаются записи со статусами `FAILED` и `SKIPPED`.
 
 ## Хранилище
-Схема:
-- `nf_hist`
+Основное аналитическое хранилище:
+- `notification_history.delivery_status_history` в ClickHouse
 
-Таблица:
-- `delivery_history`
+Порядок сортировки MergeTree:
+- `(client_id, event_id, recipient_id, channel, occurred_at, delivery_id, outbox_id)`
 
-Индекс для клиентской истории:
-- `(client_id, occurred_at desc, outbox_id desc)`
+PostgreSQL-адаптер сохранён в кодовой базе как fallback-реализация storage interface, но не является целевым аналитическим хранилищем текущей версии.
 
 ## Использование в planning
 Sender-сервисы могут запрашивать по `recipient_id` или батчу получателей краткую историю доставок за последние сутки и применять собственные лимиты без хранения локальной user-policy модели.

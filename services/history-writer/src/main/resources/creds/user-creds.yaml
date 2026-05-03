@@ -6,9 +6,16 @@ kafka:
     username: kafka
     password: kafka
 
-# бд разворачивается локально в докере
-postgresql:
-  url: jdbc:postgresql://localhost:25432/main_db?currentSchema=nf_hist
-  user:
+history:
+  postgresql:
+    url: jdbc:postgresql://localhost:25432/main_db?currentSchema=nf_hist
     username: user
     password: password
+  clickhouse:
+    url: jdbc:clickhouse://localhost:8123/notification_history
+    username: default
+    password: ""
+    database: notification_history
+    table: delivery_status_history
+    batch-size: 500
+    connection-timeout-ms: 5000

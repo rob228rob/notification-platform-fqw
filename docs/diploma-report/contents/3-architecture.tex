@@ -33,43 +33,12 @@
 
 \begin{figure}[H]
     \centering
-    \footnotesize
-    \setlength{\tabcolsep}{4pt}
-    \renewcommand{\arraystretch}{1.3}
-    \begin{tabular}{ccc}
-        \fbox{\parbox[c][1.6cm][c]{0.24\textwidth}{\centering Клиентская\\информационная система}} &
-        $\rightarrow$ &
-        \fbox{\parbox[c][1.6cm][c]{0.24\textwidth}{\centering Notification Facade\\gRPC-команды, аудитория, запуск доставки}} \\
-        & & \fbox{\parbox[c][1.3cm][c]{0.24\textwidth}{\centering Facade PostgreSQL\\notification\_event, audience, dispatch, outbox}} \\[4pt]
-        \fbox{\parbox[c][1.5cm][c]{0.24\textwidth}{\centering Template Registry\\версии шаблонов, предварительный рендеринг}} &
-        \fbox{\parbox[c][1.5cm][c]{0.22\textwidth}{\centering Kafka\\notification.facade.events\\notification.mail.dispatches\\notification.mail.scheduled\\notification.sms.dispatches\\notification.delivery-statuses}} &
-        \fbox{\parbox[c][1.5cm][c]{0.24\textwidth}{\centering Profile Consent\\проверка профиля получателя}} \\
-        \fbox{\parbox[c][1.2cm][c]{0.24\textwidth}{\centering MongoDB Templates}} & &
-        \fbox{\parbox[c][1.2cm][c]{0.24\textwidth}{\centering Redis Recipient Profiles}} \\[4pt]
-        \fbox{\parbox[c][1.5cm][c]{0.24\textwidth}{\centering Scheduler Delivery\\отложенный запуск}} &
-        \fbox{\parbox[c][1.5cm][c]{0.24\textwidth}{\centering Notification Mail Sender\\email-обработка, retry, status}} &
-        \fbox{\parbox[c][1.5cm][c]{0.24\textwidth}{\centering Notification SMS Sender\\SMS-обработка, retry, status}} \\
-        \fbox{\parbox[c][1.2cm][c]{0.24\textwidth}{\centering Scheduler PostgreSQL}} &
-        \fbox{\parbox[c][1.2cm][c]{0.24\textwidth}{\centering Mail PostgreSQL}} &
-        \fbox{\parbox[c][1.2cm][c]{0.24\textwidth}{\centering SMS PostgreSQL}} \\[4pt]
-        \multicolumn{3}{c}{
-            \fbox{\parbox[c][1.5cm][c]{0.30\textwidth}{\centering History Writer\\история статусов, сводки}}
-            \hspace{0.02\textwidth}
-            \fbox{\parbox[c][1.2cm][c]{0.20\textwidth}{\centering History PostgreSQL}}
-        } \\[4pt]
-        \multicolumn{3}{c}{
-            \fbox{\parbox[c][1.1cm][c]{0.26\textwidth}{\centering Prometheus / Grafana}}
-            \hspace{0.02\textwidth}
-            \fbox{\parbox[c][1.1cm][c]{0.22\textwidth}{\centering SMTP /\\email-провайдер}}
-            \hspace{0.02\textwidth}
-            \fbox{\parbox[c][1.1cm][c]{0.22\textwidth}{\centering SMS-провайдер}}
-        }
-    \end{tabular}
+    \includegraphics[width=\textwidth]{inc/structurizr-containers-data-ownership.png}
     \caption{Контейнерная архитектура платформы уведомлений с разделением хранилищ по сервисным контурам}
     \label{fig:arch-containers-owned-storage}
 \end{figure}
 
-Рисунок~\ref{fig:arch-containers-owned-storage} отражает не только сервисы, но и владение данными. Notification Facade, Scheduler Delivery, Notification Mail Sender, Notification SMS Sender и History Writer используют отдельные PostgreSQL-хранилища. Template Registry владеет MongoDB-хранилищем шаблонов, а Profile Consent владеет Redis-хранилищем профилей получателей. Такое разделение исключает превращение базы данных в общий интеграционный слой и принуждает сервисы обмениваться данными только через контракт владельца.
+Рисунок~\ref{fig:arch-containers-owned-storage} отражает не только сервисы, но и владение данными. Notification Facade, Scheduler Delivery, Notification Mail Sender и Notification SMS Sender используют отдельные PostgreSQL-хранилища операционного контура. History Writer использует ClickHouse как отдельное аналитическое хранилище истории доставки. Template Registry владеет MongoDB-хранилищем шаблонов, а Profile Consent владеет Redis-хранилищем профилей получателей. Такое разделение исключает превращение базы данных в общий интеграционный слой и принуждает сервисы обмениваться данными только через контракт владельца.
 
 \subsection{Верхнеуровневая модель данных и сервисных границ}
 
@@ -107,7 +76,7 @@
         \hline
         Notification SMS Sender & Обработка SMS-запусков, попытки отправки, retry и публикация статусов. & SMS PostgreSQL \\
         \hline
-        History Writer & Приём статусных событий, запись истории и формирование сводок. & History PostgreSQL \\
+        History Writer & Приём статусных событий, запись истории и формирование сводок. & ClickHouse History Store \\
         \hline
         Kafka & Событийный обмен между сервисами и буферизация фоновой обработки. & Не применимо \\
         \hline
@@ -126,12 +95,12 @@
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{inc/structurizr-create-event-flow.png}
-    \caption{Динамический поток регистрации события и передачи в событийный контур}
+    \includegraphics[width=\textwidth]{inc/structurizr-ingress-contour.png}
+    \caption{Входной контур платформы: фасад, шаблонный сервис, собственные хранилища и публикация в Kafka}
     \label{fig:arch-create-event-flow-structurizr}
 \end{figure}
 
-Рисунок~\ref{fig:arch-create-event-flow-structurizr} нужен для фиксации самой чувствительной точки архитектуры: перехода от синхронной команды к фоновому контуру. Именно здесь определяется, будет ли принятая команда потеряна при сбое сервиса между записью в базу и публикацией в брокер. В выбранной архитектуре этот риск закрывается локальной транзакцией и transactional outbox.
+Рисунок~\ref{fig:arch-create-event-flow-structurizr} показывает входной контур без деталей канальной обработки. Клиент взаимодействует только с Notification Facade. При необходимости фасад обращается к Template Registry, затем сохраняет событие, аудиторию и запись outbox в собственном PostgreSQL-хранилище и передаёт дальнейшую обработку в Kafka. Такое разделение убирает фактическую доставку из критического пути клиентского запроса и фиксирует границу между командным и фоновым контурами.
 
 \subsubsection{Поток запуска доставки}
 
@@ -142,13 +111,48 @@
     \item сбой канального контура не влияет на уже завершённый клиентский запрос.
 \end{enumerate}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\textwidth]{inc/structurizr-processing-flow-presentation.png}
+    \caption{Поток запуска доставки и прохождения уведомления через канальный контур}
+    \label{fig:arch-processing-flow-presentation}
+\end{figure}
+
+Рисунок~\ref{fig:arch-processing-flow-presentation} фиксирует упрощённый путь немедленного запуска доставки. После приёма команды фасад не удерживает дальнейшую обработку внутри пользовательского вызова, а переводит её в событийный контур. Далее сообщение проходит через sender-сервис и завершается записью результата в истории. Такой маршрут подчёркивает, что запуск доставки является самостоятельной стадией обработки, а не продолжением синхронного вызова.
+
 \subsubsection{Поток отложенной доставки}
 
 Отложенная доставка вынесена в самостоятельный контур Scheduler Delivery. Фасад публикует запуск в отдельный scheduled-топик, планировщик сохраняет задачу в собственном PostgreSQL-хранилище и после наступления планового времени переводит её в рабочий Kafka-топик. Хранение отложенных задач в отдельном сервисе исключает зависимость от таймеров в памяти конкретного экземпляра приложения.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\textwidth]{inc/structurizr-scheduling-flow-presentation.png}
+    \caption{Поток отложенной доставки с отдельным контуром планировщика}
+    \label{fig:arch-scheduling-flow-presentation}
+\end{figure}
+
+Рисунок~\ref{fig:arch-scheduling-flow-presentation} показывает отличие отложенного сценария от немедленного: между фасадом и sender-сервисом появляется отдельная стадия планировщика. Она принимает событие в Kafka, удерживает задачу до планового времени и только затем публикует рабочий запуск в канал доставки. За счёт этого отложенная отправка не зависит от таймеров в памяти фасада и не требует удерживать долгоживущий пользовательский запрос.
+
 \subsubsection{Поток канальной обработки и истории}
 
-Mail Sender и SMS Sender потребляют свои рабочие топики независимо друг от друга. Перед фактической отправкой sender-сервис обращается к profile-consent, получает решение по получателю и либо выполняет отправку, либо фиксирует пропуск как доменный результат обработки. После завершения попытки sender публикует статусное событие, которое history-writer записывает в собственное хранилище и агрегирует для запросов чтения.
+Mail Sender и SMS Sender потребляют свои рабочие топики независимо друг от друга. Перед фактической отправкой sender-сервис обращается к profile-consent, получает решение по получателю и либо выполняет отправку, либо фиксирует пропуск как доменный результат обработки. После завершения попытки sender публикует статусное событие, которое history-writer записывает в ClickHouse и использует как аналитическую read model для запросов чтения.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{inc/structurizr-delivery-handlers.png}
+    \caption{Контур обработчиков уведомлений: Kafka, sender-сервисы, profile-consent, history-writer и внешние провайдеры}
+    \label{fig:arch-delivery-handlers-structurizr}
+\end{figure}
+
+Рисунок~\ref{fig:arch-delivery-handlers-structurizr} показывает канальный участок архитектуры. На этом уровне sender-сервисы работают со своими PostgreSQL-хранилищами, получают решение о допустимости доставки через Profile Consent, обращаются к внешнему провайдеру и завершают обработку публикацией статусного события для History Writer. Схема подчёркивает, что Redis и история доставки не читаются напрямую: обмен идёт только через сервисные контракты и Kafka, а накопление аналитической истории инкапсулировано внутри history-writer.
+
+\subsection{Использование ClickHouse для хранения истории доставки}
+
+Для хранения истории доставки в актуальной версии используется ClickHouse. В отличие от операционных контуров, история доставки представляет собой преимущественно append-only/read-heavy набор данных: новые статусные события добавляются по мере обработки уведомлений, а основные запросы выполняются по клиенту, событию, получателю, каналу, статусу и временному интервалу. Поэтому history-writer рассматривается как владелец аналитического хранилища истории, а ClickHouse используется как read model для внешних и внутренних запросов к истории доставки.
+
+В ClickHouse сохраняется расширенный набор атрибутов доставки: идентификаторы клиента, события, запуска доставки, получателя и канальной доставки, канал, статус, причина ошибки, номер попытки, временные метки, destination, idempotency key, Kafka topic/partition/offset, а также сериализованные payload и headers. Если status event содержит дополнительные технические атрибуты, например correlation identifier или provider-specific поля, они также сохраняются в аналитической записи. Это позволяет отвечать не только на запросы о текущем статусе доставки, но и на аналитические запросы по динамике ошибок, распределению каналов и временным интервалам.
+
+ClickHouse не заменяет транзакционные хранилища командного и канального контуров. Сохранность команд, outbox/inbox и состояние канальной обработки остаются в операционных PostgreSQL-хранилищах соответствующих сервисов. ClickHouse используется для накопления и чтения истории, а доступ к нему инкапсулирован внутри history-writer.
 
 \subsection{Kafka-архитектура событийного контура}
 
@@ -168,19 +172,19 @@ Kafka используется как базовый транспорт асин
     \renewcommand{\arraystretch}{1.15}
     \caption{Kafka-топики и их назначение}
     \label{tab:kafka-architecture-topics}
-    \begin{tabular}{|L{0.34\textwidth}|L{0.52\textwidth}|}
+    \begin{tabular}{|L{0.40\textwidth}|L{0.46\textwidth}|}
         \hline
         \textbf{Топик} & \textbf{Назначение} \\
         \hline
-        \seqsplit{notification.facade.events} & События жизненного цикла уведомления, публикуемые фасадом для дальнейшей канальной обработки. \\
+        \texttt{\seqsplit{notification.facade.events}} & События жизненного цикла уведомления, публикуемые фасадом для дальнейшей канальной обработки. \\
         \hline
-        \seqsplit{notification.mail.dispatches} & Рабочие команды на email-доставку. \\
+        \texttt{\seqsplit{notification.mail.dispatches}} & Рабочие команды на email-доставку. \\
         \hline
-        \seqsplit{notification.mail.scheduled} & Отложенные email-команды, которые сначала обрабатывает Scheduler Delivery. \\
+        \texttt{\seqsplit{notification.mail.scheduled}} & Отложенные email-команды, которые сначала обрабатывает Scheduler Delivery. \\
         \hline
-        \seqsplit{notification.sms.dispatches} & Рабочие команды на SMS-доставку. \\
+        \texttt{\seqsplit{notification.sms.dispatches}} & Рабочие команды на SMS-доставку. \\
         \hline
-        \seqsplit{notification.delivery-statuses} & Итоговые статусы email- и SMS-доставки, поступающие в history-writer. \\
+        \texttt{\seqsplit{notification.delivery-statuses}} & Итоговые статусы email- и SMS-доставки, поступающие в history-writer. \\
         \hline
     \end{tabular}
 \end{table}

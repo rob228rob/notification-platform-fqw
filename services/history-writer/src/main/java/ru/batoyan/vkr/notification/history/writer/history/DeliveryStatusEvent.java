@@ -10,6 +10,24 @@ public record DeliveryStatusEvent(
         String eventType,
         Map<String, Object> payload,
         Map<String, Object> headers,
-        OffsetDateTime createdAt
+        OffsetDateTime createdAt,
+        String kafkaTopic,
+        int kafkaPartition,
+        long kafkaOffset
 ) {
+
+    public DeliveryStatusEvent withKafkaMetadata(String kafkaTopic, int kafkaPartition, long kafkaOffset) {
+        return new DeliveryStatusEvent(
+                outboxId,
+                aggregateType,
+                aggregateId,
+                eventType,
+                payload,
+                headers,
+                createdAt,
+                kafkaTopic,
+                kafkaPartition,
+                kafkaOffset
+        );
+    }
 }

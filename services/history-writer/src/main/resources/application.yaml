@@ -9,13 +9,6 @@ spring:
     name: history-writer
   config:
     import: classpath:creds/user-creds.yaml
-  flyway:
-    locations: classpath:db/migration
-  datasource:
-    driver-class-name: org.postgresql.Driver
-    url: ${postgresql.url}
-    password: ${postgresql.user.password}
-    username: ${postgresql.user.username}
   kafka:
     bootstrap-servers: ${kafka.bootstrap.servers:localhost:9093}
     consumer:
@@ -37,6 +30,10 @@ logging:
   level:
     root: INFO
     ru.batoyan.vkr.notification.history.writer: DEBUG
+
+history:
+  storage:
+    type: ${HISTORY_STORAGE_TYPE:clickhouse}
 
 management:
   endpoints:

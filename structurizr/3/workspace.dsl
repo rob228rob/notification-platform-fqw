@@ -40,7 +40,7 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
                 tags "Database"
             }
 
-            historyDb = container "History PostgreSQL" "Stores delivery status history and summary read models." "PostgreSQL" {
+            historyDb = container "ClickHouse History Store" "Stores delivery history and analytical read models." "ClickHouse" {
                 tags "Database"
             }
 
@@ -62,31 +62,31 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
 
         clientSystem -> platform.facade "Creates notification events, sets audience, triggers dispatch" "gRPC"
 
-        platform.facade -> platform.templateRegistry "Renders template preview when inline content is absent" "gRPC"
-        platform.facade -> platform.facadeDb "Reads and writes notification_event, audience, dispatch and outbox tables" "JDBC"
-        platform.facade -> platform.kafka "Publishes EventCreated, MailDispatchRequested and SmsDispatchRequested via outbox relay" "Kafka"
+        platform.facade -> platform.templateRegistry "renders template" "gRPC"
+        platform.facade -> platform.facadeDb "writes state" "JDBC"
+        platform.facade -> platform.kafka "publishes event" "Kafka"
 
-        platform.templateRegistry -> platform.templateMongo "Reads and writes template documents and versions" "MongoDB"
+        platform.templateRegistry -> platform.templateMongo "stores templates" "MongoDB"
 
-        platform.profileConsent -> platform.redis "Reads recipient profiles" "Redis"
+        platform.profileConsent -> platform.redis "reads profiles" "Redis"
 
-        platform.schedulerDelivery -> platform.kafka "Consumes delayed mail dispatches and republishes due ones" "Kafka"
-        platform.schedulerDelivery -> platform.schedulerDb "Reads and writes scheduled_delivery_task records" "JDBC"
+        platform.schedulerDelivery -> platform.kafka "consumes and republishes" "Kafka"
+        platform.schedulerDelivery -> platform.schedulerDb "stores tasks" "JDBC"
 
-        platform.mailSender -> platform.kafka "Consumes notification events and mail dispatches, publishes mail statuses" "Kafka"
-        platform.mailSender -> platform.profileConsent "Checks email channel and destination" "gRPC"
-        platform.mailSender -> platform.historyWriter "Reads recipient delivery summary" "gRPC"
-        platform.mailSender -> platform.mailDb "Reads and writes mail_delivery, attempts and inbox tables" "JDBC"
-        platform.mailSender -> emailProvider "Sends e-mail messages" "SMTP / JavaMail"
+        platform.mailSender -> platform.kafka "consumes and publishes" "Kafka"
+        platform.mailSender -> platform.profileConsent "checks profile" "gRPC"
+        platform.mailSender -> platform.historyWriter "reads history" "gRPC"
+        platform.mailSender -> platform.mailDb "writes delivery" "JDBC"
+        platform.mailSender -> emailProvider "sends email" "SMTP / JavaMail"
 
-        platform.smsSender -> platform.kafka "Consumes notification events and SMS dispatches, publishes SMS statuses" "Kafka"
-        platform.smsSender -> platform.profileConsent "Checks SMS channel and destination" "gRPC"
-        platform.smsSender -> platform.historyWriter "Reads recipient delivery summary" "gRPC"
-        platform.smsSender -> platform.smsDb "Reads and writes sms_delivery, attempts and inbox tables" "JDBC"
-        platform.smsSender -> smsProvider "Sends SMS messages" "Provider API / adapter"
+        platform.smsSender -> platform.kafka "consumes and publishes" "Kafka"
+        platform.smsSender -> platform.profileConsent "checks profile" "gRPC"
+        platform.smsSender -> platform.historyWriter "reads history" "gRPC"
+        platform.smsSender -> platform.smsDb "writes delivery" "JDBC"
+        platform.smsSender -> smsProvider "sends sms" "Provider API / adapter"
 
-        platform.historyWriter -> platform.kafka "Consumes mail and SMS delivery statuses" "Kafka"
-        platform.historyWriter -> platform.historyDb "Reads and writes delivery history and summary tables" "JDBC"
+        platform.historyWriter -> platform.kafka "consumes status events" "Kafka"
+        platform.historyWriter -> platform.historyDb "writes history" "JDBC"
 
         platform.prometheus -> platform.facade "Scrapes metrics" "HTTP / Actuator"
         platform.prometheus -> platform.templateRegistry "Scrapes metrics" "HTTP / Actuator"
@@ -158,55 +158,55 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
         }
 
         dynamic platform "CreateEventFlow" "CreateNotificationEvent and EventCreated flow." {
-            clientSystem -> platform.facade "CreateNotificationEvent"
-            platform.facade -> platform.templateRegistry "RenderPreview (optional)"
-            platform.facade -> platform.facadeDb "Insert notification_event, audience and outbox"
-            platform.facade -> platform.kafka "Publish EventCreated"
-            platform.kafka -> platform.mailSender "Consume EventCreated"
-            platform.kafka -> platform.smsSender "Consume EventCreated"
+            clientSystem -> platform.facade "create event"
+            platform.facade -> platform.templateRegistry "preview"
+            platform.facade -> platform.facadeDb "save event"
+            platform.facade -> platform.kafka "publish event"
+            platform.kafka -> platform.mailSender "consume event"
+            platform.kafka -> platform.smsSender "consume event"
             autolayout lr
         }
 
         dynamic platform "DelayedMailDispatchFlow" "TriggerDispatch for delayed mail delivery." {
-            clientSystem -> platform.facade "TriggerDispatch"
-            platform.facade -> platform.facadeDb "Insert dispatch and dispatch_target"
-            platform.facade -> platform.kafka "Publish MailDispatchRequested to scheduled topic"
-            platform.kafka -> platform.schedulerDelivery "Consume delayed mail dispatch"
-            platform.schedulerDelivery -> platform.schedulerDb "Persist scheduled_delivery_task"
-            platform.schedulerDelivery -> platform.kafka "Republish due task to notification.mail.dispatches"
-            platform.kafka -> platform.mailSender "Consume MailDispatchRequested"
+            clientSystem -> platform.facade "trigger dispatch"
+            platform.facade -> platform.facadeDb "save dispatch"
+            platform.facade -> platform.kafka "publish scheduled"
+            platform.kafka -> platform.schedulerDelivery "consume scheduled"
+            platform.schedulerDelivery -> platform.schedulerDb "save task"
+            platform.schedulerDelivery -> platform.kafka "publish due"
+            platform.kafka -> platform.mailSender "consume dispatch"
             autolayout lr
         }
 
         dynamic platform "DeliveryAndHistoryFlow" "Mail delivery, policy checks and history update." {
-            platform.kafka -> platform.mailSender "Consume MailDispatchRequested"
-            platform.mailSender -> platform.mailDb "Persist / lock delivery state"
-            platform.mailSender -> platform.profileConsent "CheckRecipientChannel(EMAIL)"
-            platform.mailSender -> platform.historyWriter "GetRecipientDeliverySummary"
-            platform.mailSender -> emailProvider "Send e-mail"
-            platform.mailSender -> platform.kafka "Publish MailDeliveryStatusChanged"
-            platform.kafka -> platform.historyWriter "Consume delivery status"
-            platform.historyWriter -> platform.historyDb "Persist delivery_history"
+            platform.kafka -> platform.mailSender "consume dispatch"
+            platform.mailSender -> platform.mailDb "save delivery"
+            platform.mailSender -> platform.profileConsent "check profile"
+            platform.mailSender -> platform.historyWriter "read summary"
+            platform.mailSender -> emailProvider "send email"
+            platform.mailSender -> platform.kafka "publish status"
+            platform.kafka -> platform.historyWriter "consume status"
+            platform.historyWriter -> platform.historyDb "write history"
             autolayout lr
         }
 
         dynamic platform "ProcessingFlowPresentation" "Notification processing flow for presentation: Facade -> Kafka -> Sender -> History." {
-            clientSystem -> platform.facade "CreateNotificationEvent / TriggerDispatch"
-            platform.facade -> platform.kafka "Publish notification event"
-            platform.kafka -> platform.mailSender "Consume event/dispatch"
-            platform.mailSender -> platform.kafka "Publish delivery status"
-            platform.kafka -> platform.historyWriter "Consume delivery status"
+            clientSystem -> platform.facade "create or trigger"
+            platform.facade -> platform.kafka "publish event"
+            platform.kafka -> platform.mailSender "consume dispatch"
+            platform.mailSender -> platform.kafka "publish status"
+            platform.kafka -> platform.historyWriter "consume status"
             autolayout lr
         }
 
         dynamic platform "SchedulingFlowPresentation" "Delayed dispatch flow for presentation: Facade -> Kafka -> Scheduler -> Kafka -> Sender -> History." {
-            clientSystem -> platform.facade "TriggerDispatch (delayed)"
-            platform.facade -> platform.kafka "Publish MailDispatchRequested (scheduled)"
-            platform.kafka -> platform.schedulerDelivery "Consume scheduled dispatch"
-            platform.schedulerDelivery -> platform.kafka "Republish due dispatch"
-            platform.kafka -> platform.mailSender "Consume due dispatch"
-            platform.mailSender -> platform.kafka "Publish delivery status"
-            platform.kafka -> platform.historyWriter "Consume delivery status"
+            clientSystem -> platform.facade "trigger delayed"
+            platform.facade -> platform.kafka "publish scheduled"
+            platform.kafka -> platform.schedulerDelivery "consume scheduled"
+            platform.schedulerDelivery -> platform.kafka "publish due"
+            platform.kafka -> platform.mailSender "consume due"
+            platform.mailSender -> platform.kafka "publish status"
+            platform.kafka -> platform.historyWriter "consume status"
             autolayout lr
         }
 

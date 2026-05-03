@@ -4,7 +4,7 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import net.devh.boot.grpc.server.service.GrpcService;
-import ru.batoyan.vkr.notification.history.writer.history.DeliveryHistoryRepository;
+import ru.batoyan.vkr.notification.history.writer.history.DeliveryHistoryStore;
 import ru.notification.history.proto.v1.BatchGetRecipientDeliverySummariesRequest;
 import ru.notification.history.proto.v1.BatchGetRecipientDeliverySummariesResponse;
 import ru.notification.history.proto.v1.GetRecipientDeliverySummaryRequest;
@@ -22,7 +22,7 @@ public class NotificationHistoryGrpcService extends NotificationHistoryServiceGr
     private static final int MAX_LOOKBACK_HOURS = 24 * 30;
     private static final int MAX_BATCH_SIZE = 500;
 
-    private final DeliveryHistoryRepository repository;
+    private final DeliveryHistoryStore repository;
 
     @Override
     public void listClientHistory(ListClientHistoryRequest request, StreamObserver<ListClientHistoryResponse> responseObserver) {

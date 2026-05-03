@@ -1,0 +1,20 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    container_name: clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./init:/docker-entrypoint-initdb.d
+    networks:
+      - shared
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --query \"SELECT 1\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  clickhouse_data:

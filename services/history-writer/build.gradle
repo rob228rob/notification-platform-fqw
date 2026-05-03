@@ -21,13 +21,13 @@ dependencies {
     implementation 'net.thisptr:jackson-jq-extra:1.6.0'
 
     // jackson — если ещё нет в проекте
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
     implementation "org.springframework.boot:spring-boot-starter"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "org.springframework.boot:spring-boot-starter-web"
     implementation "io.micrometer:micrometer-registry-prometheus"
     implementation "org.springframework.boot:spring-boot-starter-jdbc"
     implementation "org.springframework.kafka:spring-kafka"
+    implementation "com.clickhouse:clickhouse-jdbc:0.7.2"
 
     implementation "org.flywaydb:flyway-core"
     implementation "org.flywaydb:flyway-database-postgresql"

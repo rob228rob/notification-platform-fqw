@@ -34,7 +34,10 @@ public class DeliveryStatusEventParser {
                     String.valueOf(map.get("eventType")),
                     asMap(map.get("payload")),
                     asMap(map.get("headers")),
-                    createdAt
+                    createdAt,
+                    "",
+                    -1,
+                    -1
             );
         } catch (Exception ex) {
             throw new IllegalArgumentException("Failed to parse delivery status event: " + rawMessage, ex);
