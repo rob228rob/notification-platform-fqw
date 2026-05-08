@@ -35,6 +35,7 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
 
             historyDb = container "ClickHouse History Store" "Stores delivery history and analytical read models." "ClickHouse" {
                 tags "Database"
+                tags "ClickHouseStore"
             }
 
             templateMongo = container "MongoDB Templates" "Stores templates, versions, channel contents and activeVersion." "MongoDB" {
@@ -210,6 +211,22 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             autolayout lr
         }
 
+        dynamic platform "KafkaMessageProcessingFlow" "Kafka-driven message processing from dispatcher topic to sender execution and history update." {
+            platform.kafka -> platform.deliveryDispatcher "consume delivery.dispatcher"
+            platform.deliveryDispatcher -> platform.profileConsent "resolve recipient profile and channel consent"
+            platform.profileConsent -> platform.profileRedis "read recipient profile"
+            platform.deliveryDispatcher -> platform.kafka "publish channel command"
+            platform.kafka -> platform.mailSender "consume mail command"
+            platform.mailSender -> platform.mailDedupRedis "deduplicate command"
+            platform.mailSender -> platform.cancellationService "check delivery allowed"
+            platform.cancellationService -> platform.cancellationRedis "read cancellation mark"
+            platform.mailSender -> emailProvider "send email"
+            platform.mailSender -> platform.kafka "publish delivery status"
+            platform.kafka -> platform.historyWriter "consume delivery status"
+            platform.historyWriter -> platform.historyDb "write delivery history"
+            autolayout lr
+        }
+
         dynamic platform "ProcessingFlowPresentation" "Notification processing flow for presentation: Facade -> Dispatcher -> Sender -> History." {
             clientSystem -> platform.facade "create or trigger"
             platform.facade -> platform.kafka "publish delivery.dispatcher"
@@ -260,6 +277,11 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
 
             element "RedisStore" {
                 background "#1f8a70"
+                color "#ffffff"
+            }
+
+            element "ClickHouseStore" {
+                background "#1565c0"
                 color "#ffffff"
             }
 
