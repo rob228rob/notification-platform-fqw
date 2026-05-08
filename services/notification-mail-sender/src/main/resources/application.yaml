@@ -16,6 +16,7 @@ outbox:
       dispatches: notification.facade.dispatches
       mail-dispatches: notification.mail.dispatches
       mail-delivery-statuses: notification.mail.delivery-statuses
+      delivery-fallback: delivery.fallback
     producer-retry:
       max-attempts: 8
       initial-backoff: 100ms
@@ -25,6 +26,7 @@ outbox:
 delivery:
   mail:
     enabled: true
+    legacy-postgres-pipeline-enabled: false
     inbox-batch-size: 500
     delivery-batch-size: 500
     inbox-fixed-delay: 500ms
@@ -34,6 +36,7 @@ delivery:
     default-max-deliveries: 2500
     max-attempts: 3
     retry-backoff: 5m
+    dedup-ttl: ${MAIL_DEDUP_TTL:6h}
     gateway:
       from: ${MAIL_FROM:no-reply@dev.local}
       subject-fallback-prefix: ${MAIL_SUBJECT_FALLBACK_PREFIX:[notification]}
@@ -44,6 +47,10 @@ delivery:
     fixed-delay: 500ms
 
 clients:
+  cancellation:
+    host: ${CANCELLATION_SERVICE_HOST:localhost}
+    port: ${CANCELLATION_SERVICE_PORT:9097}
+    deadline: 3s
   profile-consent:
     host: ${PROFILE_CONSENT_HOST:localhost}
     port: ${PROFILE_CONSENT_PORT:9096}
@@ -57,17 +64,24 @@ spring:
   threads:
     virtual:
       enabled: true
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
   application:
     name: notification-mail-sender
 
   config:
     import: classpath:creds/user-creds.yaml
+  data:
+    redis:
+      host: ${MAIL_REDIS_HOST:localhost}
+      port: ${MAIL_REDIS_PORT:6379}
+      username: ${MAIL_REDIS_USERNAME:redisuser}
+      password: ${MAIL_REDIS_PASSWORD:redisuserpassword}
+      timeout: 3s
+      connect-timeout: 3s
 
-  flyway:
-    locations: classpath:db/migration
-#  autoconfigure:
-#    exclude:
-#      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
   kafka:
     bootstrap-servers: ${kafka.bootstrap.servers:localhost:9093}
     listener:

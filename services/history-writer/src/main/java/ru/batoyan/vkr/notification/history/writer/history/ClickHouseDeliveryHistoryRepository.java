@@ -154,8 +154,8 @@ public class ClickHouseDeliveryHistoryRepository implements DeliveryHistoryStore
                        channel,
                        countIf(status in ('MAIL_DELIVERY_STATUS_SENT', 'SMS_DELIVERY_STATUS_SENT')) as successful_count,
                        countIf(status in (
-                           'MAIL_DELIVERY_STATUS_FAILED', 'MAIL_DELIVERY_STATUS_SKIPPED',
-                           'SMS_DELIVERY_STATUS_FAILED', 'SMS_DELIVERY_STATUS_SKIPPED'
+                           'MAIL_DELIVERY_STATUS_FAILED', 'MAIL_DELIVERY_STATUS_SKIPPED', 'MAIL_DELIVERY_STATUS_CANCELED',
+                           'SMS_DELIVERY_STATUS_FAILED', 'SMS_DELIVERY_STATUS_SKIPPED', 'SMS_DELIVERY_STATUS_CANCELED'
                        )) as unsuccessful_count
                 from %s
                 where recipient_id in (:recipient_ids)
@@ -283,6 +283,7 @@ public class ClickHouseDeliveryHistoryRepository implements DeliveryHistoryStore
             case "MAIL_DELIVERY_STATUS_RETRY", "SMS_DELIVERY_STATUS_RETRY" -> DeliveryStatus.DELIVERY_STATUS_RETRY;
             case "MAIL_DELIVERY_STATUS_FAILED", "SMS_DELIVERY_STATUS_FAILED" -> DeliveryStatus.DELIVERY_STATUS_FAILED;
             case "MAIL_DELIVERY_STATUS_SKIPPED", "SMS_DELIVERY_STATUS_SKIPPED" -> DeliveryStatus.DELIVERY_STATUS_SKIPPED;
+            case "MAIL_DELIVERY_STATUS_CANCELED", "SMS_DELIVERY_STATUS_CANCELED" -> DeliveryStatus.DELIVERY_STATUS_CANCELED;
             default -> DeliveryStatus.DELIVERY_STATUS_UNSPECIFIED;
         };
     }

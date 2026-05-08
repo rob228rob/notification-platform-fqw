@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package notification.cancellation.v1;
+
+option java_multiple_files = true;
+option java_package = "ru.notification.cancellation.proto.v1";
+option java_outer_classname = "NotificationCancellationProto";
+
+import "google/protobuf/timestamp.proto";
+
+service CancellationService {
+  rpc CancelDispatch (CancelDispatchRequest) returns (CancelDispatchResponse);
+  rpc CheckDeliveryAllowed (CheckDeliveryAllowedRequest) returns (CheckDeliveryAllowedResponse);
+}
+
+message CancelDispatchRequest {
+  string dispatch_id = 1;
+  string event_id = 2;
+  string client_id = 3;
+  string reason = 4;
+  string requested_by = 5;
+}
+
+message CancelDispatchResponse {
+  string dispatch_id = 1;
+  bool cancelled = 2;
+  bool already_cancelled = 3;
+  google.protobuf.Timestamp cancelled_at = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+message CheckDeliveryAllowedRequest {
+  string dispatch_id = 1;
+  string event_id = 2;
+  string client_id = 3;
+}
+
+message CheckDeliveryAllowedResponse {
+  string dispatch_id = 1;
+  bool allowed = 2;
+  bool cancelled = 3;
+  string reason = 4;
+  google.protobuf.Timestamp checked_at = 5;
+  google.protobuf.Timestamp expires_at = 6;
+}

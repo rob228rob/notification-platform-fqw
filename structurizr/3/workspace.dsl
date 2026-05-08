@@ -3,7 +3,7 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
     !identifiers hierarchical
 
     model {
-        clientSystem = softwareSystem "Client Information System" "External system that creates notification events and triggers dispatches." {
+        clientSystem = softwareSystem "Client Information System" "External system that creates notification events, triggers dispatches and requests cancellations." {
             tags "External"
         }
 
@@ -16,27 +16,20 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
         }
 
         platform = softwareSystem "Notification Platform" "Distributed event-driven platform for multi-channel notification delivery." {
-            facade = container "Notification Facade" "Accepts gRPC commands, manages notification events and dispatches, and publishes outbox messages." "Java, Spring Boot, gRPC"
+            facade = container "Notification Facade" "Accepts gRPC commands, validates input, manages events/audience/dispatches, renders templates and publishes dispatch requests." "Java, Spring Boot, gRPC"
             templateRegistry = container "Template Registry" "Stores template versions and renders subject/body for a chosen channel." "Java, Spring Boot, gRPC"
-            profileConsent = container "Profile Consent" "Provides recipient channel permissions, destinations and preferred channel." "Java, Spring Boot, gRPC"
-            schedulerDelivery = container "Scheduler Delivery" "Stores delayed mail dispatches and republishes due tasks to the working topic." "Java, Spring Boot, Kafka"
-            mailSender = container "Notification Mail Sender" "Consumes notification events and mail dispatches, plans deliveries, sends e-mail and publishes statuses." "Java, Spring Boot, Kafka"
-            smsSender = container "Notification SMS Sender" "Consumes notification events and SMS dispatches, plans deliveries, sends SMS and publishes statuses." "Java, Spring Boot, Kafka"
+            profileConsent = container "Profile Consent" "Provides recipient channel permissions and destinations." "Java, Spring Boot, gRPC"
+            cancellationService = container "Cancellation Service" "Stores dispatch cancellation marks in Redis and serves sender-side cancellation checks." "Java, Spring Boot, gRPC"
+            deliveryDispatcher = container "Delivery Dispatcher" "Consumes delivery.dispatcher and delivery.fallback, manages delayed dispatches, routes commands to sender topics and orchestrates fallback." "Java, Spring Boot, Kafka"
+            mailSender = container "Notification Mail Sender" "Consumes delivery commands, performs Redis dedup and cancellation checks, sends e-mail and publishes statuses or fallback events." "Java, Spring Boot, Kafka"
+            smsSender = container "Notification SMS Sender" "Consumes delivery commands, performs Redis dedup and cancellation checks, sends SMS and publishes statuses." "Java, Spring Boot, Kafka"
             historyWriter = container "History Writer" "Consumes delivery statuses and provides gRPC access to delivery history and summaries." "Java, Spring Boot, gRPC, Kafka"
 
             facadeDb = container "Facade PostgreSQL" "Stores notification events, audience, dispatches and outbox records owned by the facade." "PostgreSQL" {
                 tags "Database"
             }
 
-            schedulerDb = container "Scheduler PostgreSQL" "Stores delayed publication tasks and scheduler state." "PostgreSQL" {
-                tags "Database"
-            }
-
-            mailDb = container "Mail PostgreSQL" "Stores mail deliveries, attempts, inbox records and sender-side status data." "PostgreSQL" {
-                tags "Database"
-            }
-
-            smsDb = container "SMS PostgreSQL" "Stores SMS deliveries, attempts, inbox records and sender-side status data." "PostgreSQL" {
+            dispatcherDb = container "Dispatcher PostgreSQL" "Stores delayed dispatch tasks and dispatcher scheduling state." "PostgreSQL" {
                 tags "Database"
             }
 
@@ -48,11 +41,27 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
                 tags "Database"
             }
 
-            redis = container "Redis Recipient Profiles" "Recipient profile storage used only by the Profile Consent service." "Redis" {
+            profileRedis = container "Redis Recipient Profiles" "Recipient profile storage used only by the Profile Consent service." "Redis" {
                 tags "Database"
+                tags "RedisStore"
             }
 
-            kafka = container "Kafka" "Asynchronous transport for notification events, dispatch commands and delivery statuses." "Apache Kafka" {
+            cancellationRedis = container "Redis Cancellation Marks" "TTL storage for dispatch cancellation keys." "Redis" {
+                tags "Database"
+                tags "RedisStore"
+            }
+
+            mailDedupRedis = container "Redis Mail Dedup" "Local TTL dedup storage for mail sender commands." "Redis" {
+                tags "Database"
+                tags "RedisStore"
+            }
+
+            smsDedupRedis = container "Redis SMS Dedup" "Local TTL dedup storage for SMS sender commands." "Redis" {
+                tags "Database"
+                tags "RedisStore"
+            }
+
+            kafka = container "Kafka" "Asynchronous transport for notification events, dispatch requests, sender commands, fallback events and delivery statuses." "Apache Kafka" {
                 tags "MessageBus"
             }
 
@@ -60,29 +69,30 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             grafana = container "Grafana" "Visualizes system quality and observability metrics." "Grafana"
         }
 
-        clientSystem -> platform.facade "Creates notification events, sets audience, triggers dispatch" "gRPC"
+        clientSystem -> platform.facade "Creates notification events, triggers dispatch, cancels dispatch" "gRPC"
 
         platform.facade -> platform.templateRegistry "renders template" "gRPC"
+        platform.facade -> platform.cancellationService "cancels dispatch" "gRPC"
         platform.facade -> platform.facadeDb "writes state" "JDBC"
-        platform.facade -> platform.kafka "publishes event" "Kafka"
+        platform.facade -> platform.kafka "publishes delivery.dispatcher" "Kafka"
 
         platform.templateRegistry -> platform.templateMongo "stores templates" "MongoDB"
+        platform.profileConsent -> platform.profileRedis "reads profiles" "Redis"
+        platform.cancellationService -> platform.cancellationRedis "reads/writes cancellation marks" "Redis"
 
-        platform.profileConsent -> platform.redis "reads profiles" "Redis"
+        platform.deliveryDispatcher -> platform.kafka "consumes dispatcher/fallback, publishes sender commands and statuses" "Kafka"
+        platform.deliveryDispatcher -> platform.dispatcherDb "stores delayed tasks" "JDBC"
+        platform.deliveryDispatcher -> platform.profileConsent "resolves recipient channels" "gRPC"
+        platform.deliveryDispatcher -> platform.cancellationService "checks dispatch cancellation" "gRPC"
 
-        platform.schedulerDelivery -> platform.kafka "consumes and republishes" "Kafka"
-        platform.schedulerDelivery -> platform.schedulerDb "stores tasks" "JDBC"
-
-        platform.mailSender -> platform.kafka "consumes and publishes" "Kafka"
-        platform.mailSender -> platform.profileConsent "checks profile" "gRPC"
-        platform.mailSender -> platform.historyWriter "reads history" "gRPC"
-        platform.mailSender -> platform.mailDb "writes delivery" "JDBC"
+        platform.mailSender -> platform.kafka "consumes commands, publishes statuses and fallback" "Kafka"
+        platform.mailSender -> platform.mailDedupRedis "deduplicates commands" "Redis"
+        platform.mailSender -> platform.cancellationService "checks cancellation before send" "gRPC"
         platform.mailSender -> emailProvider "sends email" "SMTP / JavaMail"
 
-        platform.smsSender -> platform.kafka "consumes and publishes" "Kafka"
-        platform.smsSender -> platform.profileConsent "checks profile" "gRPC"
-        platform.smsSender -> platform.historyWriter "reads history" "gRPC"
-        platform.smsSender -> platform.smsDb "writes delivery" "JDBC"
+        platform.smsSender -> platform.kafka "consumes commands and publishes statuses" "Kafka"
+        platform.smsSender -> platform.smsDedupRedis "deduplicates commands" "Redis"
+        platform.smsSender -> platform.cancellationService "checks cancellation before send" "gRPC"
         platform.smsSender -> smsProvider "sends sms" "Provider API / adapter"
 
         platform.historyWriter -> platform.kafka "consumes status events" "Kafka"
@@ -91,7 +101,8 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
         platform.prometheus -> platform.facade "Scrapes metrics" "HTTP / Actuator"
         platform.prometheus -> platform.templateRegistry "Scrapes metrics" "HTTP / Actuator"
         platform.prometheus -> platform.profileConsent "Scrapes metrics" "HTTP / Actuator"
-        platform.prometheus -> platform.schedulerDelivery "Scrapes metrics" "HTTP / Actuator"
+        platform.prometheus -> platform.cancellationService "Scrapes metrics" "HTTP / Actuator"
+        platform.prometheus -> platform.deliveryDispatcher "Scrapes metrics" "HTTP / Actuator"
         platform.prometheus -> platform.mailSender "Scrapes metrics" "HTTP / Actuator"
         platform.prometheus -> platform.smsSender "Scrapes metrics" "HTTP / Actuator"
         platform.prometheus -> platform.historyWriter "Scrapes metrics" "HTTP / Actuator"
@@ -124,7 +135,8 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             include platform.facade
             include platform.templateRegistry
             include platform.profileConsent
-            include platform.schedulerDelivery
+            include platform.cancellationService
+            include platform.deliveryDispatcher
             include platform.mailSender
             include platform.smsSender
             include platform.historyWriter
@@ -132,24 +144,30 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             autolayout lr
         }
 
-        container platform "IngressContourPresentation" "Input contour: facade, template service, owned storages and Kafka." {
+        container platform "IngressContourPresentation" "Input contour: facade, owned storages, template service and Kafka." {
             include clientSystem
             include platform.facade
             include platform.facadeDb
             include platform.templateRegistry
             include platform.templateMongo
+            include platform.cancellationService
+            include platform.cancellationRedis
             include platform.kafka
             autolayout lr
         }
 
-        container platform "DeliveryHandlersPresentation" "Notification handlers contour: Kafka, senders, owned storages, profile consent, history writer and external providers." {
+        container platform "DeliveryHandlersPresentation" "Delivery contour: dispatcher, senders, Redis dedup, profile/cancellation checks and external providers." {
             include platform.kafka
-            include platform.mailSender
-            include platform.mailDb
-            include platform.smsSender
-            include platform.smsDb
+            include platform.deliveryDispatcher
+            include platform.dispatcherDb
             include platform.profileConsent
-            include platform.redis
+            include platform.profileRedis
+            include platform.cancellationService
+            include platform.cancellationRedis
+            include platform.mailSender
+            include platform.mailDedupRedis
+            include platform.smsSender
+            include platform.smsDedupRedis
             include platform.historyWriter
             include platform.historyDb
             include emailProvider
@@ -159,52 +177,57 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
 
         dynamic platform "CreateEventFlow" "CreateNotificationEvent and EventCreated flow." {
             clientSystem -> platform.facade "create event"
-            platform.facade -> platform.templateRegistry "preview"
+            platform.facade -> platform.templateRegistry "render preview"
             platform.facade -> platform.facadeDb "save event"
             platform.facade -> platform.kafka "publish event"
-            platform.kafka -> platform.mailSender "consume event"
-            platform.kafka -> platform.smsSender "consume event"
             autolayout lr
         }
 
-        dynamic platform "DelayedMailDispatchFlow" "TriggerDispatch for delayed mail delivery." {
+        dynamic platform "DelayedMailDispatchFlow" "TriggerDispatch for delayed delivery routed through delivery-dispatcher." {
             clientSystem -> platform.facade "trigger dispatch"
+            platform.facade -> platform.templateRegistry "read template"
             platform.facade -> platform.facadeDb "save dispatch"
-            platform.facade -> platform.kafka "publish scheduled"
-            platform.kafka -> platform.schedulerDelivery "consume scheduled"
-            platform.schedulerDelivery -> platform.schedulerDb "save task"
-            platform.schedulerDelivery -> platform.kafka "publish due"
-            platform.kafka -> platform.mailSender "consume dispatch"
+            platform.facade -> platform.kafka "publish delivery.dispatcher"
+            platform.kafka -> platform.deliveryDispatcher "consume dispatch request"
+            platform.deliveryDispatcher -> platform.dispatcherDb "save delayed task"
+            platform.deliveryDispatcher -> platform.kafka "publish mail command when due"
+            platform.kafka -> platform.mailSender "consume command"
             autolayout lr
         }
 
-        dynamic platform "DeliveryAndHistoryFlow" "Mail delivery, policy checks and history update." {
-            platform.kafka -> platform.mailSender "consume dispatch"
-            platform.mailSender -> platform.mailDb "save delivery"
-            platform.mailSender -> platform.profileConsent "check profile"
-            platform.mailSender -> platform.historyWriter "read summary"
+        dynamic platform "DeliveryAndHistoryFlow" "Mail delivery, cancellation checks, fallback and history update." {
+            platform.kafka -> platform.deliveryDispatcher "consume dispatch request"
+            platform.deliveryDispatcher -> platform.profileConsent "resolve email destination"
+            platform.deliveryDispatcher -> platform.kafka "publish mail command"
+            platform.kafka -> platform.mailSender "consume command"
+            platform.mailSender -> platform.cancellationService "check delivery allowed"
             platform.mailSender -> emailProvider "send email"
-            platform.mailSender -> platform.kafka "publish status"
+            platform.mailSender -> platform.kafka "publish status or delivery.fallback"
+            platform.kafka -> platform.deliveryDispatcher "consume delivery.fallback"
+            platform.deliveryDispatcher -> platform.kafka "publish sms command when fallback allowed"
             platform.kafka -> platform.historyWriter "consume status"
             platform.historyWriter -> platform.historyDb "write history"
             autolayout lr
         }
 
-        dynamic platform "ProcessingFlowPresentation" "Notification processing flow for presentation: Facade -> Kafka -> Sender -> History." {
+        dynamic platform "ProcessingFlowPresentation" "Notification processing flow for presentation: Facade -> Dispatcher -> Sender -> History." {
             clientSystem -> platform.facade "create or trigger"
-            platform.facade -> platform.kafka "publish event"
-            platform.kafka -> platform.mailSender "consume dispatch"
+            platform.facade -> platform.kafka "publish delivery.dispatcher"
+            platform.kafka -> platform.deliveryDispatcher "consume dispatch request"
+            platform.deliveryDispatcher -> platform.kafka "publish sender command"
+            platform.kafka -> platform.mailSender "consume command"
             platform.mailSender -> platform.kafka "publish status"
             platform.kafka -> platform.historyWriter "consume status"
             autolayout lr
         }
 
-        dynamic platform "SchedulingFlowPresentation" "Delayed dispatch flow for presentation: Facade -> Kafka -> Scheduler -> Kafka -> Sender -> History." {
+        dynamic platform "SchedulingFlowPresentation" "Delayed dispatch flow for presentation: Facade -> Kafka -> Delivery Dispatcher -> Sender -> History." {
             clientSystem -> platform.facade "trigger delayed"
-            platform.facade -> platform.kafka "publish scheduled"
-            platform.kafka -> platform.schedulerDelivery "consume scheduled"
-            platform.schedulerDelivery -> platform.kafka "publish due"
-            platform.kafka -> platform.mailSender "consume due"
+            platform.facade -> platform.kafka "publish delivery.dispatcher"
+            platform.kafka -> platform.deliveryDispatcher "consume request"
+            platform.deliveryDispatcher -> platform.dispatcherDb "store delayed task"
+            platform.deliveryDispatcher -> platform.kafka "publish sender command when due"
+            platform.kafka -> platform.mailSender "consume due command"
             platform.mailSender -> platform.kafka "publish status"
             platform.kafka -> platform.historyWriter "consume status"
             autolayout lr
@@ -232,6 +255,11 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             element "Database" {
                 shape cylinder
                 background "#2e7d32"
+                color "#ffffff"
+            }
+
+            element "RedisStore" {
+                background "#1f8a70"
                 color "#ffffff"
             }
 

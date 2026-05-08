@@ -215,49 +215,12 @@ public class OutboxRelayService {
         return switch (row.aggregateType()) {
             case "notification_event" -> topics.events();
             case "dispatch" -> topics.dispatches();
-            case "mail_dispatch" -> isDelayedMailDispatch(row) ? topics.mailDispatchesScheduled() : topics.mailDispatches();
+            case "dispatch_request" -> topics.deliveryDispatcher();
+            case "mail_dispatch" -> topics.deliveryDispatcher();
             case "sms_dispatch" -> topics.smsDispatches();
+            case "delivery_fallback" -> topics.deliveryFallback();
             default -> topics.events();
         };
-    }
-
-    private boolean isDelayedMailDispatch(OutboxRow row) {
-        var payload = readJsonMap(row.payloadJson());
-        var rawPlannedSendAt = firstPresent(payload, "planned_send_at", "plannedSendAt", "send_at", "sendAt");
-        if (rawPlannedSendAt == null) {
-            return false;
-        }
-
-        var plannedSendAtText = String.valueOf(rawPlannedSendAt).trim();
-        if (plannedSendAtText.isEmpty() || "null".equalsIgnoreCase(plannedSendAtText)) {
-            return false;
-        }
-
-        var plannedSendAt = parseInstant(plannedSendAtText, row.outboxId());
-        return plannedSendAt != null && plannedSendAt.isAfter(Instant.now());
-    }
-
-    private Object firstPresent(Map<String, Object> payload, String... keys) {
-        for (var key : keys) {
-            var value = payload.get(key);
-            if (value != null) {
-                return value;
-            }
-        }
-        return null;
-    }
-
-    private Instant parseInstant(String value, long outboxId) {
-        try {
-            return OffsetDateTime.parse(value).toInstant();
-        } catch (DateTimeParseException ignored) {
-            try {
-                return Instant.parse(value);
-            } catch (DateTimeParseException ex) {
-                LOG.warn("[OUTBOX] Failed to parse planned_send_at for outboxId={}, value={}", outboxId, value);
-                return null;
-            }
-        }
     }
 
     private String serializePublisherEvent(OutboxRow row) {

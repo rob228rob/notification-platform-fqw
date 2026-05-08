@@ -1,0 +1,35 @@
+plugins {
+    id "org.springframework.boot"
+    id "io.spring.dependency-management"
+    id "java"
+}
+
+tasks.named("bootJar") {
+    archiveFileName = "delivery-dispatcher.jar"
+}
+
+dependencies {
+    implementation project(":libs:proto-common")
+    implementation project(":libs:proto-profile")
+    implementation project(":libs:proto-cancellation")
+    implementation "org.springframework.boot:spring-boot-starter"
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "org.springframework.boot:spring-boot-starter-jdbc"
+    implementation "org.springframework.kafka:spring-kafka"
+    implementation "io.grpc:grpc-netty-shaded:${providers.gradleProperty('grpcVersion').get()}"
+
+    implementation "org.flywaydb:flyway-core"
+    implementation "org.flywaydb:flyway-database-postgresql"
+    runtimeOnly "org.postgresql:postgresql"
+
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.17.2"
+
+    compileOnly "org.projectlombok:lombok"
+    annotationProcessor "org.projectlombok:lombok"
+    testCompileOnly "org.projectlombok:lombok"
+    testAnnotationProcessor "org.projectlombok:lombok"
+
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+}
+
+tasks.test { useJUnitPlatform() }

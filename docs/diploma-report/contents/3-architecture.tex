@@ -20,7 +20,7 @@
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{inc/structurizr-system-context.png}
+    \includegraphics[width=\textwidth]{inc/050526-arch/050526-archSystemContextCurrent.png}
     \caption{Системный контекст платформы уведомлений}
     \label{fig:arch-system-context-structurizr}
 \end{figure}
@@ -33,12 +33,12 @@
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{inc/structurizr-containers-data-ownership.png}
+    \includegraphics[width=\textwidth]{inc/050526-arch/050526-archContainersDataOwnership.png}
     \caption{Контейнерная архитектура платформы уведомлений с разделением хранилищ по сервисным контурам}
     \label{fig:arch-containers-owned-storage}
 \end{figure}
 
-Рисунок~\ref{fig:arch-containers-owned-storage} отражает не только сервисы, но и владение данными. Notification Facade, Scheduler Delivery, Notification Mail Sender и Notification SMS Sender используют отдельные PostgreSQL-хранилища операционного контура. History Writer использует ClickHouse как отдельное аналитическое хранилище истории доставки. Template Registry владеет MongoDB-хранилищем шаблонов, а Profile Consent владеет Redis-хранилищем профилей получателей. Такое разделение исключает превращение базы данных в общий интеграционный слой и принуждает сервисы обмениваться данными только через контракт владельца.
+Рисунок~\ref{fig:arch-containers-owned-storage} отражает не только сервисы, но и владение данными. Notification Facade и Delivery Dispatcher используют отдельные PostgreSQL-хранилища операционного контура. History Writer использует ClickHouse как отдельное аналитическое хранилище истории доставки. Template Registry владеет MongoDB-хранилищем шаблонов, Profile Consent владеет Redis-хранилищем профилей получателей, Cancellation Service владеет Redis-хранилищем отметок отмены, а sender-сервисы используют собственные Redis-контуры для локального dedup. Такое разделение исключает превращение базы данных в общий интеграционный слой и принуждает сервисы обмениваться данными только через контракт владельца.
 
 \subsection{Верхнеуровневая модель данных и сервисных границ}
 
@@ -70,11 +70,11 @@
         \hline
         Profile Consent & Выдача профиля получателя, разрешений каналов и адресных атрибутов. & Redis Recipient Profiles \\
         \hline
-        Scheduler Delivery & Контур отложенной публикации запусков доставки. & Scheduler PostgreSQL \\
+        Delivery Dispatcher & Consume общего dispatch-топика, маршрутизация в канальные топики, fallback и отложенная публикация. & Dispatcher PostgreSQL \\
         \hline
-        Notification Mail Sender & Обработка email-запусков, попытки отправки, retry и публикация статусов. & Mail PostgreSQL \\
+        Notification Mail Sender & Исполнение email-доставки, cancellation-check, retry, fallback-event и локальный dedup. & Redis Mail Dedup \\
         \hline
-        Notification SMS Sender & Обработка SMS-запусков, попытки отправки, retry и публикация статусов. & SMS PostgreSQL \\
+        Notification SMS Sender & Исполнение SMS-доставки, cancellation-check, retry и локальный dedup. & Redis SMS Dedup \\
         \hline
         History Writer & Приём статусных событий, запись истории и формирование сводок. & ClickHouse History Store \\
         \hline
@@ -95,7 +95,7 @@
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{inc/structurizr-ingress-contour.png}
+    \includegraphics[width=\textwidth]{inc/050526-arch/050526-archIngressContourPresentation.png}
     \caption{Входной контур платформы: фасад, шаблонный сервис, собственные хранилища и публикация в Kafka}
     \label{fig:arch-create-event-flow-structurizr}
 \end{figure}
@@ -113,7 +113,7 @@
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.92\textwidth]{inc/structurizr-processing-flow-presentation.png}
+    \includegraphics[width=0.92\textwidth]{inc/050526-arch/050526-archProcessingFlowPresentation.png}
     \caption{Поток запуска доставки и прохождения уведомления через канальный контур}
     \label{fig:arch-processing-flow-presentation}
 \end{figure}
@@ -122,29 +122,44 @@
 
 \subsubsection{Поток отложенной доставки}
 
-Отложенная доставка вынесена в самостоятельный контур Scheduler Delivery. Фасад публикует запуск в отдельный scheduled-топик, планировщик сохраняет задачу в собственном PostgreSQL-хранилище и после наступления планового времени переводит её в рабочий Kafka-топик. Хранение отложенных задач в отдельном сервисе исключает зависимость от таймеров в памяти конкретного экземпляра приложения.
+Отложенная доставка вынесена в самостоятельный контур Delivery Dispatcher. Фасад публикует запрос на запуск в общий топик \texttt{delivery.dispatcher}, диспетчер сохраняет задачу в собственном PostgreSQL-хранилище и после наступления планового времени переводит её в рабочий канальный Kafka-топик. Хранение отложенных задач в отдельном сервисе исключает зависимость от таймеров в памяти конкретного экземпляра приложения и одновременно сохраняет единое место принятия решений по маршрутизации.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.92\textwidth]{inc/structurizr-scheduling-flow-presentation.png}
+    \includegraphics[width=0.92\textwidth]{inc/050526-arch/050526-archSchedulingFlowPresentation.png}
     \caption{Поток отложенной доставки с отдельным контуром планировщика}
     \label{fig:arch-scheduling-flow-presentation}
 \end{figure}
 
-Рисунок~\ref{fig:arch-scheduling-flow-presentation} показывает отличие отложенного сценария от немедленного: между фасадом и sender-сервисом появляется отдельная стадия планировщика. Она принимает событие в Kafka, удерживает задачу до планового времени и только затем публикует рабочий запуск в канал доставки. За счёт этого отложенная отправка не зависит от таймеров в памяти фасада и не требует удерживать долгоживущий пользовательский запрос.
+Рисунок~\ref{fig:arch-scheduling-flow-presentation} показывает отличие отложенного сценария от немедленного: между фасадом и sender-сервисом появляется отдельная стадия диспетчеризации. Она принимает событие в Kafka, удерживает задачу до планового времени и только затем публикует рабочий запуск в канал доставки. За счёт этого отложенная отправка не зависит от таймеров в памяти фасада и не требует удерживать долгоживущий пользовательский запрос.
 
 \subsubsection{Поток канальной обработки и истории}
 
-Mail Sender и SMS Sender потребляют свои рабочие топики независимо друг от друга. Перед фактической отправкой sender-сервис обращается к profile-consent, получает решение по получателю и либо выполняет отправку, либо фиксирует пропуск как доменный результат обработки. После завершения попытки sender публикует статусное событие, которое history-writer записывает в ClickHouse и использует как аналитическую read model для запросов чтения.
+Mail Sender и SMS Sender потребляют свои рабочие топики независимо друг от друга. Перед фактической отправкой sender-сервис выполняет только execution-level проверки: локальный dedup в Redis, проверку отмены через cancellation-service, проверку deadline/timeout и попытку отправки через выбранный канал. После завершения попытки sender публикует статусное событие, которое history-writer записывает в ClickHouse и использует как аналитическую read model для запросов чтения. В целевом варианте fallback-маршрутизации mail sender при окончательной ошибке или исчерпании лимита повторов публикует в Kafka отдельное fallback-событие \texttt{delivery.fallback}, а delivery-dispatcher формирует новый запуск доставки для альтернативного канала. Такой маршрут отделяет повторную попытку в исходном канале от смены канала связи и не смешивает sender-обработку с оркестрацией нового запуска доставки.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{inc/structurizr-delivery-handlers.png}
-    \caption{Контур обработчиков уведомлений: Kafka, sender-сервисы, profile-consent, history-writer и внешние провайдеры}
+    \includegraphics[width=\textwidth]{inc/050526-arch/050526-archDeliveryHandlersPresentation.png}
+    \caption{Контур обработчиков уведомлений}
     \label{fig:arch-delivery-handlers-structurizr}
 \end{figure}
 
 Рисунок~\ref{fig:arch-delivery-handlers-structurizr} показывает канальный участок архитектуры. На этом уровне sender-сервисы работают со своими PostgreSQL-хранилищами, получают решение о допустимости доставки через Profile Consent, обращаются к внешнему провайдеру и завершают обработку публикацией статусного события для History Writer. Схема подчёркивает, что Redis и история доставки не читаются напрямую: обмен идёт только через сервисные контракты и Kafka, а накопление аналитической истории инкапсулировано внутри history-writer.
+
+\subsection{Статусная модель доставки}
+
+Статусная модель задаёт правила перехода между этапами обработки и разделяет три разных класса состояний. Состояния DRAFT и SCHEDULED относятся к подготовке уведомительного события и запуску доставки. Они фиксируют, создан ли маршрут доставки и должен ли он быть удержан до планового времени. Состояние PENDING открывает канальный контур: в этой точке запуск уже сформирован, но фактическая отправка по каналу ещё не началась. В целевом варианте эта модель закрепляется в общем protobuf-контракте `notification.common.v1.DeliveryStatus`, чтобы фасадный, sender- и исторический контуры одинаково трактовали переходы между стадиями обработки.
+
+После перехода в SENDING sender-сервис выполняет cancellation-check и попытку отправки через выбранный канал. Если доставка отменена, обработка завершается статусом CANCELED. Если провайдер подтверждает отправку, доставка получает статус SENT. Временная ошибка переводит доставку в RETRY и допускает повторную попытку в пределах заданного лимита. Исчерпание лимита повторов или окончательная ошибка не обязательно ведут сразу к FAILED. В целевом варианте mail sender сначала публикует fallback-событие, а delivery-dispatcher проверяет наличие альтернативного канала, допустимость fallback-маршрутизации и число уже выполненных смен канала.
+
+Если смена канала допустима, delivery-dispatcher создаёт новый запуск доставки с полями \texttt{fallback\_depth}, \texttt{fallback\_from\_channel} и \texttt{visited\_channels}. Число смен канала ограничивается, чтобы исключить циклическую маршрутизацию между email и SMS. Если fallback-маршрутизация не разрешена или лимит смен канала уже исчерпан, фиксируется итоговый статус FAILED.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\textwidth]{inc/status-model.png}
+    \caption{Переходы статусов канальной доставки}
+    \label{fig:arch-delivery-status-model}
+\end{figure}
 
 \subsection{Использование ClickHouse для хранения истории доставки}
 
@@ -160,7 +175,7 @@ Kafka используется как базовый транспорт асин
 \begin{enumerate}
     \item поток событий жизненного цикла уведомления;
     \item потоки рабочих запусков по каналам;
-    \item поток отложенных email-запусков;
+    \item общий поток диспетчеризации и поток fallback-событий;
     \item поток статусных событий доставки.
 \end{enumerate}
 
@@ -176,29 +191,31 @@ Kafka используется как базовый транспорт асин
         \hline
         \textbf{Топик} & \textbf{Назначение} \\
         \hline
-        \texttt{\seqsplit{notification.facade.events}} & События жизненного цикла уведомления, публикуемые фасадом для дальнейшей канальной обработки. \\
+        \texttt{notification.facade.events} & События жизненного цикла уведомления, публикуемые фасадом для дальнейшей канальной обработки. \\
         \hline
         \texttt{\seqsplit{notification.mail.dispatches}} & Рабочие команды на email-доставку. \\
         \hline
-        \texttt{\seqsplit{notification.mail.scheduled}} & Отложенные email-команды, которые сначала обрабатывает Scheduler Delivery. \\
+        \texttt{\seqsplit{delivery.dispatcher}} & Общий входной топик для delivery-dispatcher, в который facade публикует dispatch-request. \\
+        \hline
+        \texttt{\seqsplit{delivery.fallback}} & События о необходимости fallback-маршрутизации после окончательной ошибки канала. \\
         \hline
         \texttt{\seqsplit{notification.sms.dispatches}} & Рабочие команды на SMS-доставку. \\
         \hline
-        \texttt{\seqsplit{notification.delivery-statuses}} & Итоговые статусы email- и SMS-доставки, поступающие в history-writer. \\
+        \texttt{\seqsplit{notification.mail.delivery-statuses}} & Итоговые статусы email-доставок, поступающие в history-writer. \\
+        \hline
+        \texttt{\seqsplit{notification.sms.delivery-statuses}} & Итоговые статусы SMS-доставок, поступающие в history-writer. \\
         \hline
     \end{tabular}
 \end{table}
-
-Таблица~\ref{tab:kafka-architecture-topics} показывает, что Kafka используется не как внешний интеграционный шлюз, а как внутренний транспорт для нескольких независимых стадий обработки. Отдельные рабочие топики по каналам позволяют масштабировать sender-сервисы независимо и не смешивать email- и SMS-обработку в одном consumer-контуре.
 
 \subsubsection{Маршрут событийного потока}
 
 Маршрут обработки в Kafka-контуре может быть представлен как последовательность доменных шагов:
 \begin{enumerate}
     \item фасад публикует событие жизненного цикла уведомления в notification.facade.events;
-    \item фасад формирует каналоспецифичный запуск и публикует его в notification.mail.dispatches или notification.sms.dispatches;
-    \item при отложенной отправке запуск сначала попадает в notification.mail.scheduled, затем планировщик переносит его в рабочий топик;
-    \item канальные обработчики публикуют итог в notification.delivery-statuses;
+    \item фасад публикует dispatch-request в общий топик delivery.dispatcher;
+    \item delivery-dispatcher выбирает канал, а при отложенной отправке удерживает задачу до планового времени и затем публикует рабочий запуск в notification.mail.dispatches или notification.sms.dispatches;
+    \item канальные обработчики публикуют итог в notification.mail.delivery-statuses или notification.sms.delivery-statuses;
     \item сервис истории консолидирует статусные события в агрегированное представление получателя.
 \end{enumerate}
 
@@ -214,6 +231,16 @@ Kafka используется как базовый транспорт асин
 \end{enumerate}
 
 Эта схема соответствует модели at-least-once доставки и управляемой eventual consistency между сервисами \cite{kafka_docs,richardson_patterns}. Дубликаты в транспортном слое допускаются, но подавляются на уровне приложения ключами идемпотентности, входящими журналами и уникальными ограничениями.
+
+\subsection{Отказоустойчивость}
+
+В работе под отказоустойчивостью понимается не физическая гарантия получения сообщения конечным пользователем, а способность платформы сохранить принятое уведомительное событие, продолжить обработку после частичных сбоев и зафиксировать итог маршрута в истории доставки. Эта способность обеспечивается сочетанием нескольких архитектурных механизмов.
+
+Во входном контуре notification-facade сохраняет доменное изменение и outbox-запись в одном локальном транзакционном шаге. Поэтому сбой отдельного экземпляра сервиса после фиксации команды не приводит к потере уже принятого уведомительного события. В канальных контурах sender-сервисы используют inbox и идемпотентные ключи, поэтому повторная доставка Kafka-сообщения не должна создавать новую канальную доставку поверх уже обработанной записи.
+
+Ошибки внешнего провайдера не трактуются как единый тип отказа. Временная ошибка переводит доставку в RETRY и допускает повторную попытку в пределах лимита. Окончательная ошибка или исчерпание лимита повторов могут завершить маршрут статусом FAILED, а при наличии разрешённого альтернативного канала инициируют fallback-маршрутизацию. В целевом варианте mail sender публикует событие о канальном неуспехе в \texttt{delivery.fallback}, после чего delivery-dispatcher формирует новый запуск доставки в канал из списка \texttt{fallback\_channels}. Для защиты от циклов используются поля \texttt{fallback\_depth}, \texttt{fallback\_from\_channel}, \texttt{visited\_channels} и ограничение числа смен канала.
+
+Отдельной частью отказоустойчивости выступает эксплуатационный контроль деградации. Readiness- и liveness-probes позволяют Kubernetes вывести из маршрута нездоровый экземпляр сервиса, а метрики gRPC, Kafka producer/listener, consumer lag и доли ошибок дают возможность обнаружить зависание публикации, рост очереди или деградацию sender-контура. В текущем стенде для этого используются дашборды Grafana и метрики Prometheus; те же метрики могут быть привязаны к пороговым alert-правилам на рост p95 задержки, consumer lag, доли неуспешных доставок и недоступности health-check endpoints.
 
 \subsection{Архитектура профиля получателя}
 

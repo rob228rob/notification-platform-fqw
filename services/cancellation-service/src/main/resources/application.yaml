@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: cancellation-service
+  data:
+    redis:
+      host: ${CANCELLATION_REDIS_HOST:localhost}
+      port: ${CANCELLATION_REDIS_PORT:6379}
+      username: ${CANCELLATION_REDIS_USERNAME:redisuser}
+      password: ${CANCELLATION_REDIS_PASSWORD:redisuserpassword}
+      timeout: 3s
+      connect-timeout: 3s
+
+cancellation:
+  redis:
+    key-prefix: ${CANCELLATION_REDIS_KEY_PREFIX:cancellation:dispatch:}
+    ttl: ${CANCELLATION_REDIS_TTL:30m}
+
+grpc:
+  server:
+    port: ${CANCELLATION_GRPC_PORT:9097}
+
+server:
+  port: ${SERVER_PORT:8916}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  level:
+    root: INFO
+    ru.batoyan.vkr.notification.cancellation: DEBUG

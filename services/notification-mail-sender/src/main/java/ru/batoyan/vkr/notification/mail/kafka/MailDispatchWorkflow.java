@@ -3,6 +3,7 @@ package ru.batoyan.vkr.notification.mail.kafka;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -26,6 +27,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "delivery.mail.legacy-postgres-pipeline-enabled", havingValue = "true")
 public class MailDispatchWorkflow {
 
     private static final String CHANNEL_EMAIL = "CHANNEL_EMAIL";

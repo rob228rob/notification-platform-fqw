@@ -14,6 +14,7 @@ service NotificationFacade {
   rpc CreateNotificationEvent (CreateEventRequest) returns (CreateEventResponse);
   rpc UpdateNotificationEvent (UpdateEventRequest) returns (UpdateEventResponse);
   rpc CancelNotificationEvent (CancelEventRequest) returns (CancelEventResponse);
+  rpc CancelDispatch (CancelDispatchRequest) returns (CancelDispatchResponse);
 
   rpc GetNotificationEvent    (GetEventRequest)    returns (GetEventResponse);
   rpc ListNotificationEvents  (ListEventsRequest)  returns (ListEventsResponse);
@@ -88,6 +89,9 @@ message CreateEventRequest {
   map<string, string> payload = 7;
 
   Audience audience = 8;
+  // Допустимые альтернативные каналы, если preferred_channel недоступен
+  // или sender-контур должен выполнить fallback-маршрутизацию.
+  repeated notification.common.v1.Channel fallback_channels = 9;
 }
 
 message CreateEventResponse {
@@ -107,6 +111,8 @@ message UpdateEventRequest {
 
   DeliveryStrategy strategy = 6;
   map<string, string> payload = 7;
+  // Обновляемый набор fallback-каналов для маршрутизации доставки.
+  repeated notification.common.v1.Channel fallback_channels = 8;
 }
 
 message UpdateEventResponse {
@@ -134,9 +140,23 @@ message TriggerDispatchRequest {
     string event_id = 1;
     string idempotency_key = 2;
     google.protobuf.Timestamp override_send_at = 3;
+    // Опциональный override канального маршрута на уровне конкретного запуска.
+    notification.common.v1.Channel preferred_channel = 4;
+    repeated notification.common.v1.Channel fallback_channels = 5;
 }
 
 message TriggerDispatchResponse {string dispatch_id = 1; DispatchStatus status = 2;}
+
+message CancelDispatchRequest {
+  string dispatch_id = 1;
+  string reason = 2;
+}
+
+message CancelDispatchResponse {
+  string dispatch_id = 1;
+  DispatchStatus status = 2;
+  google.protobuf.Timestamp cancelled_at = 3;
+}
 
 message GetDispatchRequest {string dispatch_id = 1;}
 
@@ -151,6 +171,8 @@ message DispatchView {
 
   int64 total_targets = 7;
   int64 enqueued = 8;
+  notification.common.v1.Channel preferred_channel = 9;
+  repeated notification.common.v1.Channel fallback_channels = 10;
 }
 message GetDispatchResponse {DispatchView dispatch = 1;}
 
@@ -180,6 +202,7 @@ message EventView {
   string cancel_reason = 13;
 
   map<string, string> payload = 14;
+  repeated notification.common.v1.Channel fallback_channels = 15;
 }
 
 message GetEventResponse {EventView event = 1;}

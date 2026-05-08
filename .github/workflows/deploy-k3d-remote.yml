@@ -1,0 +1,86 @@
+name: Deploy k3d on VM
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-k3d:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull, build and deploy k3d stand on VM
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_SSH_HOST }}
+          username: ${{ secrets.VM_SSH_USERNAME }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/own_apps/notification-platform-fqw
+            git pull --ff-only
+
+            ./gradlew \
+              :services:notification-facade:bootJar \
+              :services:notification-mail-sender:bootJar \
+              :services:notification-sms-sender:bootJar \
+              :services:profile-consent:bootJar \
+              :services:history-writer:bootJar \
+              :services:scheduler-delivery:bootJar \
+              :services:template-registry:bootJar \
+              :services:custom-loader:installDist
+
+            services=(
+              "notification-facade:notification-facade"
+              "notification-mail-sender:notification-mail-sender"
+              "notification-sms-sender:notification-sms-sender"
+              "profile-consent:profile-consent"
+              "history-writer:history-writer"
+              "scheduler-delivery:scheduler-delivery"
+              "template-registry:template-registry"
+            )
+
+            for service in "${services[@]}"; do
+              module="${service%%:*}"
+              image="${service##*:}"
+              jar="$(find "services/${module}/build/libs" -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' | sort | tail -n 1)"
+              if [ -z "$jar" ]; then
+                echo "Jar not found for ${module}" >&2
+                exit 1
+              fi
+              docker build \
+                -f .k8s/docker/Dockerfile.spring \
+                --build-arg "JAR_FILE=${jar}" \
+                -t "${image}:latest" \
+                .
+            done
+
+            docker build -f services/custom-loader/Dockerfile -t custom-loader:latest .
+
+            if ! k3d cluster list | awk 'NR>1 {print $1}' | grep -qx notification-platform; then
+              k3d cluster create --config .k8s/k3d-config.yaml
+            fi
+
+            kubectl config use-context k3d-notification-platform
+
+            k3d image import \
+              notification-facade:latest \
+              notification-mail-sender:latest \
+              notification-sms-sender:latest \
+              profile-consent:latest \
+              history-writer:latest \
+              scheduler-delivery:latest \
+              template-registry:latest \
+              custom-loader:latest \
+              -c notification-platform
+
+            kubectl apply -k .k8s
+
+            kubectl rollout status deployment/template-registry -n notification-platform --timeout=180s
+            kubectl rollout status deployment/profile-consent -n notification-platform --timeout=180s
+            kubectl rollout status deployment/history-writer -n notification-platform --timeout=180s
+            kubectl rollout status deployment/notification-facade -n notification-platform --timeout=180s
+            kubectl rollout status deployment/notification-mail-sender -n notification-platform --timeout=180s
+            kubectl rollout status deployment/notification-sms-sender -n notification-platform --timeout=180s
+            kubectl rollout status deployment/scheduler-delivery -n notification-platform --timeout=180s
+
+            kubectl get pods -n notification-platform

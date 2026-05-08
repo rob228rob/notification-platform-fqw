@@ -1,10 +1,5 @@
 package ru.batoyan.vkr.notification.facade.usecase;
 
-/**
- * @author batoyan.rl
- * @since 23.02.2026
- */
-
 import ru.notification.facade.proto.v1.CancelEventResponse;
 import ru.notification.facade.proto.v1.CreateEventRequest;
 import ru.notification.facade.proto.v1.*;
@@ -18,6 +13,7 @@ public interface NotificationFacadeUseCase {
     CreateEventResponse create(CreateEventRequest req, String clientId);
     UpdateEventResponse update(UpdateEventRequest req, String clientId);
     CancelEventResponse cancel(CancelEventRequest req, String clientId);
+    CancelDispatchResponse cancelDispatch(CancelDispatchRequest req, String clientId);
 
     GetEventResponse getEvent(GetEventRequest req, String clientId);
     ListEventsResponse listEvents(ListEventsRequest req, String clientId);

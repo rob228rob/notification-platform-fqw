@@ -42,7 +42,7 @@ json, публикуемый relay:
 - `createdAt: string (ISO-8601)`
 
 Практически важный для downstream:
-- `aggregateType=mail_dispatch`, `eventType=MailDispatchRequested`, topic `notification.mail.dispatches`.
+- `aggregateType=dispatch_request`, `eventType=DispatchRequested`, topic `delivery.dispatcher`.
 
 ## Важная связка с template-registry
 - При create/update может рендерить шаблон через `template-registry` и инжектить `subject/body` в payload.

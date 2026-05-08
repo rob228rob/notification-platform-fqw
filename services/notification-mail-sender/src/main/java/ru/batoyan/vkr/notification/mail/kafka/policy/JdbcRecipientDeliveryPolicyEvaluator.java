@@ -2,6 +2,7 @@ package ru.batoyan.vkr.notification.mail.kafka.policy;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import ru.batoyan.vkr.notification.mail.grpc.NotificationHistoryClient;
 import ru.batoyan.vkr.notification.mail.grpc.ProfileConsentClient;
@@ -12,6 +13,7 @@ import ru.notification.common.proto.v1.Channel;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "delivery.mail.legacy-postgres-pipeline-enabled", havingValue = "true")
 public class JdbcRecipientDeliveryPolicyEvaluator implements RecipientDeliveryPolicyEvaluator {
 
     private final ProfileConsentClient profileConsentClient;

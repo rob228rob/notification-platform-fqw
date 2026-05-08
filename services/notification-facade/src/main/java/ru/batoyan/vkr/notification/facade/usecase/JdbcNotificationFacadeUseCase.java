@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.batoyan.vkr.notification.facade.cancellation.CancellationServiceClient;
 import ru.batoyan.vkr.notification.facade.template.TemplateRegistryRenderClient;
 import ru.notification.common.proto.v1.Channel;
 import ru.notification.common.proto.v1.DeliveryPriority;
@@ -30,13 +31,16 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
     private final NamedParameterJdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
     private final TemplateRegistryRenderClient templateRegistryRenderClient;
+    private final CancellationServiceClient cancellationServiceClient;
 
     public JdbcNotificationFacadeUseCase(NamedParameterJdbcTemplate jdbc,
                                          ObjectMapper objectMapper,
-                                         TemplateRegistryRenderClient templateRegistryRenderClient) {
+                                         TemplateRegistryRenderClient templateRegistryRenderClient,
+                                         CancellationServiceClient cancellationServiceClient) {
         this.jdbc = jdbc;
         this.objectMapper = objectMapper;
         this.templateRegistryRenderClient = templateRegistryRenderClient;
+        this.cancellationServiceClient = cancellationServiceClient;
     }
 
     @Override
@@ -301,6 +305,45 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
     }
 
     @Override
+    @Transactional
+    public CancelDispatchResponse cancelDispatch(CancelDispatchRequest req, String clientId) {
+        var clientUuid = parseClientId(clientId);
+        var dispatchId = parseUuid(req.getDispatchId(), "dispatch_id");
+        var dispatch = findDispatchById(dispatchId)
+                .orElseThrow(() -> Status.NOT_FOUND.withDescription("dispatch not found").asRuntimeException());
+        if (!dispatch.clientId.equals(clientUuid)) {
+            throw Status.NOT_FOUND.withDescription("dispatch not found").asRuntimeException();
+        }
+        if (dispatch.status.equals(DispatchStatus.DISPATCH_STATUS_COMPLETED.name())
+                || dispatch.status.equals(DispatchStatus.DISPATCH_STATUS_FAILED.name())) {
+            throw Status.FAILED_PRECONDITION
+                    .withDescription("dispatch is already finalized: " + dispatch.status)
+                    .asRuntimeException();
+        }
+
+        var cancelledAt = Instant.now();
+        cancellationServiceClient.cancelDispatch(
+                dispatchId.toString(),
+                dispatch.eventId.toString(),
+                clientUuid.toString(),
+                req.getReason(),
+                clientUuid.toString()
+        );
+        jdbc.update("""
+                update dispatch
+                set status = 'DISPATCH_STATUS_CANCELLED'
+                where dispatch_id = :dispatch_id
+                  and status <> 'DISPATCH_STATUS_CANCELLED'
+                """, Map.of("dispatch_id", dispatchId));
+
+        return CancelDispatchResponse.newBuilder()
+                .setDispatchId(dispatchId.toString())
+                .setStatus(DispatchStatus.DISPATCH_STATUS_CANCELLED)
+                .setCancelledAt(toTs(cancelledAt))
+                .build();
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public GetEventResponse getEvent(GetEventRequest req, String clientId) {
         var clientUuid = parseClientId(clientId);
@@ -560,7 +603,7 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                     Map.of("total", (long) recipients.size(), "dispatch_id", dispatchId)
             );
 
-            enqueueChannelDispatch(dispatchId, ev, recipients, planned, now);
+            enqueueDispatcherRequest(dispatchId, ev, recipients, planned, now, req);
         }
 
         jdbc.update("""
@@ -574,34 +617,22 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                 .build();
     }
 
-    private void enqueueChannelDispatch(UUID dispatchId,
-                                        EventRow event,
-                                        List<String> recipients,
-                                        OffsetDateTime plannedAt,
-                                        OffsetDateTime createdAt) {
-        switch (event.preferredChannel) {
-            case "CHANNEL_EMAIL" -> enqueueDispatch(
-                    "mail_dispatch",
-                    "MailDispatchRequested",
-                    dispatchId,
-                    event,
-                    recipients,
-                    plannedAt,
-                    createdAt
-            );
-            case "CHANNEL_SMS" -> enqueueDispatch(
-                    "sms_dispatch",
-                    "SmsDispatchRequested",
-                    dispatchId,
-                    event,
-                    recipients,
-                    plannedAt,
-                    createdAt
-            );
-            default -> throw Status.UNIMPLEMENTED
-                    .withDescription("dispatch publication is not implemented for channel " + event.preferredChannel)
-                    .asRuntimeException();
-        }
+    private void enqueueDispatcherRequest(UUID dispatchId,
+                                          EventRow event,
+                                          List<String> recipients,
+                                          OffsetDateTime plannedAt,
+                                          OffsetDateTime createdAt,
+                                          TriggerDispatchRequest request) {
+        enqueueDispatch(
+                "dispatch_request",
+                "DispatchRequested",
+                dispatchId,
+                event,
+                recipients,
+                plannedAt,
+                createdAt,
+                request
+        );
     }
 
     private void enqueueNotificationEvent(String eventType,
@@ -650,14 +681,22 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                                  EventRow event,
                                  List<String> recipients,
                                  OffsetDateTime plannedAt,
-                                 OffsetDateTime createdAt) {
+                                 OffsetDateTime createdAt,
+                                 TriggerDispatchRequest request) {
+        var preferredChannel = request.getPreferredChannel() == Channel.CHANNEL_UNSPECIFIED
+                ? event.preferredChannel
+                : request.getPreferredChannel().name();
+        var fallbackChannels = request.getFallbackChannelsCount() > 0
+                ? request.getFallbackChannelsList().stream().map(Channel::name).toList()
+                : List.<String>of();
         var payload = new LinkedHashMap<String, Object>();
         payload.put("dispatch_id", dispatchId.toString());
         payload.put("event_id", event.eventId.toString());
         payload.put("client_id", event.clientId.toString());
         payload.put("template_id", event.templateId);
         payload.put("template_version", event.templateVersion);
-        payload.put("preferred_channel", event.preferredChannel);
+        payload.put("preferred_channel", preferredChannel);
+        payload.put("fallback_channels", fallbackChannels);
         payload.put("payload", readJsonMap(event.payloadJson));
         payload.put("recipient_ids", recipients);
         payload.put("planned_send_at", plannedAt == null ? null : plannedAt.toString());
@@ -867,6 +906,16 @@ public class JdbcNotificationFacadeUseCase implements NotificationFacadeUseCase 
                 from event_audience
                 where event_id = :event_id
                 """, Map.of("event_id", eventId), AUDIENCE_ROW_MAPPER);
+        return rows.stream().findFirst();
+    }
+
+    private Optional<DispatchRow> findDispatchById(UUID dispatchId) {
+        var rows = jdbc.query("""
+                select d.*, e.client_id
+                from dispatch d
+                join notification_event e on e.event_id = d.event_id
+                where d.dispatch_id = :dispatch_id
+                """, Map.of("dispatch_id", dispatchId), DISPATCH_ROW_MAPPER);
         return rows.stream().findFirst();
     }
 

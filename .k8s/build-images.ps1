@@ -9,8 +9,9 @@ try {
       :services:notification-mail-sender:bootJar `
       :services:notification-sms-sender:bootJar `
       :services:profile-consent:bootJar `
+      :services:cancellation-service:bootJar `
       :services:history-writer:bootJar `
-      :services:scheduler-delivery:bootJar `
+      :services:delivery-dispatcher:bootJar `
       :services:template-registry:bootJar `
       :services:custom-loader:installDist
 
@@ -19,8 +20,9 @@ try {
       @{ module = "notification-mail-sender"; image = "notification-mail-sender" },
       @{ module = "notification-sms-sender"; image = "notification-sms-sender" },
       @{ module = "profile-consent"; image = "profile-consent" },
+      @{ module = "cancellation-service"; image = "cancellation-service" },
       @{ module = "history-writer"; image = "history-writer" },
-      @{ module = "scheduler-delivery"; image = "scheduler-delivery" },
+      @{ module = "delivery-dispatcher"; image = "delivery-dispatcher" },
       @{ module = "template-registry"; image = "template-registry" }
     )
 

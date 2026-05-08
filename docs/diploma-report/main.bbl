@@ -19,25 +19,6 @@
 
 \refsection{0}
   \datalist[entry]{none/global//global/global}
-    \entry{kafka_docs}{online}{}
-      \list{language}{1}{%
-        {english}%
-      }
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labeltitlesource}{title}
-      \field{title}{Apache Kafka Documentation}
-      \field{urlday}{25}
-      \field{urlmonth}{3}
-      \field{urlyear}{2026}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://kafka.apache.org/documentation/
-      \endverb
-      \verb{url}
-      \verb https://kafka.apache.org/documentation/
-      \endverb
-    \endentry
     \entry{kleppmann_ddia}{book}{}
       \name{author}{1}{}{%
         {{hash=34b8d5b1d29d175527a6642f3ec8a76d}{%
@@ -120,65 +101,43 @@
       \field{title}{Microservices Patterns}
       \field{year}{2018}
     \endentry
-    \entry{nygard_releaseit}{book}{}
-      \name{author}{1}{}{%
-        {{hash=7517211d7d5cad5693ec6ca951302ccc}{%
-           family={Nygard},
-           familyi={N\bibinitperiod},
-           given={Michael\bibnamedelima T.},
-           giveni={M\bibinitperiod\bibinitdelim T\bibinitperiod}}}%
+    \entry{grpc_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
       }
-      \list{location}{1}{%
-        {Raleigh}%
-      }
-      \list{publisher}{1}{%
-        {Pragmatic Bookshelf}%
-      }
-      \strng{namehash}{7517211d7d5cad5693ec6ca951302ccc}
-      \strng{fullhash}{7517211d7d5cad5693ec6ca951302ccc}
-      \strng{bibnamehash}{7517211d7d5cad5693ec6ca951302ccc}
-      \strng{authorbibnamehash}{7517211d7d5cad5693ec6ca951302ccc}
-      \strng{authornamehash}{7517211d7d5cad5693ec6ca951302ccc}
-      \strng{authorfullhash}{7517211d7d5cad5693ec6ca951302ccc}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
-      \field{labelnamesource}{author}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labeltitlesource}{title}
-      \field{edition}{2}
-      \field{title}{Release It! Design and Deploy Production-Ready Software}
-      \field{year}{2018}
+      \field{title}{gRPC Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://grpc.io/docs/
+      \endverb
+      \verb{url}
+      \verb https://grpc.io/docs/
+      \endverb
     \endentry
-    \entry{hohpe_woolf_eip}{book}{}
-      \name{author}{2}{}{%
-        {{hash=2ed2f5feceafdf9a03a27134da39d3d0}{%
-           family={Hohpe},
-           familyi={H\bibinitperiod},
-           given={Gregor},
-           giveni={G\bibinitperiod}}}%
-        {{hash=8ea1767d5a1edce116c79b82a83c54da}{%
-           family={Woolf},
-           familyi={W\bibinitperiod},
-           given={Bobby},
-           giveni={B\bibinitperiod}}}%
+    \entry{kafka_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
       }
-      \list{location}{1}{%
-        {Boston}%
-      }
-      \list{publisher}{1}{%
-        {Addison-Wesley}%
-      }
-      \strng{namehash}{ddf3be6dfde807c1811cbd3352154f04}
-      \strng{fullhash}{ddf3be6dfde807c1811cbd3352154f04}
-      \strng{bibnamehash}{ddf3be6dfde807c1811cbd3352154f04}
-      \strng{authorbibnamehash}{ddf3be6dfde807c1811cbd3352154f04}
-      \strng{authornamehash}{ddf3be6dfde807c1811cbd3352154f04}
-      \strng{authorfullhash}{ddf3be6dfde807c1811cbd3352154f04}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
-      \field{labelnamesource}{author}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labeltitlesource}{title}
-      \field{title}{Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions}
-      \field{year}{2003}
+      \field{title}{Apache Kafka Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://kafka.apache.org/documentation/
+      \endverb
+      \verb{url}
+      \verb https://kafka.apache.org/documentation/
+      \endverb
     \endentry
     \entry{kafka_in_action}{book}{}
       \name{author}{3}{}{%
@@ -217,6 +176,72 @@
       \field{title}{Kafka in Action}
       \field{year}{2022}
     \endentry
+    \entry{nygard_releaseit}{book}{}
+      \name{author}{1}{}{%
+        {{hash=7517211d7d5cad5693ec6ca951302ccc}{%
+           family={Nygard},
+           familyi={N\bibinitperiod},
+           given={Michael\bibnamedelima T.},
+           giveni={M\bibinitperiod\bibinitdelim T\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Raleigh}%
+      }
+      \list{publisher}{1}{%
+        {Pragmatic Bookshelf}%
+      }
+      \strng{namehash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{fullhash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{bibnamehash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{authorbibnamehash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{authornamehash}{7517211d7d5cad5693ec6ca951302ccc}
+      \strng{authorfullhash}{7517211d7d5cad5693ec6ca951302ccc}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{edition}{2}
+      \field{title}{Release It! Design and Deploy Production-Ready Software}
+      \field{year}{2018}
+    \endentry
+    \entry{mongodb_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{labeltitlesource}{title}
+      \field{title}{MongoDB Manual}
+      \field{urlday}{13}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.mongodb.com/docs/manual/
+      \endverb
+      \verb{url}
+      \verb https://www.mongodb.com/docs/manual/
+      \endverb
+    \endentry
+    \entry{spring_boot_docs}{online}{}
+      \list{language}{1}{%
+        {english}%
+      }
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{labeltitlesource}{title}
+      \field{title}{Spring Boot Reference Documentation}
+      \field{urlday}{25}
+      \field{urlmonth}{3}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.spring.io/spring-boot/reference/
+      \endverb
+      \verb{url}
+      \verb https://docs.spring.io/spring-boot/reference/
+      \endverb
+    \endentry
     \entry{rogov_postgresql17_internals}{book}{}
       \name{author}{1}{}{%
         {{hash=0f6bc473488c56906be6e7e457f16243}{%
@@ -240,89 +265,13 @@
       \strng{authorbibnamehash}{0f6bc473488c56906be6e7e457f16243}
       \strng{authornamehash}{0f6bc473488c56906be6e7e457f16243}
       \strng{authorfullhash}{0f6bc473488c56906be6e7e457f16243}
-      \field{sortinit}{3}
-      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{isbn}{978-5-93700-372-0}
       \field{title}{PostgreSQL 17 изнутри}
       \field{year}{2025}
-    \endentry
-    \entry{mongodb_docs}{online}{}
-      \list{language}{1}{%
-        {english}%
-      }
-      \field{sortinit}{3}
-      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
-      \field{labeltitlesource}{title}
-      \field{title}{MongoDB Manual}
-      \field{urlday}{13}
-      \field{urlmonth}{4}
-      \field{urlyear}{2026}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://www.mongodb.com/docs/manual/
-      \endverb
-      \verb{url}
-      \verb https://www.mongodb.com/docs/manual/
-      \endverb
-    \endentry
-    \entry{grpc_docs}{online}{}
-      \list{language}{1}{%
-        {english}%
-      }
-      \field{sortinit}{3}
-      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
-      \field{labeltitlesource}{title}
-      \field{title}{gRPC Documentation}
-      \field{urlday}{25}
-      \field{urlmonth}{3}
-      \field{urlyear}{2026}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://grpc.io/docs/
-      \endverb
-      \verb{url}
-      \verb https://grpc.io/docs/
-      \endverb
-    \endentry
-    \entry{spring_boot_docs}{online}{}
-      \list{language}{1}{%
-        {english}%
-      }
-      \field{sortinit}{3}
-      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
-      \field{labeltitlesource}{title}
-      \field{title}{Spring Boot Reference Documentation}
-      \field{urlday}{25}
-      \field{urlmonth}{3}
-      \field{urlyear}{2026}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://docs.spring.io/spring-boot/reference/
-      \endverb
-      \verb{url}
-      \verb https://docs.spring.io/spring-boot/reference/
-      \endverb
-    \endentry
-    \entry{structurizr_dsl_docs}{online}{}
-      \list{language}{1}{%
-        {english}%
-      }
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
-      \field{labeltitlesource}{title}
-      \field{title}{Structurizr DSL Documentation}
-      \field{urlday}{11}
-      \field{urlmonth}{4}
-      \field{urlyear}{2026}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://docs.structurizr.com/dsl
-      \endverb
-      \verb{url}
-      \verb https://docs.structurizr.com/dsl
-      \endverb
     \endentry
   \enddatalist
 \endrefsection

@@ -129,8 +129,8 @@ public class DeliveryHistoryRepository implements DeliveryHistoryStore {
                        ) as successful_count,
                        count(*) filter (
                            where delivery_status in (
-                               'MAIL_DELIVERY_STATUS_FAILED', 'MAIL_DELIVERY_STATUS_SKIPPED',
-                               'SMS_DELIVERY_STATUS_FAILED', 'SMS_DELIVERY_STATUS_SKIPPED'
+                               'MAIL_DELIVERY_STATUS_FAILED', 'MAIL_DELIVERY_STATUS_SKIPPED', 'MAIL_DELIVERY_STATUS_CANCELED',
+                               'SMS_DELIVERY_STATUS_FAILED', 'SMS_DELIVERY_STATUS_SKIPPED', 'SMS_DELIVERY_STATUS_CANCELED'
                            )
                        ) as unsuccessful_count
                 from nf_hist.delivery_history
@@ -275,6 +275,7 @@ public class DeliveryHistoryRepository implements DeliveryHistoryStore {
             case "MAIL_DELIVERY_STATUS_RETRY", "SMS_DELIVERY_STATUS_RETRY" -> DeliveryStatus.DELIVERY_STATUS_RETRY;
             case "MAIL_DELIVERY_STATUS_FAILED", "SMS_DELIVERY_STATUS_FAILED" -> DeliveryStatus.DELIVERY_STATUS_FAILED;
             case "MAIL_DELIVERY_STATUS_SKIPPED", "SMS_DELIVERY_STATUS_SKIPPED" -> DeliveryStatus.DELIVERY_STATUS_SKIPPED;
+            case "MAIL_DELIVERY_STATUS_CANCELED", "SMS_DELIVERY_STATUS_CANCELED" -> DeliveryStatus.DELIVERY_STATUS_CANCELED;
             default -> DeliveryStatus.DELIVERY_STATUS_UNSPECIFIED;
         };
     }

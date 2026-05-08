@@ -24,26 +24,18 @@ spec:
               value: "8914"
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: kafka:9092
-            - name: SMS_SENDER_DATASOURCE_URL
-              value: jdbc:postgresql://postgres:5432/main_db?currentSchema=nf_sms
-            - name: SMS_SENDER_DATASOURCE_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-credentials
-                  key: username
-            - name: SMS_SENDER_DATASOURCE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-credentials
-                  key: password
-            - name: PROFILE_CONSENT_HOST
-              value: profile-consent
-            - name: PROFILE_CONSENT_PORT
-              value: "9096"
-            - name: NOTIFICATION_HISTORY_HOST
-              value: history-writer
-            - name: NOTIFICATION_HISTORY_PORT
-              value: "9091"
+            - name: SMS_REDIS_HOST
+              value: redis
+            - name: SMS_REDIS_PORT
+              value: "6379"
+            - name: SMS_REDIS_USERNAME
+              value: redisuser
+            - name: SMS_REDIS_PASSWORD
+              value: redisuserpassword
+            - name: CANCELLATION_SERVICE_HOST
+              value: cancellation-service
+            - name: CANCELLATION_SERVICE_PORT
+              value: "9097"
             - name: SMS_GATEWAY_LOG_ONLY
               value: "true"
           readinessProbe:

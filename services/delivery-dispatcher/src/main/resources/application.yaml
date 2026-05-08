@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: delivery-dispatcher
+  config:
+    import: classpath:creds/user-creds.yaml
+  flyway:
+    locations: classpath:db/migration
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${postgresql.url}
+    password: ${postgresql.user.password}
+    username: ${postgresql.user.username}
+  kafka:
+    bootstrap-servers: ${kafka.bootstrap.servers:localhost:9093}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:delivery-dispatcher-group}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+dispatcher:
+  delivery:
+    dispatch-topic: ${DELIVERY_DISPATCHER_TOPIC:delivery.dispatcher}
+    fallback-topic: ${DELIVERY_FALLBACK_TOPIC:delivery.fallback}
+    mail-topic: ${DELIVERY_MAIL_TOPIC:notification.mail.dispatches}
+    sms-topic: ${DELIVERY_SMS_TOPIC:notification.sms.dispatches}
+    mail-status-topic: ${DELIVERY_MAIL_STATUS_TOPIC:notification.mail.delivery-statuses}
+    sms-status-topic: ${DELIVERY_SMS_STATUS_TOPIC:notification.sms.delivery-statuses}
+    consumer-concurrency: ${DELIVERY_DISPATCHER_CONSUMER_CONCURRENCY:1}
+    poll-fixed-delay: ${DELIVERY_DISPATCHER_POLL_FIXED_DELAY:5s}
+    batch-size: ${DELIVERY_DISPATCHER_BATCH_SIZE:100}
+    retry-backoff: ${DELIVERY_DISPATCHER_RETRY_BACKOFF:1m}
+    max-fallback-depth: ${DELIVERY_DISPATCHER_MAX_FALLBACK_DEPTH:1}
+
+clients:
+  profile-consent:
+    host: ${PROFILE_CONSENT_HOST:localhost}
+    port: ${PROFILE_CONSENT_PORT:9096}
+    deadline: ${PROFILE_CONSENT_DEADLINE:3s}
+  cancellation:
+    host: ${CANCELLATION_SERVICE_HOST:localhost}
+    port: ${CANCELLATION_SERVICE_PORT:9097}
+    deadline: ${CANCELLATION_SERVICE_DEADLINE:3s}
+
+logging:
+  level:
+    root: INFO
+    ru.batoyan.vkr.notification.scheduler.delivery: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

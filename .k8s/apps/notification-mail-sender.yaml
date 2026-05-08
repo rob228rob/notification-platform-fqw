@@ -24,26 +24,18 @@ spec:
               value: "8911"
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: kafka:9092
-            - name: POSTGRESQL_URL
-              value: jdbc:postgresql://postgres:5432/main_db?currentSchema=nf_mail
-            - name: POSTGRESQL_USER_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-credentials
-                  key: username
-            - name: POSTGRESQL_USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-credentials
-                  key: password
-            - name: PROFILE_CONSENT_HOST
-              value: profile-consent
-            - name: PROFILE_CONSENT_PORT
-              value: "9096"
-            - name: NOTIFICATION_HISTORY_HOST
-              value: history-writer
-            - name: NOTIFICATION_HISTORY_PORT
-              value: "9091"
+            - name: MAIL_REDIS_HOST
+              value: redis
+            - name: MAIL_REDIS_PORT
+              value: "6379"
+            - name: MAIL_REDIS_USERNAME
+              value: redisuser
+            - name: MAIL_REDIS_PASSWORD
+              value: redisuserpassword
+            - name: CANCELLATION_SERVICE_HOST
+              value: cancellation-service
+            - name: CANCELLATION_SERVICE_PORT
+              value: "9097"
             - name: MAIL_GATEWAY_LOG_ONLY
               value: "true"
           readinessProbe:

@@ -13,6 +13,7 @@ dependencies {
     implementation project(":libs:proto-common")
     implementation project(":libs:proto-profile")
     implementation project(":libs:proto-history")
+    implementation project(":libs:proto-cancellation")
 
     // --- Spring Boot starters ---
     implementation "org.springframework.boot:spring-boot-starter-webflux"
@@ -20,6 +21,7 @@ dependencies {
     implementation "io.micrometer:micrometer-registry-prometheus"
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-mail"
+    implementation "org.springframework.boot:spring-boot-starter-data-redis"
 
     implementation "org.springframework.boot:spring-boot-starter-jdbc"
     runtimeOnly  "com.h2database:h2"

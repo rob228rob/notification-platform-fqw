@@ -55,7 +55,8 @@ public class OutboxRelayProperties {
             @NotBlank String dispatches,
             @NotBlank String mailDispatches,
             @NotBlank String smsDispatches,
-            @NotBlank String mailDispatchesScheduled
+            @NotBlank String deliveryDispatcher,
+            @NotBlank String deliveryFallback
     ) {
     }
 

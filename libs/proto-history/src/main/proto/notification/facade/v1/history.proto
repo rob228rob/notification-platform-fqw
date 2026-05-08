@@ -23,6 +23,7 @@ enum DeliveryStatus {
   DELIVERY_STATUS_RETRY = 4;
   DELIVERY_STATUS_FAILED = 5;
   DELIVERY_STATUS_SKIPPED = 6;
+  DELIVERY_STATUS_CANCELED = 7;
 }
 
 message DeliveryHistoryPayload {

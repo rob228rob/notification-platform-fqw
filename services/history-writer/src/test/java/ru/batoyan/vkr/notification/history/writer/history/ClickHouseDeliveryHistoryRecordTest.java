@@ -22,17 +22,19 @@ class ClickHouseDeliveryHistoryRecordTest {
                 "MAIL_DELIVERY",
                 "delivery-42",
                 "MailDeliveryStatusChanged",
-                Map.of(
-                        "client_id", "client-1",
-                        "recipient_id", "recipient-1",
-                        "email", "user@example.com",
-                        "channel", "CHANNEL_EMAIL",
-                        "status", "MAIL_DELIVERY_STATUS_SENT",
-                        "template_id", "template-1",
-                        "template_version", String.valueOf(3),
-                        "idempotency_key", "idem-1",
-                        "attempt_no", String.valueOf(2),
-                        "occurred_at", "2026-05-03T12:30:00Z"
+                Map.ofEntries(
+                        Map.entry("event_id", "event-1"),
+                        Map.entry("dispatch_id", "dispatch-1"),
+                        Map.entry("client_id", "client-1"),
+                        Map.entry("recipient_id", "recipient-1"),
+                        Map.entry("email", "user@example.com"),
+                        Map.entry("channel", "CHANNEL_EMAIL"),
+                        Map.entry("status", "MAIL_DELIVERY_STATUS_SENT"),
+                        Map.entry("template_id", "template-1"),
+                        Map.entry("template_version", String.valueOf(3)),
+                        Map.entry("idempotency_key", "idem-1"),
+                        Map.entry("attempt_no", String.valueOf(2)),
+                        Map.entry("occurred_at", "2026-05-03T12:30:00Z")
                 ),
                 Map.of(
                         "message_id", "msg-1"

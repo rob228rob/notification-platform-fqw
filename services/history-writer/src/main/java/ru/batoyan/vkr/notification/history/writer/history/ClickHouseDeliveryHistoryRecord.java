@@ -167,7 +167,10 @@ public record ClickHouseDeliveryHistoryRecord(
     }
 
     private static boolean isFinalStatus(String status) {
-        return status.endsWith("_SENT") || status.endsWith("_FAILED") || status.endsWith("_SKIPPED");
+        return status.endsWith("_SENT")
+                || status.endsWith("_FAILED")
+                || status.endsWith("_SKIPPED")
+                || status.endsWith("_CANCELED");
     }
 
     private static String safe(String value) {

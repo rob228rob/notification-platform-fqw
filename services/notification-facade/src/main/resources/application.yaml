@@ -21,6 +21,12 @@ template:
       plaintext: ${TEMPLATE_REGISTRY_PLAINTEXT:true}
       deadline: ${TEMPLATE_REGISTRY_DEADLINE:3s}
 
+clients:
+  cancellation:
+    host: ${CANCELLATION_SERVICE_HOST:localhost}
+    port: ${CANCELLATION_SERVICE_PORT:9097}
+    deadline: ${CANCELLATION_SERVICE_DEADLINE:3s}
+
 outbox:
   relay:
     enabled: true
@@ -36,7 +42,8 @@ outbox:
       dispatches: notification.facade.dispatches
       mail-dispatches: notification.mail.dispatches
       sms-dispatches: notification.sms.dispatches
-      mail-dispatches-scheduled: notification.mail.dispatches.scheduled
+      delivery-dispatcher: delivery.dispatcher
+      delivery-fallback: delivery.fallback
     producer-retry:
       max-attempts: 8
       initial-backoff: 100ms

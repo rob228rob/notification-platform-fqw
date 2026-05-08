@@ -10,19 +10,21 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/libs" />
+            <option value="$PROJECT_DIR$/libs/proto-cancellation" />
             <option value="$PROJECT_DIR$/libs/proto-common" />
             <option value="$PROJECT_DIR$/libs/proto-facade" />
             <option value="$PROJECT_DIR$/libs/proto-history" />
             <option value="$PROJECT_DIR$/libs/proto-profile" />
             <option value="$PROJECT_DIR$/libs/proto-templates" />
             <option value="$PROJECT_DIR$/services" />
+            <option value="$PROJECT_DIR$/services/cancellation-service" />
             <option value="$PROJECT_DIR$/services/custom-loader" />
+            <option value="$PROJECT_DIR$/services/delivery-dispatcher" />
             <option value="$PROJECT_DIR$/services/history-writer" />
             <option value="$PROJECT_DIR$/services/notification-facade" />
             <option value="$PROJECT_DIR$/services/notification-mail-sender" />
             <option value="$PROJECT_DIR$/services/notification-sms-sender" />
             <option value="$PROJECT_DIR$/services/profile-consent" />
-            <option value="$PROJECT_DIR$/services/scheduler-delivery" />
             <option value="$PROJECT_DIR$/services/template-registry" />
           </set>
         </option>

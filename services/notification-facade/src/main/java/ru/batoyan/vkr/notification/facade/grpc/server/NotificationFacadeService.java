@@ -71,6 +71,17 @@ public class NotificationFacadeService extends NotificationFacadeGrpc.Notificati
     }
 
     @Override
+    public void cancelDispatch(CancelDispatchRequest request, StreamObserver<CancelDispatchResponse> responseObserver) {
+        execute("cancelDispatch", () -> {
+            var clientId = clientIdResolver.requireClientId();
+            LOG.info("[CANCEL_DISPATCH] Request from client {} for DispatchId: {}", clientId, request.getDispatchId());
+
+            requireUuid(request.getDispatchId(), "dispatch_id");
+            return useCase.cancelDispatch(request, clientId);
+        }, responseObserver);
+    }
+
+    @Override
     public void getNotificationEvent(GetEventRequest request, StreamObserver<GetEventResponse> responseObserver) {
         execute("getNotificationEvent", () -> {
             var clientId = clientIdResolver.requireClientId();

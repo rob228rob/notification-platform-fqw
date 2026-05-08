@@ -15,11 +15,12 @@ resources:
   - infra/grafana.yaml
   - apps/template-registry.yaml
   - apps/profile-consent.yaml
+  - apps/cancellation-service.yaml
   - apps/history-writer.yaml
   - apps/notification-facade.yaml
   - apps/notification-mail-sender.yaml
   - apps/notification-sms-sender.yaml
-  - apps/scheduler-delivery.yaml
+  - apps/delivery-dispatcher.yaml
   - apps/custom-loader-job.yaml
 
 commonLabels:

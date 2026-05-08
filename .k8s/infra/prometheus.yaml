@@ -45,11 +45,17 @@ data:
           - targets:
               - profile-consent:8913
 
-      - job_name: scheduler-delivery
+      - job_name: delivery-dispatcher
         metrics_path: /actuator/prometheus
         static_configs:
           - targets:
-              - scheduler-delivery:8915
+              - delivery-dispatcher:8915
+
+      - job_name: cancellation-service
+        metrics_path: /actuator/prometheus
+        static_configs:
+          - targets:
+              - cancellation-service:8916
 
       - job_name: template-registry
         metrics_path: /actuator/prometheus
