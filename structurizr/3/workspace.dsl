@@ -271,17 +271,17 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
 
             element "Database" {
                 shape cylinder
-                background "#2e7d32"
+                background "#66bb6a"
                 color "#ffffff"
             }
 
             element "RedisStore" {
-                background "#1f8a70"
+                background "#0f9d8a"
                 color "#ffffff"
             }
 
             element "ClickHouseStore" {
-                background "#66bb6a"
+                background "#2e7d32"
                 color "#ffffff"
             }
 
