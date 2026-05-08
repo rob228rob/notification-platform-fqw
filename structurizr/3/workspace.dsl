@@ -281,7 +281,7 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             }
 
             element "ClickHouseStore" {
-                background "#1565c0"
+                background "#66bb6a"
                 color "#ffffff"
             }
 
