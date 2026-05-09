@@ -120,27 +120,14 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             autolayout lr
         }
 
-        container platform "ContainersCurrent" "Container view of the current notification platform implementation." {
+        container platform "ContainersCurrent" "Simplified container overview of the current notification platform implementation." {
             include clientSystem
             include platform.facade
-            include platform.templateRegistry
-            include platform.facadeDb
-            include platform.templateMongo
             include platform.kafka
             include platform.deliveryDispatcher
-            include platform.dispatcherDb
-            include platform.profileConsent
-            include platform.profileRedis
-            include platform.cancellationService
-            include platform.cancellationRedis
             include platform.mailSender
-            include platform.mailDedupRedis
-            include emailProvider
             include platform.smsSender
-            include platform.smsDedupRedis
-            include smsProvider
             include platform.historyWriter
-            include platform.historyDb
             autolayout lr
         }
 
@@ -181,34 +168,44 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             autolayout lr
         }
 
-        container platform "IngressContourPresentation" "Input contour: facade, owned storages, template service and Kafka." {
+        container platform "InboundCommandFlow" "Inbound Command Flow: client command processing, template rendering, state persistence and publication to Kafka." {
             include clientSystem
             include platform.facade
-            include platform.facadeDb
             include platform.templateRegistry
             include platform.templateMongo
+            include platform.facadeDb
+            include platform.kafka
             include platform.cancellationService
             include platform.cancellationRedis
-            include platform.kafka
             autolayout lr
         }
 
-        container platform "DeliveryHandlersPresentation" "Delivery contour: Kafka, dispatcher, support services, sender execution, Redis dedup and history." {
+        container platform "KafkaDeliveryFlow" "Kafka Delivery Flow: producers and consumers around Kafka without storage and provider details." {
+            include platform.facade
+            include platform.kafka
+            include platform.deliveryDispatcher
+            include platform.mailSender
+            include platform.smsSender
+            include platform.historyWriter
+            autolayout lr
+        }
+
+        container platform "EmailNotificationProcessingFlow" "Email Notification Processing Flow: Kafka command consumption, Redis dedup, cancellation check, provider call and status/fallback publication." {
+            include platform.kafka
+            include platform.mailSender
+            include platform.mailDedupRedis
+            include platform.cancellationService
+            include platform.cancellationRedis
+            include emailProvider
+            autolayout lr
+        }
+
+        container platform "DispatchRoutingFlow" "Dispatch Routing Flow: dispatcher consumes Kafka, resolves profile constraints, stores scheduling state and publishes sender commands." {
             include platform.kafka
             include platform.deliveryDispatcher
             include platform.dispatcherDb
             include platform.profileConsent
             include platform.profileRedis
-            include platform.cancellationService
-            include platform.cancellationRedis
-            include platform.mailSender
-            include platform.mailDedupRedis
-            include platform.smsSender
-            include platform.smsDedupRedis
-            include platform.historyWriter
-            include platform.historyDb
-            include emailProvider
-            include smsProvider
             autolayout lr
         }
 
