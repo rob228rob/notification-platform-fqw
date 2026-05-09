@@ -277,8 +277,8 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             }
 
             element "RedisStore" {
-                background "#d32f2f"
-                color "#ffffff"
+                background "#fff59d"
+                color "#1b1b1b"
             }
 
             element "ClickHouseStore" {
