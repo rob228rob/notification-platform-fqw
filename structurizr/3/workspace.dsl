@@ -40,6 +40,7 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
 
             templateMongo = container "MongoDB Templates" "Stores templates, versions, channel contents and activeVersion." "MongoDB" {
                 tags "Database"
+                tags "MongoStore"
             }
 
             profileRedis = container "Redis Recipient Profiles" "Recipient profile storage used only by the Profile Consent service." "Redis" {
@@ -271,18 +272,23 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
 
             element "Database" {
                 shape cylinder
-                background "#66bb6a"
+                background "#26a69a"
                 color "#ffffff"
             }
 
             element "RedisStore" {
-                background "#0f9d8a"
+                background "#d32f2f"
                 color "#ffffff"
             }
 
             element "ClickHouseStore" {
-                background "#2e7d32"
+                background "#1b5e20"
                 color "#ffffff"
+            }
+
+            element "MongoStore" {
+                background "#a5d6a7"
+                color "#1b1b1b"
             }
 
             element "MessageBus" {
