@@ -63,7 +63,7 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
                 tags "RedisStore"
             }
 
-            kafka = container "Kafka" "Asynchronous transport for dispatch requests, sender commands, fallback events and delivery statuses. Topics: delivery.dispatcher, delivery.mail.commands, delivery.sms.commands, delivery.fallback, delivery.statuses." "Apache Kafka" {
+            kafka = container "Kafka" "Asynchronous transport for dispatch requests, sender commands, fallback events and delivery statuses." "Apache Kafka" {
                 tags "MessageBus"
             }
 
