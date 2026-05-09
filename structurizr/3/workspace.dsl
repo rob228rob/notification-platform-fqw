@@ -277,7 +277,7 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             }
 
             element "RedisStore" {
-                background "#fff59d"
+                background "#ffe082"
                 color "#1b1b1b"
             }
 
@@ -287,7 +287,7 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             }
 
             element "MongoStore" {
-                background "#a5d6a7"
+                background "#7ed957"
                 color "#1b1b1b"
             }
 
