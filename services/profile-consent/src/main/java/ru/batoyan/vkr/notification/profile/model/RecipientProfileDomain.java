@@ -14,6 +14,6 @@ public record RecipientProfileDomain(
 ) {
 
     public ChannelConsent channel(Channel channel) {
-        return channels.getOrDefault(channel, new ChannelConsent(channel, false, false, ""));
+        return channels.getOrDefault(channel, new ChannelConsent(channel, "", false, false, ""));
     }
 }

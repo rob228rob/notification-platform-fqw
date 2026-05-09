@@ -22,12 +22,14 @@ public class ProfileConsentGrpcService extends ProfileConsentServiceGrpc.Profile
 
     @Override
     public void getRecipientProfile(GetRecipientProfileRequest request, StreamObserver<GetRecipientProfileResponse> responseObserver) {
-        validateRecipientId(request.getRecipientId(), "recipient_id", responseObserver);
-        log.debug("gRPC getRecipientProfile called: recipientId={}", request.getRecipientId());
-        recipientProfileService.getRecipientProfile(request.getRecipientId())
+        if (!validateRecipientId(request.getRecipientId(), "recipient_id", responseObserver)) {
+            return;
+        }
+        log.debug("gRPC getRecipientProfile called: recipientId={}, tenant={}", request.getRecipientId(), request.getTenant());
+        recipientProfileService.getRecipientProfile(request.getRecipientId(), request.getTenant())
             .ifPresentOrElse(profile -> {
-                log.debug("gRPC getRecipientProfile success: recipientId={}, preferredChannel={}, active={}",
-                    request.getRecipientId(), profile.preferredChannel(), profile.active());
+                log.debug("gRPC getRecipientProfile success: recipientId={}, tenant={}, preferredChannel={}, active={}",
+                    request.getRecipientId(), request.getTenant(), profile.preferredChannel(), profile.active());
                 responseObserver.onNext(GetRecipientProfileResponse.newBuilder()
                     .setProfile(profileToProto(profile))
                     .build());
@@ -44,13 +46,13 @@ public class ProfileConsentGrpcService extends ProfileConsentServiceGrpc.Profile
     public void batchGetRecipientProfiles(BatchGetRecipientProfilesRequest request,
                                           StreamObserver<BatchGetRecipientProfilesResponse> responseObserver) {
         validateRecipientIds(request.getRecipientIdList(), "recipient_id", responseObserver);
-        log.debug("gRPC batchGetRecipientProfiles called: recipientIdsCount={}", request.getRecipientIdCount());
+        log.debug("gRPC batchGetRecipientProfiles called: recipientIdsCount={}, tenant={}", request.getRecipientIdCount(), request.getTenant());
         var response = BatchGetRecipientProfilesResponse.newBuilder();
-        var profiles = recipientProfileService.getRecipientProfiles(request.getRecipientIdList());
+        var profiles = recipientProfileService.getRecipientProfiles(request.getRecipientIdList(), request.getTenant());
         profiles.values()
             .forEach(profile -> response.addProfiles(profileToProto(profile)));
-        log.debug("gRPC batchGetRecipientProfiles completed: requested={}, found={}",
-            request.getRecipientIdCount(), profiles.size());
+        log.debug("gRPC batchGetRecipientProfiles completed: requested={}, tenant={}, found={}",
+            request.getRecipientIdCount(), request.getTenant(), profiles.size());
         responseObserver.onNext(response.build());
         responseObserver.onCompleted();
     }
@@ -63,9 +65,9 @@ public class ProfileConsentGrpcService extends ProfileConsentServiceGrpc.Profile
         }
         log.debug("gRPC checkRecipientChannel called: recipientId={}, channel={}",
             request.getRecipientId(), request.getChannel());
-        var result = recipientProfileService.checkRecipientChannel(request.getRecipientId(), request.getChannel());
-        log.debug("gRPC checkRecipientChannel result: recipientId={}, channel={}, allowed={}, reasonCode={}, preferredChannel={}, destination={}",
-            request.getRecipientId(), request.getChannel(), result.allowed(), result.reasonCode(),
+        var result = recipientProfileService.checkRecipientChannel(request.getRecipientId(), request.getChannel(), request.getTenant());
+        log.debug("gRPC checkRecipientChannel result: recipientId={}, channel={}, tenant={}, allowed={}, reasonCode={}, preferredChannel={}, destination={}",
+            request.getRecipientId(), request.getChannel(), request.getTenant(), result.allowed(), result.reasonCode(),
             result.preferredChannel(), result.destination());
         responseObserver.onNext(CheckRecipientChannelResponse.newBuilder()
             .setAllowed(result.allowed())
@@ -90,6 +92,7 @@ public class ProfileConsentGrpcService extends ProfileConsentServiceGrpc.Profile
                 .setEnabled(channel.enabled())
                 .setBlacklisted(channel.blacklisted())
                 .setDestination(channel.destination())
+                .setTenant(channel.tenant())
                 .build()));
         return builder.build();
     }

@@ -19,26 +19,26 @@ public class RecipientProfileService {
 
     private final RecipientProfileRepository repository;
 
-    public Optional<RecipientProfileDomain> getRecipientProfile(String recipientId) {
-        var profile = repository.findByRecipientId(recipientId);
-        log.debug("Service getRecipientProfile: recipientId={}, found={}", recipientId, profile.isPresent());
+    public Optional<RecipientProfileDomain> getRecipientProfile(String recipientId, String tenant) {
+        var profile = repository.findByRecipientId(recipientId, tenant);
+        log.debug("Service getRecipientProfile: recipientId={}, tenant={}, found={}", recipientId, tenant, profile.isPresent());
         return profile;
     }
 
-    public Map<String, RecipientProfileDomain> getRecipientProfiles(Collection<String> recipientIds) {
-        var profiles = repository.findAllByRecipientIds(recipientIds);
-        log.debug("Service getRecipientProfiles: requested={}, found={}", recipientIds.size(), profiles.size());
+    public Map<String, RecipientProfileDomain> getRecipientProfiles(Collection<String> recipientIds, String tenant) {
+        var profiles = repository.findAllByRecipientIds(recipientIds, tenant);
+        log.debug("Service getRecipientProfiles: requested={}, tenant={}, found={}", recipientIds.size(), tenant, profiles.size());
         return profiles;
     }
 
-    public ChannelCheckResult checkRecipientChannel(String recipientId, Channel channel) {
-        log.debug("Service checkRecipientChannel called: recipientId={}, channel={}", recipientId, channel);
-        var result = repository.findByRecipientId(recipientId)
+    public ChannelCheckResult checkRecipientChannel(String recipientId, Channel channel, String tenant) {
+        log.debug("Service checkRecipientChannel called: recipientId={}, channel={}, tenant={}", recipientId, channel, tenant);
+        var result = repository.findByRecipientId(recipientId, tenant)
                 .map(profile -> checkByChannels(profile, channel))
                 // default negative path
                 .orElseGet(() -> new ChannelCheckResult(false, "", Channel.CHANNEL_UNSPECIFIED, mapReasonCode("PROFILE_NOT_FOUND")));
-        log.debug("Service checkRecipientChannel result: recipientId={}, channel={}, allowed={}, reasonCode={}, preferredChannel={}",
-                recipientId, channel, result.allowed(), result.reasonCode(), result.preferredChannel());
+        log.debug("Service checkRecipientChannel result: recipientId={}, channel={}, tenant={}, allowed={}, reasonCode={}, preferredChannel={}",
+                recipientId, channel, tenant, result.allowed(), result.reasonCode(), result.preferredChannel());
         return result;
     }
 

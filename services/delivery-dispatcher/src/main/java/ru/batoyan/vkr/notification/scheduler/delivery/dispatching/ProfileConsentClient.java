@@ -26,9 +26,10 @@ public class ProfileConsentClient {
         this.properties = properties;
     }
 
-    public Map<String, RecipientProfile> getProfiles(Collection<String> recipientIds) {
+    public Map<String, RecipientProfile> getProfiles(Collection<String> recipientIds, String tenant) {
         var response = stub().batchGetRecipientProfiles(BatchGetRecipientProfilesRequest.newBuilder()
                 .addAllRecipientId(recipientIds)
+                .setTenant(tenant == null ? "" : tenant)
                 .build());
         var profiles = new LinkedHashMap<String, RecipientProfile>();
         response.getProfilesList().forEach(profile -> profiles.put(profile.getRecipientId(), profile));

@@ -42,7 +42,8 @@ public class DeliveryDispatcherService {
             return;
         }
 
-        var profiles = profileConsentClient.getProfiles(dispatch.recipientIds());
+        var tenant = dispatch.payload().getOrDefault("tenant", "").toString();
+        var profiles = profileConsentClient.getProfiles(dispatch.recipientIds(), tenant);
         for (var recipientId : dispatch.recipientIds()) {
             var profile = profiles.get(recipientId);
             var destination = resolveDestination(profile, dispatch.preferredChannel());
@@ -68,7 +69,8 @@ public class DeliveryDispatcherService {
             return;
         }
 
-        var profiles = profileConsentClient.getProfiles(List.of(fallback.recipientId()));
+        var tenant = fallback.payload().getOrDefault("tenant", "").toString();
+        var profiles = profileConsentClient.getProfiles(List.of(fallback.recipientId()), tenant);
         var profile = profiles.get(fallback.recipientId());
         var destination = resolveDestination(profile, Channel.CHANNEL_SMS.name());
         if (destination == null) {
@@ -87,6 +89,7 @@ public class DeliveryDispatcherService {
         command.put("template_id", fallback.templateId());
         command.put("template_version", fallback.templateVersion());
         command.put("payload", fallback.payload());
+        command.put("tenant", tenant);
         command.put("fallback_depth", fallback.fallbackDepth() + 1);
         command.put("fallback_from_channel", fallback.channel());
         var visited = new ArrayList<>(fallback.visitedChannels());
@@ -115,6 +118,7 @@ public class DeliveryDispatcherService {
         command.put("template_id", dispatch.templateId());
         command.put("template_version", dispatch.templateVersion());
         command.put("payload", dispatch.payload());
+        command.put("tenant", dispatch.payload().getOrDefault("tenant", "").toString());
         command.put("fallback_depth", 0);
         command.put("fallback_from_channel", "");
         command.put("visited_channels", List.of(dispatch.preferredChannel()));
@@ -151,6 +155,7 @@ public class DeliveryDispatcherService {
         payload.put("status", statusDbValue(channel, status));
         payload.put("template_id", dispatch.templateId());
         payload.put("template_version", dispatch.templateVersion());
+        payload.put("tenant", dispatch.payload().getOrDefault("tenant", "").toString());
         payload.put("idempotency_key", dispatch.dispatchId() + ":" + recipientId + ":" + channel);
         payload.put("attempt_no", 0);
         payload.put("error_message", errorMessage == null ? "" : errorMessage);

@@ -34,13 +34,17 @@ spec:
               value: "9090"
             - name: FACADE_PLAINTEXT
               value: "true"
-            - name: REDIS_HOST
-              value: redis
-            - name: REDIS_PORT
-              value: "6379"
-            - name: REDIS_USER
-              value: redisuser
-            - name: REDIS_PASSWORD
-              value: redisuserpassword
-            - name: REDIS_KEY_PREFIX
-              value: "profile-consent:recipient:"
+            - name: PROFILE_STORAGE_TYPE
+              value: postgres
+            - name: POSTGRESQL_URL
+              value: jdbc:postgresql://postgres:5432/main_db?currentSchema=nf_prof
+            - name: POSTGRESQL_USER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: username
+            - name: POSTGRESQL_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password

@@ -12,7 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
-public final class RedisProfileSeeder {
+public final class RedisProfileSeeder implements RecipientProfileSeeder {
 
     private final LoaderConfig config;
     private final Random random = new Random();
@@ -21,6 +21,7 @@ public final class RedisProfileSeeder {
         this.config = config;
     }
 
+    @Override
     public void seed() {
         var clientConfig = DefaultJedisClientConfig.builder()
                 .user(config.redisUser())
@@ -35,6 +36,7 @@ public final class RedisProfileSeeder {
         }
     }
 
+    @Override
     public List<String> recipientIds() {
         return java.util.stream.IntStream.rangeClosed(1, config.users())
                 .mapToObj(this::recipientId)

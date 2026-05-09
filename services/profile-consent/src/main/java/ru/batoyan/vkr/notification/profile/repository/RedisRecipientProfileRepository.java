@@ -1,6 +1,7 @@
 package ru.batoyan.vkr.notification.profile.repository;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
 import ru.batoyan.vkr.notification.profile.config.ProfileConsentRedisProperties;
@@ -19,25 +20,26 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "app.profile-consent.storage", name = "type", havingValue = "redis")
 public class RedisRecipientProfileRepository implements RecipientProfileRepository {
 
     private final StringRedisTemplate redisTemplate;
     private final ProfileConsentRedisProperties properties;
 
     @Override
-    public Optional<RecipientProfileDomain> findByRecipientId(String recipientId) {
+    public Optional<RecipientProfileDomain> findByRecipientId(String recipientId, String tenant) {
         var values = redisTemplate.opsForHash().entries(key(recipientId));
         if (values.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(mapProfile(recipientId, values));
+        return Optional.of(mapProfile(recipientId, values, tenant));
     }
 
     @Override
-    public Map<String, RecipientProfileDomain> findAllByRecipientIds(Collection<String> recipientIds) {
+    public Map<String, RecipientProfileDomain> findAllByRecipientIds(Collection<String> recipientIds, String tenant) {
         var result = new LinkedHashMap<String, RecipientProfileDomain>();
         for (var recipientId : recipientIds) {
-            findByRecipientId(recipientId).ifPresent(profile -> result.put(recipientId, profile));
+            findByRecipientId(recipientId, tenant).ifPresent(profile -> result.put(recipientId, profile));
         }
         return result;
     }
@@ -46,14 +48,14 @@ public class RedisRecipientProfileRepository implements RecipientProfileReposito
         return properties.getKeyPrefix() + recipientId;
     }
 
-    private RecipientProfileDomain mapProfile(String recipientId, Map<Object, Object> rawValues) {
+    private RecipientProfileDomain mapProfile(String recipientId, Map<Object, Object> rawValues, String tenant) {
         var values = new LinkedHashMap<String, String>();
         rawValues.forEach((key, value) -> values.put(String.valueOf(key), String.valueOf(value)));
 
         var channels = new EnumMap<Channel, ChannelConsent>(Channel.class);
-        channels.put(Channel.CHANNEL_EMAIL, buildChannel(Channel.CHANNEL_EMAIL, values, "email"));
-        channels.put(Channel.CHANNEL_SMS, buildChannel(Channel.CHANNEL_SMS, values, "sms"));
-        channels.put(Channel.CHANNEL_PUSH, buildChannel(Channel.CHANNEL_PUSH, values, "push"));
+        channels.put(Channel.CHANNEL_EMAIL, buildChannel(Channel.CHANNEL_EMAIL, values, "email", tenant));
+        channels.put(Channel.CHANNEL_SMS, buildChannel(Channel.CHANNEL_SMS, values, "sms", tenant));
+        channels.put(Channel.CHANNEL_PUSH, buildChannel(Channel.CHANNEL_PUSH, values, "push", tenant));
 
         return new RecipientProfileDomain(
                 recipientId,
@@ -64,13 +66,25 @@ public class RedisRecipientProfileRepository implements RecipientProfileReposito
         );
     }
 
-    private ChannelConsent buildChannel(Channel channel, Map<String, String> values, String prefix) {
+    private ChannelConsent buildChannel(Channel channel, Map<String, String> values, String prefix, String tenant) {
+        var normalizedTenant = normalizeTenant(tenant);
+        var tenantPrefix = normalizedTenant.isBlank() ? prefix : prefix + "." + normalizedTenant;
+        var keyPrefix = values.containsKey(tenantPrefix + ".enabled")
+                || values.containsKey(tenantPrefix + ".blacklisted")
+                || values.containsKey(tenantPrefix + ".destination")
+                ? tenantPrefix
+                : prefix;
         return new ChannelConsent(
                 channel,
-                parseBoolean(values.getOrDefault(prefix + ".enabled", "false")),
-                parseBoolean(values.getOrDefault(prefix + ".blacklisted", "false")),
-                values.getOrDefault(prefix + ".destination", "")
+                keyPrefix.equals(prefix) ? "" : normalizedTenant,
+                parseBoolean(values.getOrDefault(keyPrefix + ".enabled", "false")),
+                parseBoolean(values.getOrDefault(keyPrefix + ".blacklisted", "false")),
+                values.getOrDefault(keyPrefix + ".destination", "")
         );
+    }
+
+    private String normalizeTenant(String tenant) {
+        return tenant == null ? "" : tenant.trim();
     }
 
     private Channel parseChannel(String value) {

@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public interface RecipientProfileRepository {
 
-    Optional<RecipientProfileDomain> findByRecipientId(String recipientId);
+    Optional<RecipientProfileDomain> findByRecipientId(String recipientId, String tenant);
 
-    Map<String, RecipientProfileDomain> findAllByRecipientIds(Collection<String> recipientIds);
+    Map<String, RecipientProfileDomain> findAllByRecipientIds(Collection<String> recipientIds, String tenant);
 }

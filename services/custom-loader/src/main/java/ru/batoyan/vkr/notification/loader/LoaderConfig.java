@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.util.Properties;
 
 public record LoaderConfig(
+        String profileStorageType,
         String mode,
         int users,
         int threads,
@@ -15,6 +16,9 @@ public record LoaderConfig(
         String facadeHost,
         int facadePort,
         boolean facadePlaintext,
+        String postgresUrl,
+        String postgresUsername,
+        String postgresPassword,
         String redisHost,
         int redisPort,
         String redisUser,
@@ -32,6 +36,7 @@ public record LoaderConfig(
 
     public static LoaderConfig from(String[] args) {
         Properties defaults = loadDefaults();
+        String profileStorageType = arg(args, "--profile-storage-type", env(defaults, "PROFILE_STORAGE_TYPE", "postgres"));
         String mode = arg(args, "--mode", env(defaults, "LOADER_MODE", "seed-and-load"));
         int users = intArg(args, "--users", intEnv(defaults, "LOADER_USERS", 10000));
         int threads = intArg(args, "--threads", intEnv(defaults, "LOADER_THREADS", 24));
@@ -41,6 +46,9 @@ public record LoaderConfig(
         String facadeHost = arg(args, "--facade-host", env(defaults, "FACADE_HOST", "localhost"));
         int facadePort = intArg(args, "--facade-port", intEnv(defaults, "FACADE_PORT", 9090));
         boolean facadePlaintext = boolArg(args, "--facade-plaintext", boolEnv(defaults, "FACADE_PLAINTEXT", true));
+        String postgresUrl = arg(args, "--postgres-url", env(defaults, "POSTGRESQL_URL", "jdbc:postgresql://localhost:25432/main_db?currentSchema=nf_prof"));
+        String postgresUsername = arg(args, "--postgres-username", env(defaults, "POSTGRESQL_USER_USERNAME", "user"));
+        String postgresPassword = arg(args, "--postgres-password", env(defaults, "POSTGRESQL_USER_PASSWORD", "password"));
         String redisHost = arg(args, "--redis-host", env(defaults, "REDIS_HOST", "localhost"));
         int redisPort = intArg(args, "--redis-port", intEnv(defaults, "REDIS_PORT", 6379));
         String redisUser = arg(args, "--redis-user", env(defaults, "REDIS_USER", "redisuser"));
@@ -54,9 +62,9 @@ public record LoaderConfig(
         int emailParagraphRepeat = intArg(args, "--email-paragraph-repeat", intEnv(defaults, "EMAIL_PARAGRAPH_REPEAT", 4));
         String templateId = arg(args, "--template-id", env(defaults, "TEMPLATE_ID", "tmpl-order-reminder"));
         int templateVersion = intArg(args, "--template-version", intEnv(defaults, "TEMPLATE_VERSION", 1));
-        return new LoaderConfig(mode, users, threads, duration, qpsStart, qpsEnd, facadeHost, facadePort, facadePlaintext,
-                redisHost, redisPort, redisUser, redisPassword, redisKeyPrefix, recipientPrefix, emailShare, smsShare,
-                recipientsPerEvent, emailSections, emailParagraphRepeat, templateId, templateVersion);
+        return new LoaderConfig(profileStorageType, mode, users, threads, duration, qpsStart, qpsEnd, facadeHost, facadePort, facadePlaintext,
+                postgresUrl, postgresUsername, postgresPassword, redisHost, redisPort, redisUser, redisPassword, redisKeyPrefix,
+                recipientPrefix, emailShare, smsShare, recipientsPerEvent, emailSections, emailParagraphRepeat, templateId, templateVersion);
     }
 
     private static String arg(String[] args, String name, String fallback) {

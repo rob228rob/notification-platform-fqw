@@ -18,7 +18,7 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
         platform = softwareSystem "Notification Platform" "Distributed event-driven platform for multi-channel notification delivery." {
             facade = container "Notification Facade" "Accepts gRPC commands, validates input, manages events, audience and dispatches, renders templates and publishes dispatch requests." "Java, Spring Boot, gRPC"
             templateRegistry = container "Template Registry" "Stores template versions and renders subject/body for a chosen channel." "Java, Spring Boot, gRPC"
-            profileConsent = container "Profile Consent" "Provides recipient channel permissions and destinations." "Java, Spring Boot, gRPC"
+            profileConsent = container "Profile Consent" "Provides recipient channel permissions and destinations from PostgreSQL-owned recipient profiles." "Java, Spring Boot, gRPC"
             cancellationService = container "Cancellation Service" "Stores dispatch cancellation marks in Redis and provides fast cancellation checks for senders." "Java, Spring Boot, gRPC"
             deliveryDispatcher = container "Delivery Dispatcher" "Consumes delivery dispatch requests, manages scheduling, routes delivery commands to sender topics and orchestrates fallback." "Java, Spring Boot, Kafka"
             mailSender = container "Notification Mail Sender" "Consumes delivery commands, performs Redis dedup and cancellation checks, sends e-mail and publishes statuses or fallback events." "Java, Spring Boot, Kafka"
@@ -43,9 +43,8 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
                 tags "MongoStore"
             }
 
-            profileRedis = container "Redis Recipient Profiles" "Recipient profile storage used only by the Profile Consent service." "Redis" {
+            profileDb = container "Profile Consent PostgreSQL" "Stores recipient profiles, channel permissions, tenant-specific overrides and destinations." "PostgreSQL" {
                 tags "Database"
-                tags "RedisStore"
             }
 
             cancellationRedis = container "Redis Cancellation Marks" "TTL storage for dispatch cancellation keys, default TTL 30 minutes." "Redis" {
@@ -79,7 +78,7 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
         platform.facade -> platform.kafka "Publishes dispatch requests to delivery.dispatcher" "Kafka"
 
         platform.templateRegistry -> platform.templateMongo "Stores templates" "MongoDB"
-        platform.profileConsent -> platform.profileRedis "Reads recipient profiles" "Redis"
+        platform.profileConsent -> platform.profileDb "Stores recipient profiles, channel permissions and destinations" "JDBC"
         platform.cancellationService -> platform.cancellationRedis "Reads/writes cancellation marks with TTL" "Redis"
 
         platform.kafka -> platform.deliveryDispatcher "Consumes dispatch requests and fallback events" "Kafka"
@@ -141,7 +140,7 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             include platform.deliveryDispatcher
             include platform.dispatcherDb
             include platform.profileConsent
-            include platform.profileRedis
+            include platform.profileDb
             include platform.cancellationService
             include platform.cancellationRedis
             include platform.mailSender
@@ -205,7 +204,7 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
             include platform.deliveryDispatcher
             include platform.dispatcherDb
             include platform.profileConsent
-            include platform.profileRedis
+            include platform.profileDb
             autolayout lr
         }
 
@@ -247,7 +246,7 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
         dynamic platform "KafkaMessageProcessingFlow" "Kafka-driven message processing from dispatcher topic to sender execution and history update." {
             platform.kafka -> platform.deliveryDispatcher "consume delivery.dispatcher"
             platform.deliveryDispatcher -> platform.profileConsent "resolve recipient profile and channel consent"
-            platform.profileConsent -> platform.profileRedis "read recipient profile"
+            platform.profileConsent -> platform.profileDb "read recipient profile"
             platform.deliveryDispatcher -> platform.kafka "publish channel command"
             platform.kafka -> platform.mailSender "consume mail command"
             platform.mailSender -> platform.mailDedupRedis "deduplicate command"

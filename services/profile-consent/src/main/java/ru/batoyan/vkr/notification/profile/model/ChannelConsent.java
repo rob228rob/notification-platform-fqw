@@ -4,6 +4,7 @@ import ru.notification.common.proto.v1.Channel;
 
 public record ChannelConsent(
         Channel channel,
+        String tenant,
         boolean enabled,
         boolean blacklisted,
         String destination

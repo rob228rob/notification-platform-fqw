@@ -32,6 +32,7 @@ message RecipientChannelSettings {
   bool enabled = 2;
   bool blacklisted = 3;
   string destination = 4;
+  string tenant = 5;
 }
 
 message RecipientProfile {
@@ -44,6 +45,7 @@ message RecipientProfile {
 
 message GetRecipientProfileRequest {
   string recipient_id = 1;
+  string tenant = 2;
 }
 
 message GetRecipientProfileResponse {
@@ -52,6 +54,7 @@ message GetRecipientProfileResponse {
 
 message BatchGetRecipientProfilesRequest {
   repeated string recipient_id = 1;
+  string tenant = 2;
 }
 
 message BatchGetRecipientProfilesResponse {
@@ -61,6 +64,7 @@ message BatchGetRecipientProfilesResponse {
 message CheckRecipientChannelRequest {
   string recipient_id = 1;
   notification.common.v1.Channel channel = 2;
+  string tenant = 3;
 }
 
 message CheckRecipientChannelResponse {

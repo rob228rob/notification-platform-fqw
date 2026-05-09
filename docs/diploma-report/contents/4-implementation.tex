@@ -21,7 +21,7 @@
 
 В реализации используются Spring gRPC, Spring Kafka, Spring Data MongoDB, Spring Data Redis, JavaMailSender, Micrometer и Actuator \cite{grpc_docs,spring_boot_docs,mongodb_docs,rogov_postgresql17_internals}.
 
-Операционные контуры событий, запусков доставки, планировщика и канальной обработки используют отдельные PostgreSQL-хранилища. Template Registry использует MongoDB для хранения шаблонов и их версий. Profile Consent использует Redis как оперативное хранилище профилей получателей и канальных ограничений. History Writer использует ClickHouse как аналитическое хранилище истории доставки.
+Операционные контуры событий, запусков доставки, планировщика, канальной обработки и профилей получателей используют отдельные PostgreSQL-хранилища. Template Registry использует MongoDB для хранения шаблонов и их версий. Profile Consent использует PostgreSQL как основное персистентное хранилище профилей получателей, tenant-aware канальных разрешений и destination. Такой выбор упрощает миграции схемы, индексацию по recipient/channel/tenant и контроль целостности при долговременном хранении настроек профиля. History Writer использует ClickHouse как аналитическое хранилище истории доставки.
 
 \subsection{Моделирование данных}
 
@@ -53,7 +53,7 @@
         \hline
         Template Registry & MongoDB Templates & Шаблоны, версии, channel contents, activeVersion. & Через gRPC \\
         \hline
-        Profile Consent & Redis Recipient Profiles & Профиль получателя, разрешения каналов, destination, ограничения. & Через gRPC \\
+        Profile Consent & Profile Consent PostgreSQL & Профиль получателя, разрешения каналов, tenant-aware destination и ограничения. & Через gRPC \\
         \hline
     \end{tabular}
 \end{table}

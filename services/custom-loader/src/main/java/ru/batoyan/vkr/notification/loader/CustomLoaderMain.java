@@ -10,11 +10,11 @@ public final class CustomLoaderMain {
 
     public static void main(String[] args) throws Exception {
         var config = LoaderConfig.from(args);
-        var seeder = new RedisProfileSeeder(config);
+        var seeder = profileSeeder(config);
 
         switch (config.mode()) {
             case "seed" -> {
-                System.out.printf("SEED_START users=%d redis=%s:%d%n", config.users(), config.redisHost(), config.redisPort());
+                System.out.printf("SEED_START users=%d storage=%s%n", config.users(), config.profileStorageType());
                 seeder.seed();
                 System.out.println("SEED_DONE");
             }
@@ -25,7 +25,7 @@ public final class CustomLoaderMain {
                 new FacadeLoadRunner(config, seeder.recipientIds()).run();
             }
             case "seed-and-load" -> {
-                System.out.printf("SEED_START users=%d redis=%s:%d%n", config.users(), config.redisHost(), config.redisPort());
+                System.out.printf("SEED_START users=%d storage=%s%n", config.users(), config.profileStorageType());
                 seeder.seed();
                 System.out.println("SEED_DONE");
                 System.out.printf("LOAD_START users=%d facade=%s:%d duration=%ss qpsStart=%d qpsEnd=%d threads=%d%n",
@@ -35,5 +35,14 @@ public final class CustomLoaderMain {
             }
             default -> throw new IllegalArgumentException("Unsupported --mode: " + config.mode());
         }
+    }
+
+    private static RecipientProfileSeeder profileSeeder(LoaderConfig config) {
+        if ("redis".equalsIgnoreCase(config.profileStorageType())) {
+            LOG.info("Using Redis recipient profile seeder");
+            return new RedisProfileSeeder(config);
+        }
+        LOG.info("Using PostgreSQL recipient profile seeder");
+        return new PostgresProfileSeeder(config);
     }
 }

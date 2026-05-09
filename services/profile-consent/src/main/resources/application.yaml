@@ -1,6 +1,15 @@
 spring:
   application:
     name: profile-consent
+  config:
+    import: optional:classpath:creds/user-creds.yaml
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${postgresql.url:jdbc:postgresql://localhost:25432/main_db?currentSchema=nf_prof}
+    username: ${postgresql.user.username:user}
+    password: ${postgresql.user.password:password}
+  flyway:
+    locations: classpath:db/migration
   data:
     redis:
       host: ${PROFILE_CONSENT_REDIS_HOST:localhost}
@@ -9,6 +18,11 @@ spring:
       password: ${PROFILE_CONSENT_REDIS_PASSWORD:redisuserpassword}
       timeout: 3s
       connect-timeout: 3s
+
+app:
+  profile-consent:
+    storage:
+      type: ${PROFILE_CONSENT_STORAGE_TYPE:postgres}
 
 profile-consent:
   redis:
@@ -22,6 +36,11 @@ server:
   port: ${SERVER_PORT:8913}
 
 management:
+  health:
+    redis:
+      enabled: ${PROFILE_CONSENT_REDIS_HEALTH_ENABLED:false}
+    db:
+      enabled: true
   endpoints:
     web:
       exposure:

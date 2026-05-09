@@ -26,14 +26,20 @@ spec:
               value: "8913"
             - name: PROFILE_CONSENT_GRPC_PORT
               value: "9096"
-            - name: PROFILE_CONSENT_REDIS_HOST
-              value: redis
-            - name: PROFILE_CONSENT_REDIS_PORT
-              value: "6379"
-            - name: PROFILE_CONSENT_REDIS_USERNAME
-              value: redisuser
-            - name: PROFILE_CONSENT_REDIS_PASSWORD
-              value: redisuserpassword
+            - name: PROFILE_CONSENT_STORAGE_TYPE
+              value: postgres
+            - name: POSTGRESQL_URL
+              value: jdbc:postgresql://postgres:5432/main_db?currentSchema=nf_prof
+            - name: POSTGRESQL_USER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: username
+            - name: POSTGRESQL_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
           readinessProbe:
             httpGet:
               path: /actuator/health
