@@ -88,13 +88,13 @@ workspace "Notification Platform - Current Implementation" "Actual architecture 
 
         platform.kafka -> platform.mailSender "Consumes mail delivery commands" "Kafka"
         platform.kafka -> platform.smsSender "Consumes SMS delivery commands" "Kafka"
-        platform.mailSender -> platform.cancellationService "Checks dispatch cancellation before send" "gRPC"
-        platform.smsSender -> platform.cancellationService "Checks dispatch cancellation before send" "gRPC"
+        platform.mailSender -> platform.cancellationService "Checks dispatch cancellation" "gRPC"
+        platform.smsSender -> platform.cancellationService "Checks dispatch cancellation" "gRPC"
         platform.mailSender -> platform.mailDedupRedis "Deduplicates mail commands" "Redis"
         platform.smsSender -> platform.smsDedupRedis "Deduplicates SMS commands" "Redis"
         platform.mailSender -> emailProvider "Sends email" "SMTP / provider API"
         platform.smsSender -> smsProvider "Sends SMS" "Provider API"
-        platform.mailSender -> platform.kafka "Publishes statuses and fallback events to delivery.fallback when final mail attempt fails" "Kafka"
+        platform.mailSender -> platform.kafka "Publishes to delivery.fallback" "Kafka"
         platform.smsSender -> platform.kafka "Publishes delivery statuses" "Kafka"
 
         platform.kafka -> platform.historyWriter "Consumes delivery status events" "Kafka"
