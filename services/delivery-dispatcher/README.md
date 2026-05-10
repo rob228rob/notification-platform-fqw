@@ -7,7 +7,7 @@
 - consume `delivery.dispatcher`;
 - отложенный запуск по `planned_send_at`;
 - маршрутизация в `notification.mail.dispatches` и `notification.sms.dispatches`;
-- consume `delivery.fallback` и запуск fallback-маршрута;
+- consume `delivery.fallback` и запуск fallback-маршрута с учётом `previous_channels`;
 - минимальная оркестрация жизненного цикла доставки без переноса валидации, аудитории и шаблонов из facade.
 
 ## Хранилище и топики
@@ -15,6 +15,8 @@
 - `PostgreSQL`: таблица `nf_sched.scheduled_delivery_task`
 - `Kafka input`: `${dispatcher.delivery.dispatch-topic}` и `${dispatcher.delivery.fallback-topic}`
 - `Kafka output`: `${dispatcher.delivery.mail-topic}` и `${dispatcher.delivery.sms-topic}`
+
+Fallback-событие должно передавать массив `previous_channels`. Dispatcher исключает все каналы из этого массива и не публикует новую sender-команду, если доступных альтернативных каналов не осталось.
 
 ## Smoke
 

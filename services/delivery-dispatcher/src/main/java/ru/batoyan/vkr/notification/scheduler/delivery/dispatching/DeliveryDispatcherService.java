@@ -57,25 +57,30 @@ public class DeliveryDispatcherService {
 
     public void handleFallback(KafkaEnvelope envelope) {
         var fallback = FallbackRequest.fromEnvelope(envelope);
+        var previousChannels = mergePreviousChannels(fallback.previousChannels(), fallback.channel());
         if (fallback.fallbackDepth() >= properties.getMaxFallbackDepth()) {
             LOG.info("Fallback depth exhausted dispatchId={}, recipientId={}, depth={}",
                     fallback.dispatchId(), fallback.recipientId(), fallback.fallbackDepth());
+            publishFallbackFailedStatus(fallback, "FALLBACK_DEPTH_EXHAUSTED");
             return;
         }
-        if (!fallback.fallbackChannels().contains(Channel.CHANNEL_SMS.name())
-                || fallback.visitedChannels().contains(Channel.CHANNEL_SMS.name())) {
-            LOG.info("Fallback to SMS is not allowed dispatchId={}, recipientId={}",
-                    fallback.dispatchId(), fallback.recipientId());
+
+        var nextChannel = nextFallbackChannel(fallback.fallbackChannels(), previousChannels);
+        if (nextChannel == null) {
+            LOG.info("Fallback target unavailable dispatchId={}, recipientId={}, previousChannels={}",
+                    fallback.dispatchId(), fallback.recipientId(), previousChannels);
+            publishFallbackFailedStatus(fallback, "FALLBACK_CHANNEL_UNAVAILABLE");
             return;
         }
 
         var tenant = fallback.payload().getOrDefault("tenant", "").toString();
         var profiles = profileConsentClient.getProfiles(List.of(fallback.recipientId()), tenant);
         var profile = profiles.get(fallback.recipientId());
-        var destination = resolveDestination(profile, Channel.CHANNEL_SMS.name());
+        var destination = resolveDestination(profile, nextChannel);
         if (destination == null) {
             LOG.info("Fallback destination unavailable dispatchId={}, recipientId={}",
                     fallback.dispatchId(), fallback.recipientId());
+            publishFallbackFailedStatus(fallback, "FALLBACK_DESTINATION_UNAVAILABLE");
             return;
         }
 
@@ -84,7 +89,7 @@ public class DeliveryDispatcherService {
         command.put("event_id", fallback.eventId());
         command.put("client_id", fallback.clientId());
         command.put("recipient_id", fallback.recipientId());
-        command.put("channel", Channel.CHANNEL_SMS.name());
+        command.put("channel", nextChannel);
         command.put("destination", destination);
         command.put("template_id", fallback.templateId());
         command.put("template_version", fallback.templateVersion());
@@ -92,17 +97,30 @@ public class DeliveryDispatcherService {
         command.put("tenant", tenant);
         command.put("fallback_depth", fallback.fallbackDepth() + 1);
         command.put("fallback_from_channel", fallback.channel());
-        var visited = new ArrayList<>(fallback.visitedChannels());
-        visited.add(Channel.CHANNEL_SMS.name());
+        var visited = new ArrayList<>(previousChannels);
+        visited.add(nextChannel);
+        command.put("previous_channels", previousChannels);
         command.put("visited_channels", visited);
         command.put("fallback_channels", fallback.fallbackChannels());
         command.put("created_at", OffsetDateTime.now().toString());
 
+        var topic = switch (nextChannel) {
+            case "CHANNEL_EMAIL" -> properties.getMailTopic();
+            case "CHANNEL_SMS" -> properties.getSmsTopic();
+            default -> throw new IllegalArgumentException("Unsupported fallback route target " + nextChannel);
+        };
+        var aggregateType = nextChannel.equals(Channel.CHANNEL_EMAIL.name())
+                ? "mail_delivery_command"
+                : "sms_delivery_command";
+        var eventType = nextChannel.equals(Channel.CHANNEL_EMAIL.name())
+                ? "MailDeliveryCommandRequested"
+                : "SmsDeliveryCommandRequested";
+
         publishEnvelope(
-                properties.getSmsTopic(),
-                "sms_delivery_command",
-                fallback.dispatchId() + ":" + fallback.recipientId() + ":" + Channel.CHANNEL_SMS.name(),
-                "SmsDeliveryCommandRequested",
+                topic,
+                aggregateType,
+                fallback.dispatchId() + ":" + fallback.recipientId() + ":" + nextChannel,
+                eventType,
                 command
         );
     }
@@ -121,6 +139,7 @@ public class DeliveryDispatcherService {
         command.put("tenant", dispatch.payload().getOrDefault("tenant", "").toString());
         command.put("fallback_depth", 0);
         command.put("fallback_from_channel", "");
+        command.put("previous_channels", List.of(dispatch.preferredChannel()));
         command.put("visited_channels", List.of(dispatch.preferredChannel()));
         command.put("fallback_channels", dispatch.fallbackChannels());
         command.put("created_at", OffsetDateTime.now().toString());
@@ -171,6 +190,32 @@ public class DeliveryDispatcherService {
         publishEnvelope(topic, aggregateType, dispatch.dispatchId() + ":" + recipientId + ":" + channel, eventType, payload);
     }
 
+    private void publishFallbackFailedStatus(FallbackRequest fallback, String reason) {
+        var payload = new LinkedHashMap<String, Object>();
+        payload.put("dispatch_id", fallback.dispatchId());
+        payload.put("event_id", fallback.eventId());
+        payload.put("client_id", fallback.clientId());
+        payload.put("recipient_id", fallback.recipientId());
+        payload.put("channel", fallback.channel());
+        payload.put("status", statusDbValue(fallback.channel(), "FAILED"));
+        payload.put("template_id", fallback.templateId());
+        payload.put("template_version", fallback.templateVersion());
+        payload.put("tenant", fallback.payload().getOrDefault("tenant", "").toString());
+        payload.put("idempotency_key", fallback.dispatchId() + ":" + fallback.recipientId() + ":" + fallback.channel());
+        payload.put("attempt_no", fallback.fallbackDepth());
+        payload.put("error_message", reason);
+        payload.put("occurred_at", OffsetDateTime.now().toString());
+
+        var topic = fallback.channel().equals(Channel.CHANNEL_SMS.name())
+                ? properties.getSmsStatusTopic()
+                : properties.getMailStatusTopic();
+        var aggregateType = fallback.channel().equals(Channel.CHANNEL_SMS.name()) ? "sms_delivery" : "mail_delivery";
+        var eventType = fallback.channel().equals(Channel.CHANNEL_SMS.name())
+                ? "SmsDeliveryStatusChanged"
+                : "MailDeliveryStatusChanged";
+        publishEnvelope(topic, aggregateType, fallback.dispatchId() + ":" + fallback.recipientId() + ":" + fallback.channel(), eventType, payload);
+    }
+
     private void publishEnvelope(String topic, String aggregateType, String aggregateId, String eventType, Map<String, Object> payload) {
         try {
             var envelope = new LinkedHashMap<String, Object>();
@@ -219,6 +264,34 @@ public class DeliveryDispatcherService {
         };
     }
 
+    static List<String> mergePreviousChannels(List<String> previousChannels, String currentChannel) {
+        var result = new ArrayList<String>();
+        if (previousChannels != null) {
+            for (var channel : previousChannels) {
+                if (channel != null && !channel.isBlank() && !result.contains(channel)) {
+                    result.add(channel);
+                }
+            }
+        }
+        if (currentChannel != null && !currentChannel.isBlank() && !result.contains(currentChannel)) {
+            result.add(currentChannel);
+        }
+        return List.copyOf(result);
+    }
+
+    static String nextFallbackChannel(List<String> fallbackChannels, List<String> previousChannels) {
+        if (fallbackChannels == null || fallbackChannels.isEmpty()) {
+            return null;
+        }
+        var visited = previousChannels == null ? List.<String>of() : previousChannels;
+        for (var channel : fallbackChannels) {
+            if (channel != null && !channel.isBlank() && !visited.contains(channel)) {
+                return channel;
+            }
+        }
+        return null;
+    }
+
     private record DispatchRequest(
             String dispatchId,
             String eventId,
@@ -256,7 +329,7 @@ public class DeliveryDispatcherService {
             int templateVersion,
             Map<String, Object> payload,
             int fallbackDepth,
-            List<String> visitedChannels,
+            List<String> previousChannels,
             List<String> fallbackChannels
     ) {
         private static FallbackRequest fromEnvelope(KafkaEnvelope envelope) {
@@ -271,7 +344,7 @@ public class DeliveryDispatcherService {
                     Integer.parseInt(String.valueOf(payload.get("template_version"))),
                     asMap(payload.get("payload")),
                     Integer.parseInt(String.valueOf(payload.getOrDefault("fallback_depth", 0))),
-                    asList(payload.get("visited_channels")),
+                    fallbackPreviousChannels(payload),
                     asList(payload.get("fallback_channels"))
             );
         }
@@ -285,5 +358,10 @@ public class DeliveryDispatcherService {
     @SuppressWarnings("unchecked")
     private static List<String> asList(Object value) {
         return value instanceof List<?> list ? (List<String>) list : List.of();
+    }
+
+    private static List<String> fallbackPreviousChannels(Map<String, Object> payload) {
+        var previous = asList(payload.get("previous_channels"));
+        return previous.isEmpty() ? asList(payload.get("visited_channels")) : previous;
     }
 }

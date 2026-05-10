@@ -34,23 +34,38 @@
 }
 
 \newglossaryentry{idempotency}{
-    name={idempotency},
+    name={идемпотентность},
     description={свойство операции, при котором повторный запуск с теми же входными параметрами не приводит к дополнительным побочным эффектам}
 }
 
 \newglossaryentry{deduplication}{
-    name={deduplication},
+    name={дедупликация},
     description={обнаружение и подавление дублирующихся сообщений или операций по устойчивому ключу}
 }
 
+\newglossaryentry{redis_deduplication}{
+    name={дедупликация через Redis},
+    description={техническое подавление повторной обработки sender-команд через атомарную запись TTL-ключа в Redis}
+}
+
 \newglossaryentry{retry_term}{
-    name={retry},
+    name={повторная попытка},
     description={контролируемое повторное выполнение операции после временной ошибки}
 }
 
 \newglossaryentry{fallback_routing}{
     name={fallback-маршрутизация},
     description={переназначение доставки в альтернативный канал связи после окончательной ошибки или исчерпания повторов в исходном канале}
+}
+
+\newglossaryentry{cancellation_mark}{
+    name={отметка отмены},
+    description={TTL-ключ в Redis, фиксирующий отмену dispatch или delivery и используемый sender-сервисами перед фактической отправкой}
+}
+
+\newglossaryentry{history_writer}{
+    name={history-writer},
+    description={сервис, который потребляет статусные события доставки и записывает append-only историю в ClickHouse}
 }
 
 \newglossaryentry{eventual_consistency}{

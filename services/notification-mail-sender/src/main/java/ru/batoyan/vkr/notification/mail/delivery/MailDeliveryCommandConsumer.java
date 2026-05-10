@@ -121,7 +121,8 @@ public class MailDeliveryCommandConsumer {
     }
 
     private void publishFallback(MailCommand command, String errorMessage) throws Exception {
-        if (!command.fallbackChannels().contains("CHANNEL_SMS") || command.visitedChannels().contains("CHANNEL_SMS")) {
+        var previousChannels = fallbackPreviousChannels(command.previousChannels(), command.channel());
+        if (!command.fallbackChannels().contains("CHANNEL_SMS") || previousChannels.contains("CHANNEL_SMS")) {
             return;
         }
         var payload = new LinkedHashMap<String, Object>();
@@ -134,10 +135,26 @@ public class MailDeliveryCommandConsumer {
         payload.put("template_version", command.templateVersion());
         payload.put("payload", command.payload());
         payload.put("fallback_depth", command.fallbackDepth());
-        payload.put("visited_channels", command.visitedChannels());
+        payload.put("previous_channels", previousChannels);
+        payload.put("visited_channels", previousChannels);
         payload.put("fallback_channels", command.fallbackChannels());
         payload.put("error_message", errorMessage == null ? "" : errorMessage);
         publishEnvelope(fallbackTopic, "delivery_fallback", command.deliveryId(), "DeliveryFallbackRequested", payload);
+    }
+
+    static List<String> fallbackPreviousChannels(List<String> visitedChannels, String currentChannel) {
+        var result = new ArrayList<String>();
+        if (visitedChannels != null) {
+            for (var channel : visitedChannels) {
+                if (channel != null && !channel.isBlank() && !result.contains(channel)) {
+                    result.add(channel);
+                }
+            }
+        }
+        if (currentChannel != null && !currentChannel.isBlank() && !result.contains(currentChannel)) {
+            result.add(currentChannel);
+        }
+        return List.copyOf(result);
     }
 
     private void publishEnvelope(String topic, String aggregateType, String aggregateId, String eventType, Map<String, Object> payload) throws Exception {
@@ -208,7 +225,7 @@ public class MailDeliveryCommandConsumer {
             int templateVersion,
             Map<String, Object> payload,
             int fallbackDepth,
-            List<String> visitedChannels,
+            List<String> previousChannels,
             List<String> fallbackChannels
     ) {
         private static MailCommand fromEnvelope(PublisherEnvelope envelope) {
@@ -224,7 +241,7 @@ public class MailDeliveryCommandConsumer {
                     Integer.parseInt(String.valueOf(payload.get("template_version"))),
                     asMap(payload.get("payload")),
                     Integer.parseInt(String.valueOf(payload.getOrDefault("fallback_depth", 0))),
-                    asList(payload.get("visited_channels")),
+                    commandPreviousChannels(payload),
                     asList(payload.get("fallback_channels"))
             );
         }
@@ -251,5 +268,10 @@ public class MailDeliveryCommandConsumer {
             return new ArrayList<>((List<String>) list);
         }
         return List.of();
+    }
+
+    private static List<String> commandPreviousChannels(Map<String, Object> payload) {
+        var previous = asList(payload.get("previous_channels"));
+        return previous.isEmpty() ? asList(payload.get("visited_channels")) : previous;
     }
 }
