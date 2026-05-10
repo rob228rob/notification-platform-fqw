@@ -1,33 +1,12 @@
-\section{Реализация системы, моделирование данных и контракты взаимодействия}
+\section{Реализация системы}
 
-\subsection{Технологический стек и модульная структура}
+Реализация выполнена как набор сервисов на Java~25 и Spring Boot. Код размещён в Gradle monorepo: прикладные сервисы, protobuf-контракты и вспомогательные библиотеки собираются независимо, но используют единый набор соглашений по конфигурации, наблюдаемости и интеграции.
 
-Система реализована как набор микросервисов на Java~25 с использованием Spring Boot. Исходный код размещён в Gradle monorepo, где прикладные сервисы, protobuf-контракты и вспомогательные инструменты собираются в одном цикле, но развиваются как отдельные модули.
+Взаимодействие синхронных контуров построено на gRPC. Асинхронная обработка команд доставки, статусов и fallback-событий выполняется через Kafka. Для транзакционных данных используются PostgreSQL-хранилища, для шаблонов --- MongoDB, для истории статусов --- ClickHouse. Redis используется только для TTL-механизмов: отметок отмены и локального подавления дублей в sender-сервисах.
 
-В прикладную часть входят следующие сервисы:
-\begin{enumerate}
-    \item notification-facade;
-    \item template-registry;
-    \item profile-consent;
-    \item delivery-dispatcher;
-    \item cancellation-service;
-    \item notification-mail-sender;
-    \item notification-sms-sender;
-    \item history-writer;
-    \item custom-loader, используемый для нагрузочных и проверочных сценариев.
-\end{enumerate}
+\subsection{Обзор владения данными}
 
-Контракты вынесены в отдельные protobuf-модули. Это исключает дублирование сигнатур между клиентскими и серверными компонентами и упрощает сопровождение внутренних gRPC-интерфейсов.
-
-В реализации используются Spring gRPC, Spring Kafka, Spring Data MongoDB, Spring Data Redis, JavaMailSender, Micrometer и Actuator \cite{grpc_docs,spring_boot_docs,mongodb_docs,rogov_postgresql17_internals}.
-
-Операционные контуры событий, запусков доставки, планировщика, канальной обработки и профилей получателей используют отдельные PostgreSQL-хранилища. Template Registry использует MongoDB для хранения шаблонов и их версий. Profile Consent использует PostgreSQL как основное персистентное хранилище профилей получателей, tenant-aware канальных разрешений и destination. Такой выбор упрощает миграции схемы, индексацию по recipient/channel/tenant и контроль целостности при долговременном хранении настроек профиля. History Writer использует ClickHouse как аналитическое хранилище истории доставки.
-
-\subsection{Моделирование данных}
-
-\subsubsection{Владение данными по сервисным контурам}
-
-Модель хранения подчинена сервисным границам: каждая доменная зона имеет собственного владельца и собственное хранилище. Сервис не использует таблицы или коллекции другого контура как интеграционный интерфейс. Распределение данных показано в таблице~\ref{tab:data-ownership}.
+Хранилища разделены по сервисным границам. Сервис не читает таблицы или коллекции другого сервиса напрямую: доступ к данным выполняется через gRPC-контракт или через события Kafka. Такое разделение снижает связность схем данных и не превращает базу данных в общий интеграционный слой.
 
 \begin{table}[h]
     \centering
@@ -35,147 +14,114 @@
     \renewcommand{\arraystretch}{1.15}
     \caption{Владение данными по сервисным контурам}
     \label{tab:data-ownership}
-    \begin{tabular}{|L{0.20\textwidth}|L{0.16\textwidth}|L{0.34\textwidth}|L{0.20\textwidth}|}
+    \begin{tabular}{|L{0.22\textwidth}|L{0.18\textwidth}|L{0.36\textwidth}|L{0.16\textwidth}|}
         \hline
         \textbf{Сервис} & \textbf{Хранилище} & \textbf{Данные} & \textbf{Доступ других сервисов} \\
         \hline
-        Notification Facade & Facade PostgreSQL & События уведомлений, аудитория, запуски доставки, outbox. & Только через gRPC/Kafka \\
+        Notification Facade & Facade PostgreSQL & События уведомлений, аудитория, входные dispatch-запросы, outbox-записи и ключи идемпотентности. & Только через gRPC/Kafka \\
         \hline
-        Delivery Dispatcher & Dispatcher PostgreSQL & Отложенные задачи публикации, состояние fallback и диспетчеризация в канальные топики. & Только через Kafka и сервисные контракты \\
+        Template Registry & MongoDB Templates & Шаблоны, версии шаблонов, channel contents и activeVersion. & Через gRPC \\
         \hline
-        Notification Mail Sender & Redis Mail Dedup & Ключи локального dedup и техническая защита от повторной обработки email-команд. & Только через Kafka и сервисные контракты \\
+        Profile Consent & Profile Consent PostgreSQL & Профиль получателя, tenant-aware разрешения каналов, destination и ограничения. & Через gRPC \\
         \hline
-        Notification SMS Sender & Redis SMS Dedup & Ключи локального dedup и техническая защита от повторной обработки SMS-команд. & Только через Kafka и сервисные контракты \\
+        Delivery Dispatcher & Dispatcher PostgreSQL & Отложенные задачи, routing decisions, retry/fallback state и состояние планирования. & Через Kafka/gRPC \\
         \hline
-        Cancellation Service & Redis Cancellation Marks & Признаки отмены dispatch/delivery с TTL 30 минут. & Только через gRPC \\
+        Cancellation Service & Redis Cancellation Marks & Отметки отмены dispatch/delivery с TTL 30 минут. & Через gRPC \\
         \hline
-        History Writer & ClickHouse History Store & История статусов доставки, данные по попыткам, recipient/channel read model и аналитическая история. & Через API history-writer \\
+        Notification Mail Sender & Redis Mail Dedup & TTL-ключи локального dedup для email-команд. & Не используется другими сервисами \\
         \hline
-        Template Registry & MongoDB Templates & Шаблоны, версии, channel contents, activeVersion. & Через gRPC \\
+        Notification SMS Sender & Redis SMS Dedup & TTL-ключи локального dedup для SMS-команд. & Не используется другими сервисами \\
         \hline
-        Profile Consent & Profile Consent PostgreSQL & Профиль получателя, разрешения каналов, tenant-aware destination и ограничения. & Через gRPC \\
+        History Writer & ClickHouse History Store & Append-only история статусов доставки и атрибуты обработки. & Через API history-writer \\
         \hline
     \end{tabular}
 \end{table}
 
-Такое разделение предотвращает превращение базы данных в общий интеграционный слой. Если сервису требуются данные другого контура, он обращается к владельцу данных через сервисный контракт или получает событие из Kafka.
+DBML-версии реляционных схем подготовлены отдельно в каталоге docs/dbdiagram. Они используются как источник для ERD-изображений в данном разделе; PlantUML-версии схем сохранены в каталоге docs/plantuml.
 
-\subsubsection{Модель хранения истории доставки}
+\subsection{notification-facade}
 
-В текущей реализации history-writer получает status events из Kafka и переводит их в строковую модель ClickHouse. Для каждой записи сохраняются идентификаторы клиента, события, запуска доставки и получателя, канал, статус, номер попытки, причина ошибки, временные метки, destination, idempotency key, Kafka topic/partition/offset и сериализованные payload/headers. Если во входном status event присутствуют дополнительные поля, например provider-specific идентификаторы или correlation identifier, они также попадают в аналитическую запись через metadata-поля. Такой набор покрывает два класса запросов: оперативное чтение истории по клиенту и получателю через gRPC и аналитические выборки по статусам, каналам и временным интервалам.
+Notification Facade принимает клиентские команды, проверяет входные данные, фиксирует событие уведомления и аудиторию, подготавливает dispatch request и публикует его в Kafka topic delivery.dispatcher. В этом сервисе остаются операции, связанные с входным жизненным циклом события: идемпотентность клиентской команды, запись события, работа с аудиторией и формирование outbox-записей для последующей публикации.
 
-ClickHouse выбран не как замена транзакционным таблицам sender-сервисов, а как отдельный аналитический слой истории. Состояние канальной доставки и механизмы consumer inbox продолжают жить в PostgreSQL sender-контуров. History Writer получает уже сформированное статусное событие, добавляет техническую информацию о Kafka-сообщении и сохраняет его как append-only журнал с последующим агрегированием для read API.
+Фасад не отправляет команды напрямую в mail- или sms-sender. После подготовки события он публикует общий dispatch request, а выбор канала и fallback-решения выполняет delivery-dispatcher. При клиентской отмене фасад вызывает cancellation-service и не хранит отметки отмены в собственной PostgreSQL-схеме.
 
-\subsubsection{Документоориентированная модель шаблонов}
-
-В сервисе template-registry шаблон хранится в коллекции templates. Один документ объединяет метаданные шаблона, номер активной версии и массив версий с канальными представлениями. Это соответствует типовым сценариям чтения: выбор активной версии, чтение одного канала и предварительный рендеринг.
-
-Документ включает обязательные поля:
-\begin{enumerate}
-    \item идентификатор шаблона и клиента (templateId, clientId);
-    \item метаданные шаблона (name, description, status);
-    \item номер активной версии (activeVersion);
-    \item createIdempotencyKey для защиты операции создания;
-    \item массив versions, где каждая версия содержит номер версии, движок рендеринга и список channel contents.
-\end{enumerate}
-
-Хранение версии внутри одного документа уменьшает число отдельных операций чтения при RenderPreview и при публикации новой версии. Контроль конкурентного изменения активной версии выполняется на уровне самого сервиса template-registry, а не за счёт прямого доступа других сервисов к MongoDB \cite{mongodb_docs}.
-
-Пример фактического документа коллекции templates, полученный из тестовой базы, приведён на рисунке~\ref{fig:impl-template-document-mongo}.
+Основные таблицы фасада отражают входное событие, адресатов, dispatch-запрос и outbox. Реляционная модель приведена на рисунке~\ref{fig:data-facade-postgres-schema}.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.84\textwidth]{inc/mongo-template-data.png}
-    \caption{Пример документа шаблона в MongoDB}
-    \label{fig:impl-template-document-mongo}
+    \includegraphics[width=0.82\textwidth]{inc/dbdiagram/png/facade-postgres-schema.png}
+    \caption{Реляционная модель notification-facade}
+    \label{fig:data-facade-postgres-schema}
 \end{figure}
 
-Рисунок~\ref{fig:impl-template-document-mongo} показывает, что метаданные шаблона, активная версия и channel contents собраны в одном документе. Для текущего сервиса это означает, что чтение активной версии и выбор канального представления выполняются без дополнительной сборки данных из нескольких сущностей.
+\subsection{template-registry}
 
-\subsubsection{Модель профиля получателя}
+Template Registry отвечает за хранение и рендеринг шаблонов уведомлений. Сервис получает от фасада идентификатор шаблона, канал и параметры рендеринга, выбирает активную версию и возвращает подготовленное содержимое. Модель хранится в MongoDB, потому что документ шаблона содержит версии, канальные представления и набор переменных, которые удобнее хранить как вложенную структуру.
 
-Профиль получателя хранится в Redis. В нём фиксируются признаки активности, разрешения каналов, адресные атрибуты и технические маркеры актуальности. Канальные сервисы не зависят от схемы ключей и значений Redis: решение о допустимости доставки возвращает только сервис profile-consent.
+В документе шаблона фиксируются client id, template id, activeVersion и набор версий. Для каждой версии хранятся channel contents для email и SMS, тема, тело и metadata. Пример структуры документа показан на рисунке~\ref{fig:data-template-registry-mongo}.
 
-Статусная модель доставки вынесена на архитектурный уровень, поскольку задаёт правила переходов между этапами обработки. В реализации sender-сервисы, фасадный контракт и history-writer отражают эту модель через поля запуска доставки, статусные события и записи истории.
-
-\subsection{Контракты взаимодействия}
-
-\subsubsection{Контракты управления событиями и доставкой}
-
-Контракт фасада разделён на три группы операций:
-\begin{enumerate}
-    \item управление событием уведомления;
-    \item управление аудиторией;
-    \item управление запуском доставки.
-\end{enumerate}
-
-Такое разделение напрямую следует из доменной модели: создание уведомительного события и запуск доставки являются разными этапами обработки и должны жить в разных gRPC-операциях.
-
-Ключевые gRPC-операции фасада приведены в таблице~\ref{tab:impl-facade-contracts}.
-
-\begin{table}[h]
+\begin{figure}[H]
     \centering
-    \footnotesize
-    \renewcommand{\arraystretch}{1.15}
-    \caption{Ключевые операции NotificationFacade}
-    \label{tab:impl-facade-contracts}
-    \begin{tabular}{|L{0.34\textwidth}|L{0.52\textwidth}|}
-        \hline
-        \textbf{Операция} & \textbf{Назначение} \\
-        \hline
-        CreateNotificationEvent, UpdateNotificationEvent, CancelNotificationEvent, GetNotificationEvent, ListNotificationEvents & Управление событием уведомления и чтение его состояния. \\
-        \hline
-        SetAudience, AddRecipients, RemoveRecipients, GetAudience & Управление аудиторией события. \\
-        \hline
-        TriggerDispatch, GetDispatch, ListDispatches & Создание, чтение и контроль запуска доставки. \\
-        \hline
-    \end{tabular}
-\end{table}
+    \includegraphics[width=0.76\textwidth]{inc/mongo-template-data.png}
+    \caption{Модель MongoDB-документа template-registry}
+    \label{fig:data-template-registry-mongo}
+\end{figure}
 
-\subsubsection{Контракты шаблонов, профиля и истории}
+\subsection{profile-consent}
 
-Сервис шаблонов предоставляет операции управления версиями шаблонов и предварительного рендеринга. При переходе на MongoDB внешний gRPC-контракт сохранён: изменение затронуло внутренний слой хранения. Сервис профиля предоставляет операции одиночной и пакетной проверки получателей. Сервис истории предоставляет операции чтения истории и агрегированных сводок, а сами данные истории читает из ClickHouse без прямого доступа других сервисов к этому хранилищу.
+Profile Consent инкапсулирует правила доступности каналов и профиль получателя. Delivery Dispatcher и другие сервисы не обращаются к таблицам профиля напрямую: они используют gRPC-метод проверки канала. Это сохраняет единое место принятия решений по recipient/channel/tenant.
 
-Фасадный protobuf-контракт дополнительно фиксирует предпочтительный канал и список fallback-каналов. Предпочтительный канал задаёт первичный маршрут доставки, а fallback-каналы определяют допустимые альтернативы, если delivery-dispatcher переводит доставку в другой канал после окончательной ошибки или после исчерпания лимита повторов. Дополнительно введён gRPC-контракт cancellation-service с операциями CancelDispatch и CheckDeliveryAllowed. Это позволяет вынести фиксацию отмены в отдельный сервис и сохранить для sender-сервисов минимальный безопасный execution-level check перед фактической отправкой.
+PostgreSQL используется как транзакционное хранилище долговременных настроек профиля, согласий, channel destination и признаков блокировки. Основная таблица фиксирует активность профиля и предпочтительный канал, а таблица согласий хранит пару channel-tenant, destination, признак enabled и блокировку. Реляционная модель profile-consent приведена на рисунке~\ref{fig:data-profile-consent-postgres-schema}.
 
-Эти контракты покрывают зависимости sender-сервисов: получение шаблона, проверку допустимости доставки и чтение истории.
-
-Сводка прикладных сервисных контрактов приведена в таблице~\ref{tab:impl-service-contracts}.
-
-\begin{table}[h]
+\begin{figure}[H]
     \centering
-    \footnotesize
-    \renewcommand{\arraystretch}{1.15}
-    \caption{Ключевые операции template-registry, profile-consent и history-writer}
-    \label{tab:impl-service-contracts}
-    \begin{tabular}{|L{0.34\textwidth}|L{0.52\textwidth}|}
-        \hline
-        \textbf{Операция} & \textbf{Назначение} \\
-        \hline
-        CreateTemplate, UpdateTemplate, GetTemplate, ListTemplates, RenderPreview & Управление шаблонами, версиями и предварительным рендерингом. \\
-        \hline
-        GetRecipientProfile, BatchGetRecipientProfiles, CheckRecipientChannel & Получение профиля получателя и проверка допустимости доставки в канале. \\
-        \hline
-        ListClientHistory, GetRecipientDeliverySummary & Чтение истории доставок и агрегированных сводок по получателю. \\
-        \hline
-    \end{tabular}
-\end{table}
+    \includegraphics[width=0.82\textwidth]{inc/dbdiagram/png/profile-consent-postgres-schema.png}
+    \caption{Реляционная модель profile-consent}
+    \label{fig:data-profile-consent-postgres-schema}
+\end{figure}
 
-\subsubsection{Событийные контракты}
+\subsection{delivery-dispatcher}
 
-Для асинхронного обмена используется единая структура событийного сообщения, включающая идентификаторы события и запуска, технические атрибуты и полезную нагрузку. Такой формат облегчает трассировку межсервисного маршрута и повторную обработку.
+Delivery Dispatcher потребляет dispatch requests из delivery.dispatcher и fallback events из delivery.fallback. Сервис управляет отложенным запуском, принимает routing-решение, проверяет профиль и согласия через profile-consent, публикует команды в канальные Kafka topics и защищает fallback от бесконечного цикла.
 
-В текущем маршруте используются события жизненного цикла уведомления, рабочие channel dispatch events и status events. Этого набора достаточно для прохождения пути от регистрации события до фиксации итогового статуса в history-writer.
+Dispatcher не выполняет входную бизнес-валидацию, не работает с аудиторией и не рендерит шаблоны. Эти операции остаются в notification-facade. Его зона ответственности начинается после появления валидного dispatch request в Kafka и ограничена оркестрацией доставки, планированием и маршрутизацией.
 
-\subsection{Ключевые механизмы реализации}
+Собственная PostgreSQL-модель dispatcher хранит планировочное состояние, routing decisions, retry/fallback state и технические данные, которые нужны для безопасного повторного запуска. Схема показана на рисунке~\ref{fig:data-dispatcher-postgres-schema}.
 
-Текущая реализация подтверждает архитектурные решения на уровне каждого отдельного сервиса:
-\begin{enumerate}
-    \item notification-facade принимает gRPC-команды, сохраняет событие, аудиторию и запуск доставки, ведёт outbox и публикует интеграционные сообщения;
-    \item template-registry хранит шаблон как документ MongoDB с массивом версий и активной версией;
-    \item profile-consent читает профиль получателя из Redis и возвращает единое решение по канальной допустимости;
-    \item delivery-dispatcher хранит отложенные задачи, consume-ит \texttt{delivery.dispatcher}, маршрутизирует delivery-команды в sender-топики и обрабатывает \texttt{delivery.fallback};
-    \item cancellation-service записывает в Redis признак отмены с TTL 30 минут и идемпотентно отвечает на повторные запросы отмены;
-    \item notification-mail-sender и notification-sms-sender используют Redis-based dedup, выполняют cancellation-check перед фактической отправкой и публикуют статусные события; mail sender при окончательной ошибке публикует fallback-событие, а не принимает решение о смене канала самостоятельно;
-    \item history-writer потребляет status events, сохраняет их в ClickHouse и формирует агрегированные summary-модели для gRPC-чтения.
-\end{enumerate}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.86\textwidth]{inc/dbdiagram/png/dispatcher-postgres-schema.png}
+    \caption{Реляционная модель delivery-dispatcher}
+    \label{fig:data-dispatcher-postgres-schema}
+\end{figure}
+
+\subsection{cancellation-service}
+
+Cancellation Service выделен в отдельный контур, потому что отмена dispatch/delivery должна быстро проверяться sender-сервисами перед обращением к внешнему провайдеру. Сервис предоставляет gRPC-методы фиксации отмены и проверки допустимости отправки.
+
+Отметка отмены хранится в Redis как TTL-key. Время жизни ключа составляет 30 минут: после этого окно практической отмены считается закрытым, а дальнейшая судьба доставки определяется обычным статусным контуром. Повторный запрос отмены обрабатывается идемпотентно. Если sender получает признак отмены, он не вызывает внешний provider API и публикует статус CANCELED.
+
+\subsection{notification-mail-sender}
+
+Notification Mail Sender потребляет email-команды из Kafka и выполняет только execution-level проверки. Перед отправкой сервис атомарно записывает Redis dedup key через операцию типа SET NX EX, затем обращается к cancellation-service. Если доставка отменена, внешний email provider не вызывается, а в Kafka публикуется статус CANCELED.
+
+Если отмены нет, sender выполняет отправку через SMTP/provider API и публикует итоговый статус. При окончательной ошибке email-канала сервис не выбирает альтернативный канал самостоятельно. Он публикует fallback event в delivery.fallback, после чего решение принимает delivery-dispatcher.
+
+\subsection{notification-sms-sender}
+
+Notification SMS Sender устроен аналогично mail sender. Он потребляет SMS-команды, выполняет локальный Redis-based dedup, проверяет cancellation-service и только после этого вызывает SMS provider API. При отмене публикуется статус CANCELED; при технической ошибке фиксируется статус доставки через общий Kafka status pipeline.
+
+SMS sender не владеет шаблонами, профилем получателя или правилами fallback. Эти решения остаются в template-registry, profile-consent и delivery-dispatcher соответственно.
+
+\subsection{history-writer}
+
+History Writer вынесен из online-path доставки и работает как потребитель status events из Kafka. Сервис записывает события статусов в ClickHouse в append-only модель. Такая схема позволяет отделить аналитическое чтение истории от транзакционных контуров notification-facade и delivery-dispatcher.
+
+ClickHouse-таблица содержит идентификаторы события, dispatch и delivery, канал, статус, причину ошибки, номер попытки, время возникновения статуса и технические атрибуты Kafka-публикации. Модель хранения истории приведена на рисунке~\ref{fig:data-history-clickhouse-schema}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.38\textwidth]{inc/dbdiagram/png/history-clickhouse-schema.png}
+    \caption{Модель хранения истории доставки в ClickHouse}
+    \label{fig:data-history-clickhouse-schema}
+\end{figure}

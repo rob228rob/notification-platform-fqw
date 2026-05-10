@@ -3500,11 +3500,6 @@
     <bcf:citekey order="8" intorder="1">mongodb_docs</bcf:citekey>
     <bcf:citekey order="9" intorder="1">spring_boot_docs</bcf:citekey>
     <bcf:citekey order="9" intorder="2">kafka_docs</bcf:citekey>
-    <bcf:citekey order="10" intorder="1">grpc_docs</bcf:citekey>
-    <bcf:citekey order="10" intorder="2">spring_boot_docs</bcf:citekey>
-    <bcf:citekey order="10" intorder="3">mongodb_docs</bcf:citekey>
-    <bcf:citekey order="10" intorder="4">rogov_postgresql17_internals</bcf:citekey>
-    <bcf:citekey order="11" intorder="1">mongodb_docs</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="none">

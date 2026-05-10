@@ -1,0 +1,48 @@
+// notification-facade PostgreSQL
+// Example data: docs/plantuml/examples/facade-postgres-example.json
+
+Table nf_fac.notification_event {
+  event_id uuid [pk]
+  client_id uuid [not null]
+  idempotency_key varchar(128) [not null]
+  template_id varchar(128)
+  template_version int
+  preferred_channel varchar(32)
+  priority smallint [not null]
+  status varchar(32) [not null]
+  scheduled_at timestamptz
+  payload jsonb [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  Indexes {
+    (client_id, idempotency_key) [unique, name: 'uq_event_client_idem']
+    (status, created_at) [name: 'idx_notification_event_status_created_at']
+  }
+}
+
+Table nf_fac.event_audience {
+  audience_id uuid [pk]
+  event_id uuid [not null]
+  audience_type varchar(32) [not null]
+  audience_source varchar(64)
+  criteria jsonb
+  created_at timestamptz [not null]
+}
+
+Table nf_fac.event_recipient {
+  recipient_id uuid [pk]
+  event_id uuid [not null]
+  external_recipient_id varchar(128) [not null]
+  tenant_key varchar(128)
+  destination varchar(256)
+  channel varchar(32)
+  created_at timestamptz [not null]
+
+  Indexes {
+    (event_id, external_recipient_id) [name: 'idx_event_recipient_event_external']
+  }
+}
+
+Ref: nf_fac.event_audience.event_id > nf_fac.notification_event.event_id
+Ref: nf_fac.event_recipient.event_id > nf_fac.notification_event.event_id

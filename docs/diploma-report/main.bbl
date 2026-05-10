@@ -242,37 +242,6 @@
       \verb https://docs.spring.io/spring-boot/reference/
       \endverb
     \endentry
-    \entry{rogov_postgresql17_internals}{book}{}
-      \name{author}{1}{}{%
-        {{hash=0f6bc473488c56906be6e7e457f16243}{%
-           family={Рогов},
-           familyi={Р\bibinitperiod},
-           given={Егор\bibnamedelima В.},
-           giveni={Е\bibinitperiod\bibinitdelim В\bibinitperiod}}}%
-      }
-      \list{language}{1}{%
-        {russian}%
-      }
-      \list{location}{1}{%
-        {Москва}%
-      }
-      \list{publisher}{1}{%
-        {ДМК Пресс}%
-      }
-      \strng{namehash}{0f6bc473488c56906be6e7e457f16243}
-      \strng{fullhash}{0f6bc473488c56906be6e7e457f16243}
-      \strng{bibnamehash}{0f6bc473488c56906be6e7e457f16243}
-      \strng{authorbibnamehash}{0f6bc473488c56906be6e7e457f16243}
-      \strng{authornamehash}{0f6bc473488c56906be6e7e457f16243}
-      \strng{authorfullhash}{0f6bc473488c56906be6e7e457f16243}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{isbn}{978-5-93700-372-0}
-      \field{title}{PostgreSQL 17 изнутри}
-      \field{year}{2025}
-    \endentry
   \enddatalist
 \endrefsection
 \endinput

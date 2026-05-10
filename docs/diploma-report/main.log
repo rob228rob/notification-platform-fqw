@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  8 MAY 2026 21:24
+This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  10 MAY 2026 15:54
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -1798,70 +1798,89 @@ Overfull \hbox (3.05719pt too wide) in paragraph at lines 194--207
 \openout2 = `contents/3-architecture.aux'.
 
  (./contents/3-architecture.tex
-File: inc/050526-arch/050526-archSystemContextCurrent.png Graphic file (type bm
-p)
-<inc/050526-arch/050526-archSystemContextCurrent.png>
+File: inc/arch-090526/0905arch_SystemContextCurrent.png Graphic file (type bmp)
+
+<inc/arch-090526/0905arch_SystemContextCurrent.png>
  [24
 
 
 
 
 ]
-File: inc/050526-arch/050526-archContainersDataOwnership.png Graphic file (type
- bmp)
-<inc/050526-arch/050526-archContainersDataOwnership.png>
+File: inc/arch-090526/0905arch_ContainersDataOwnership.png Graphic file (type b
+mp)
+<inc/arch-090526/0905arch_ContainersDataOwnership.png>
  [25] [26] [27]
-File: inc/050526-arch/050526-archIngressContourPresentation.png Graphic file (t
-ype bmp)
-<inc/050526-arch/050526-archIngressContourPresentation.png>
+File: inc/arch-090526/0905arch_InboundCommandFlow.png Graphic file (type bmp)
+<inc/arch-090526/0905arch_InboundCommandFlow.png>
 
 [28]
-File: inc/050526-arch/050526-archProcessingFlowPresentation.png Graphic file (t
-ype bmp)
-<inc/050526-arch/050526-archProcessingFlowPresentation.png>
+File: inc/arch-090526/0905arch_ServicesPresentation.png Graphic file (type bmp)
+
+<inc/arch-090526/0905arch_ServicesPresentation.png>
  [29]
-File: inc/050526-arch/050526-archSchedulingFlowPresentation.png Graphic file (t
-ype bmp)
-<inc/050526-arch/050526-archSchedulingFlowPresentation.png>
+File: inc/arch-090526/0905arch_DispatchRoutingFlow.png Graphic file (type bmp)
+<inc/arch-090526/0905arch_DispatchRoutingFlow.png>
  [30]
-File: inc/050526-arch/050526-archDeliveryHandlersPresentation.png Graphic file 
-(type bmp)
-<inc/050526-arch/050526-archDeliveryHandlersPresentation.png>
- [31] [32]
+File: inc/arch-090526/0905arch_EmailNotificationProcessingFlow.png Graphic file
+ (type bmp)
+<inc/arch-090526/0905arch_EmailNotificationProcessingFlow.png>
+ [31]
+File: inc/statuses-protobuf.png Graphic file (type bmp)
+<inc/statuses-protobuf.png>
+ [32]
 File: inc/status-model.png Graphic file (type bmp)
 <inc/status-model.png>
- [33] [34] [35] [36] [37] [38]) [39]
+ [33] [34] [35] [36] [37]) [38]
 \openout2 = `contents/4-implementation.aux'.
 
 
-(./contents/4-implementation.tex [40
-
-
-
-
-]
-Overfull \hbox (3.05002pt too wide) in paragraph at lines 37--56
+(./contents/4-implementation.tex
+Overfull \hbox (12.44144pt too wide) in paragraph at lines 17--38
  [][] 
  []
 
-[41]
-File: inc/mongo-template-data.png Graphic file (type bmp)
-<inc/mongo-template-data.png>
- [42] [43] [44] [45]) [46]
-\openout2 = `contents/5-deployment-testing.aux'.
 
- (./contents/5-deployment-testing.tex [47
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[39
 
 
 
 
 ]
-(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+File: inc/dbdiagram/png/facade-postgres-schema.png Graphic file (type bmp)
+<inc/dbdiagram/png/facade-postgres-schema.png>
+ [40]
+File: inc/mongo-template-data.png Graphic file (type bmp)
+<inc/mongo-template-data.png>
+ [41] [42]
+File: inc/dbdiagram/png/profile-consent-postgres-schema.png Graphic file (type 
+bmp)
+<inc/dbdiagram/png/profile-consent-postgres-schema.png>
+File: inc/dbdiagram/png/dispatcher-postgres-schema.png Graphic file (type bmp)
+<inc/dbdiagram/png/dispatcher-postgres-schema.png>
+ [43] [44]
+File: inc/dbdiagram/png/history-clickhouse-schema.png Graphic file (type bmp)
+<inc/dbdiagram/png/history-clickhouse-schema.png>
+) [45] [46]
+\openout2 = `contents/5-deployment-testing.aux'.
+
+ (./contents/5-deployment-testing.tex
+[47
+
+
+
+
+] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2020/03/24 1.8d listings language file
 )
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2020/03/24 1.8d listings language file
-) [48] [49]
+)
+Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
+nput line 51.
+ [48] [49]
 Overfull \hbox (3.05002pt too wide) in paragraph at lines 115--130
  [][] 
  []
@@ -1878,8 +1897,8 @@ File: inc/kafka_avg_latency.png Graphic file (type bmp)
 File: inc/kafka_consume_rps.png Graphic file (type bmp)
 <inc/kafka_consume_rps.png>
  [54]
-LaTeX Font Info:    Calculating math sizes for size <9.3334> on input line 245.
-
+LaTeX Font Info:    Calculating math sizes for size <12.77509> on input line 24
+5.
  [55] [56]) [57]
 \openout2 = `contents/7-conclusion.aux'.
 
@@ -1916,12 +1935,12 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 43231 strings out of 478025
- 869671 string characters out of 5841685
- 2088069 words of memory out of 5000000
- 62471 multiletter control sequences out of 15000+600000
- 530862 words of font info for 158 fonts, out of 8000000 for 9000
+ 43241 strings out of 478025
+ 870523 string characters out of 5841685
+ 2091557 words of memory out of 5000000
+ 62475 multiletter control sequences out of 15000+600000
+ 530868 words of font info for 158 fonts, out of 8000000 for 9000
  682 hyphenation exceptions out of 8191
  138i,11n,134p,2324b,5506s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.xdv (61 pages, 927368 bytes).
+Output written on main.xdv (61 pages, 873580 bytes).

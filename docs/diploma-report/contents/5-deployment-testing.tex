@@ -2,7 +2,7 @@
 
 \subsection{Требования к развёртыванию и стенд проверки}
 
-Экспериментальная проверка выполнялась на контейнерном Kubernetes-стенде, разворачиваемом по конфигурации .k8s/k3d-config.yaml. В состав стенда входили прикладные сервисы notification-facade, template-registry, profile-consent, delivery-dispatcher, cancellation-service, notification-mail-sender, notification-sms-sender и history-writer, а также Kafka, PostgreSQL фасада и delivery-dispatcher, MongoDB, Redis, ClickHouse, Prometheus и Grafana.
+Экспериментальная проверка выполнялась на контейнерном Kubernetes-стенде, разворачиваемом по конфигурации .k8s/k3d-config.yaml. В состав стенда входили прикладные сервисы notification-facade, template-registry, profile-consent, delivery-dispatcher, cancellation-service, notification-mail-sender, notification-sms-sender и history-writer, а также Kafka, PostgreSQL-контуры notification-facade, delivery-dispatcher и profile-consent, MongoDB, Redis, ClickHouse, Prometheus и Grafana.
 
 Стенд разворачивался на Linux-узле с ресурсами 4~vCPU и 8~ГБ оперативной памяти. Для воспроизведения контура требуются Docker Engine как runtime для k3d, утилиты kubectl и k3d, JDK~21 для сборки jar-артефактов и git для получения актуального состояния репозитория. Измерения получены не на выделенном кластере с жёстким разделением ресурсов между инфраструктурными и прикладными сервисами, а в локальном k3d-окружении, где сервисы, брокер, базы данных и средства наблюдаемости конкурировали за общий набор ресурсов хоста.
 
@@ -47,8 +47,8 @@
 
 Развёртывание стенда выполняется в четыре шага. Сначала Gradle wrapper собирает jar-артефакты прикладных сервисов, после чего формируются контейнерные образы, импортируемые внутрь кластера k3d. Отдельно подготавливается образ custom-loader:latest, используемый для генерации тестовой нагрузки. Затем создаётся или переиспользуется кластер k3d с именем notification-platform, а Kubernetes-ресурсы применяются командой kubectl apply -k .k8s.
 
-Последовательность ключевых команд выглядит следующим образом:
-\begin{lstlisting}[language=bash]
+Последовательность ключевых команд приведена в листинге~\ref{lst:k3d-deploy-commands}.
+\begin{lstlisting}[language=bash,caption={Последовательность ключевых команд развёртывания k3d-стенда},label={lst:k3d-deploy-commands}]
 k3d cluster create --config .k8s/k3d-config.yaml
 kubectl config use-context k3d-notification-platform
 k3d image import notification-facade:latest notification-mail-sender:latest \
@@ -189,7 +189,7 @@ kubectl get pods -n notification-platform
     \label{fig:test-kafka-consume-rps}
 \end{figure}
 
-Рисунок~\ref{fig:test-kafka-consume-rps} подтверждает прохождение маршрута до конечной стадии. В артефактах прогона детально наблюдается основной email-контур: потребление \texttt{delivery.dispatcher} сервисом delivery-dispatcher, потребление \texttt{notification.mail.dispatches} sender-обработчиком и потребление \texttt{notification.mail.delivery-statuses} сервисом history-writer.
+Рисунок~\ref{fig:test-kafka-consume-rps} подтверждает прохождение маршрута до конечной стадии. В артефактах прогона детально наблюдается основной email-контур: потребление delivery.dispatcher сервисом delivery-dispatcher, потребление notification.mail.dispatches sender-обработчиком и потребление notification.mail.delivery-statuses сервисом history-writer.
 
 \subsection{Результаты нагрузочного прогона}
 
@@ -238,35 +238,35 @@ kubectl get pods -n notification-platform
 
 \begin{table}[H]
     \centering
-    \scriptsize
+    \small
     \renewcommand{\arraystretch}{1.15}
-    \caption{Имена, описания и значения ключевых метрик по сценариям}
+    \caption{Значения ключевых метрик по сценариям}
     \label{tab:load-results-latency}
-    \begin{tabular}{|L{0.22\textwidth}|L{0.26\textwidth}|L{0.12\textwidth}|L{0.12\textwidth}|L{0.12\textwidth}|}
+    \begin{tabular}{|L{0.34\textwidth}|L{0.16\textwidth}|L{0.16\textwidth}|L{0.18\textwidth}|}
         \hline
-        \textbf{Имя метрики} & \textbf{Описание метрики} & \textbf{Линейная 25$\rightarrow$90} & \textbf{Константная 75} & \textbf{Константная 50, отложенная доставка} \\
+        \textbf{Метрика} & \textbf{Линейная 25$\rightarrow$90} & \textbf{Константная 75} & \textbf{Константная 50, отложенная доставка} \\
         \hline
-        \seqsplit{grpc\_server\_rps\_avg} & Средняя интенсивность входных gRPC-запросов в фасадный контур, RPS. & 56.4 & 73.9 & 49.2 \\
+        gRPC RPS & 56.4 & 73.9 & 49.2 \\
         \hline
-        \seqsplit{grpc\_create\_notification\_event\_p50\_ms} & Медианная задержка метода CreateNotificationEvent, мс. & 742 & 812 & 875 \\
+        CreateNotificationEvent p50, мс & 742 & 812 & 875 \\
         \hline
-        \seqsplit{grpc\_create\_notification\_event\_p95\_ms} & Задержка p95 метода CreateNotificationEvent, мс. & 1395 & 1510 & 1588 \\
+        CreateNotificationEvent p95, мс & 1395 & 1510 & 1588 \\
         \hline
-        \seqsplit{kafka\_producer\_rps\_avg} & Средняя скорость публикации Kafka-сообщений, RPS. & 39.1 & 40.8 & 24.1 \\
+        Kafka producer RPS & 39.1 & 40.8 & 24.1 \\
         \hline
-        \seqsplit{kafka\_producer\_latency\_avg\_ms} & Средняя задержка публикации сообщения в Kafka, мс. & 228 & 286 & 338 \\
+        Kafka producer avg latency, мс & 228 & 286 & 338 \\
         \hline
-        \seqsplit{kafka\_producer\_latency\_p95\_ms} & Задержка p95 публикации Kafka-сообщения, мс. & 371 & 389 & 447 \\
+        Kafka producer p95 latency, мс & 371 & 389 & 447 \\
         \hline
-        \seqsplit{kafka\_consumer\_rps\_avg} & Средняя интенсивность потребления рабочих Kafka-топиков, RPS. & 37.6 & 38.9 & 23.4 \\
+        Kafka consumer RPS & 37.6 & 38.9 & 23.4 \\
         \hline
-        \seqsplit{history\_writer\_consume\_rps\_avg} & Средняя интенсивность поступления статусных событий в history-writer, RPS. & 20.7 & 21.5 & 18.9 \\
+        History writer consume RPS & 20.7 & 21.5 & 18.9 \\
         \hline
-        \seqsplit{dispatcher\_consume\_rps\_avg} & Средняя интенсивность потребления отложенных запусков delivery-dispatcher, RPS. & --- & --- & 21.8 \\
+        Dispatcher consume RPS & --- & --- & 21.8 \\
         \hline
-        \seqsplit{dispatcher\_actual\_delay\_avg\_seconds} & Средняя фактическая задержка отложенного запуска, с. & --- & --- & 31.4 \\
+        Dispatcher actual delay avg, с & --- & --- & 31.4 \\
         \hline
-        \seqsplit{dispatcher\_actual\_delay\_p95\_seconds} & Фактическая задержка p95 отложенного запуска, с. & --- & --- & 36.8 \\
+        Dispatcher actual delay p95, с & --- & --- & 36.8 \\
         \hline
     \end{tabular}
 \end{table}

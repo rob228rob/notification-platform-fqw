@@ -1,0 +1,42 @@
+// history-writer ClickHouse
+// Example data: docs/plantuml/examples/history-clickhouse-example.json
+
+Table notification_history.delivery_status_history {
+  event_date date [not null]
+  occurred_at timestamp [not null]
+  ingested_at timestamp [not null]
+  created_at timestamp [not null]
+  client_id string [not null]
+  event_id string [not null]
+  dispatch_id string [not null]
+  recipient_id string [not null]
+  delivery_id string
+  channel string [not null]
+  provider string
+  status string [not null]
+  previous_status string
+  reason_code string
+  reason_message string
+  attempt_no int [not null]
+  max_attempts int [not null]
+  is_final boolean [not null]
+  scheduled_at timestamp
+  sent_at timestamp
+  failed_at timestamp
+  provider_message_id string
+  template_id string
+  correlation_id string
+  idempotency_key string
+  kafka_topic string [not null]
+  kafka_partition int [not null]
+  kafka_offset bigint [not null]
+  destination string
+  payload_json json
+  headers_json json
+  metadata_json json
+
+  Indexes {
+    (client_id, event_id, recipient_id, channel, occurred_at) [name: 'idx_merge_tree_order_prefix']
+    (status, event_date) [name: 'idx_status_event_date']
+  }
+}

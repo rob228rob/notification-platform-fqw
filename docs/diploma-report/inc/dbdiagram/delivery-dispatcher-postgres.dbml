@@ -1,0 +1,80 @@
+// delivery-dispatcher PostgreSQL
+// Example data: docs/plantuml/examples/delivery-dispatcher-postgres-example.json
+
+Table nf_sched.dispatch {
+  dispatch_id uuid [pk]
+  event_id uuid [not null]
+  idempotency_key varchar(128) [not null]
+  status varchar(32) [not null]
+  scheduled_at timestamptz
+  deadline_at timestamptz
+  payload jsonb [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  Indexes {
+    (event_id, idempotency_key) [unique, name: 'uq_dispatch_event_idem']
+    (status, scheduled_at) [name: 'idx_dispatch_status_scheduled_at']
+  }
+}
+
+Table nf_sched.dispatch_target {
+  target_id uuid [pk]
+  dispatch_id uuid [not null]
+  recipient_id uuid [not null]
+  channel varchar(32) [not null]
+  tenant_key varchar(128)
+  destination varchar(256)
+  status varchar(32) [not null]
+  created_at timestamptz [not null]
+
+  Indexes {
+    (dispatch_id, recipient_id, channel) [name: 'idx_dispatch_target_dispatch_recipient_channel']
+  }
+}
+
+Table nf_sched.scheduled_delivery_task {
+  task_id uuid [pk]
+  message_id varchar(128) [not null]
+  dispatch_id uuid
+  aggregate_type varchar(64) [not null]
+  aggregate_id uuid [not null]
+  event_type varchar(128) [not null]
+  status varchar(32) [not null]
+  planned_send_at timestamptz [not null]
+  next_retry_at timestamptz
+  attempt_count int [not null]
+  max_attempts int [not null]
+  payload jsonb [not null]
+  headers jsonb
+  last_error text
+  published_at timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  Indexes {
+    (message_id) [unique, name: 'uq_scheduled_delivery_task_message_id']
+    (status, planned_send_at, next_retry_at) [name: 'idx_scheduled_delivery_due']
+  }
+}
+
+Table nf_sched.outbox_message {
+  outbox_id uuid [pk]
+  aggregate_type varchar(64) [not null]
+  aggregate_id uuid [not null]
+  event_type varchar(128) [not null]
+  topic varchar(128) [not null]
+  key varchar(128)
+  payload jsonb [not null]
+  headers jsonb
+  created_at timestamptz [not null]
+  published_at timestamptz
+
+  Indexes {
+    (aggregate_type, aggregate_id, created_at) [name: 'idx_outbox_aggregate_created_at']
+    (created_at) [name: 'ix_outbox_unpublished']
+  }
+}
+
+Ref: nf_sched.dispatch_target.dispatch_id > nf_sched.dispatch.dispatch_id
+Ref: nf_sched.scheduled_delivery_task.dispatch_id > nf_sched.dispatch.dispatch_id
