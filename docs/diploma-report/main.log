@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  11 MAY 2026 19:38
+This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  11 MAY 2026 22:25
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -1894,7 +1894,7 @@ Overfull \hbox (12.44861pt too wide) in paragraph at lines 241--252
 
 
 
-]
+] [49] [50]
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2020/03/24 1.8d listings language file
 )
@@ -1902,37 +1902,37 @@ File: lstlang1.sty 2020/03/24 1.8d listings language file
 File: lstlang1.sty 2020/03/24 1.8d listings language file
 )
 Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
-nput line 47.
- [49] [50]
-Overfull \hbox (3.05002pt too wide) in paragraph at lines 120--135
+nput line 86.
+ [51] [52]
+Overfull \hbox (3.05002pt too wide) in paragraph at lines 159--174
  [][] 
  []
 
-[51] [52]
+[53] [54]
 File: inc/server_rps.png Graphic file (type bmp)
 <inc/server_rps.png>
- [53]
+ [55]
 File: inc/grpc_p50_lat.png Graphic file (type bmp)
 <inc/grpc_p50_lat.png>
 File: inc/kafka_avg_latency.png Graphic file (type bmp)
 <inc/kafka_avg_latency.png>
- [54]
+ [56]
 File: inc/kafka_consume_rps.png Graphic file (type bmp)
 <inc/kafka_consume_rps.png>
- [55]
-LaTeX Font Info:    Calculating math sizes for size <12.77509> on input line 25
-0.
- [56] [57]) [58]
+ [57]
+LaTeX Font Info:    Calculating math sizes for size <12.77509> on input line 28
+9.
+ [58] [59]) [60]
 \openout2 = `contents/7-conclusion.aux'.
 
- (./contents/7-conclusion.tex [59
+ (./contents/7-conclusion.tex [61
 
 
 
 
 
 ])
-[60] [61
+[62] [63
 
 
 
@@ -1943,7 +1943,7 @@ LaTeX Font Info:    Calculating math sizes for size <12.77509> on input line 25
  (./contents/8-appendix-repository-qr.tex
 File: inc/QR_diploma_batoyan.png Graphic file (type bmp)
 <inc/QR_diploma_batoyan.png>
-) [62
+) [64
 
 
 ]
@@ -1958,12 +1958,12 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 43388 strings out of 478025
- 874190 string characters out of 5841685
- 2119691 words of memory out of 5000000
- 62622 multiletter control sequences out of 15000+600000
+ 43356 strings out of 478025
+ 873368 string characters out of 5841685
+ 2119281 words of memory out of 5000000
+ 62590 multiletter control sequences out of 15000+600000
  530868 words of font info for 158 fonts, out of 8000000 for 9000
  682 hyphenation exceptions out of 8191
  138i,11n,134p,2324b,5506s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.xdv (62 pages, 905796 bytes).
+Output written on main.xdv (64 pages, 929704 bytes).

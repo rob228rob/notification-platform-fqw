@@ -41,17 +41,18 @@
 \contentsline {subsection}{\numberline {3.6}notification-mail-sender}{45}{subsection.3.6}%
 \contentsline {subsection}{\numberline {3.7}notification-sms-sender}{45}{subsection.3.7}%
 \contentsline {subsection}{\numberline {3.8}history-writer}{46}{subsection.3.8}%
-\contentsline {section}{\numberline {4}Развёртывание и проверка на контейнерном стенде}{48}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Требования к развёртыванию и стенд проверки}{48}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Развёртывание k3d-стенда}{49}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Методика проверки}{50}{subsection.4.3}%
-\contentsline {subsection}{\numberline {4.4}Критерии успешности}{50}{subsection.4.4}%
-\contentsline {subsection}{\numberline {4.5}Проверка повторной и отказной обработки}{51}{subsection.4.5}%
-\contentsline {subsection}{\numberline {4.6}Проверенные сценарии}{52}{subsection.4.6}%
-\contentsline {subsection}{\numberline {4.7}Артефакты метрик}{53}{subsection.4.7}%
-\contentsline {subsection}{\numberline {4.8}Результаты нагрузочного прогона}{56}{subsection.4.8}%
-\contentsline {subsection}{\numberline {4.9}Интерпретация результатов}{57}{subsection.4.9}%
-\contentsline {structure}{\numberline {}ЗАКЛЮЧЕНИЕ}{59}{structure.4}%
-\contentsline {structure}{\numberline {}СПИСОК~ИСПОЛЬЗОВАННЫХ~ИСТОЧНИКОВ}{61}{structure.5}%
-\contentsline {section}{ПРИЛОЖЕНИЕ~А~{Репозиторий проекта}}{62}{structure.5}%
+\contentsline {section}{\numberline {4}Развёртывание и тестирование}{48}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Автоматизированные тесты сервисов}{48}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Требования к развёртыванию и стенд проверки}{50}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Развёртывание k3d-стенда}{50}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Методика проверки}{51}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Критерии успешности}{52}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Проверка повторной и отказной обработки}{53}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.7}Проверенные сценарии}{54}{subsection.4.7}%
+\contentsline {subsection}{\numberline {4.8}Артефакты метрик}{55}{subsection.4.8}%
+\contentsline {subsection}{\numberline {4.9}Результаты нагрузочного прогона}{58}{subsection.4.9}%
+\contentsline {subsection}{\numberline {4.10}Интерпретация результатов}{59}{subsection.4.10}%
+\contentsline {structure}{\numberline {}ЗАКЛЮЧЕНИЕ}{61}{structure.4}%
+\contentsline {structure}{\numberline {}СПИСОК~ИСПОЛЬЗОВАННЫХ~ИСТОЧНИКОВ}{63}{structure.5}%
+\contentsline {section}{ПРИЛОЖЕНИЕ~А~{Репозиторий проекта}}{64}{structure.5}%
 \contentsfinish 
