@@ -4,46 +4,11 @@
 
 Синхронные операции выполняются через gRPC. Фоновая доставка, статусы и fallback-события передаются через Kafka. Для транзакционных данных используются PostgreSQL-хранилища, для шаблонов --- MongoDB, для истории статусов --- ClickHouse. Redis применяется только для TTL-механизмов: отметок отмены и локальной дедупликации sender-команд.
 
-\subsection{Обзор владения данными}
-
-Хранилища разделены по сервисным границам. Сервис не читает таблицы или коллекции другого сервиса напрямую: доступ к данным выполняется через gRPC-контракт или через Kafka-событие. Такое разделение снижает связность схем данных и не превращает базу данных в общий интеграционный слой.
-
-\begin{table}[h]
-    \centering
-    \footnotesize
-    \renewcommand{\arraystretch}{1.15}
-    \caption{Владение данными по сервисным контурам}
-    \label{tab:data-ownership}
-    \begin{tabular}{|L{0.22\textwidth}|L{0.18\textwidth}|L{0.36\textwidth}|L{0.16\textwidth}|}
-        \hline
-        \textbf{Сервис} & \textbf{Хранилище} & \textbf{Данные} & \textbf{Доступ других сервисов} \\
-        \hline
-        Notification Facade & Facade PostgreSQL & События уведомлений, аудитория, входные dispatch-запросы, outbox-записи и ключи идемпотентности. & Только через gRPC/Kafka \\
-        \hline
-        Template Registry & MongoDB Templates & Шаблоны, версии шаблонов, канальные представления и activeVersion. & Через gRPC \\
-        \hline
-        Profile Consent & Profile Consent PostgreSQL & Профиль получателя, tenant-aware разрешения каналов, destination и ограничения. & Через gRPC \\
-        \hline
-        Delivery Dispatcher & Dispatcher PostgreSQL & Отложенные задачи, решения маршрутизации, состояние повторных попыток и fallback-маршрутизации. & Через Kafka/gRPC \\
-        \hline
-        Cancellation Service & Redis Cancellation Marks & Отметки отмены dispatch/delivery с TTL 30 минут. & Через gRPC \\
-        \hline
-        Notification Mail Sender & Redis Mail Dedup & TTL-ключи локальной дедупликации email-команд. & Не используется другими сервисами \\
-        \hline
-        Notification SMS Sender & Redis SMS Dedup & TTL-ключи локальной дедупликации SMS-команд. & Не используется другими сервисами \\
-        \hline
-        History Writer & ClickHouse History Store & Append-only история статусов доставки и атрибуты обработки. & Через API history-writer \\
-        \hline
-    \end{tabular}
-\end{table}
-
-DBML-версии реляционных схем подготовлены отдельно в каталоге docs/dbdiagram. Они используются как источник для ERD-изображений в данном разделе; PlantUML-версии схем сохранены в каталоге docs/plantuml.
-
 \subsection{notification-facade}
 
-Notification Facade является командным фасадом платформы. Он принимает клиентские gRPC-команды, проверяет входные данные, фиксирует уведомительное событие и аудиторию, управляет запуском доставки и публикует dispatch request в Kafka topic delivery.dispatcher. Фасад не отправляет уведомления напрямую и не выбирает альтернативный канал: эти решения передаются delivery-dispatcher.
+Notification Facade является входным сервисом в систему -- командным фасадом платформы. Он принимает клиентские gRPC-команды, проверяет входные данные, фиксирует уведомительное событие и аудиторию, управляет запуском доставки и публикует запрос на  отправку в Kafka топик delivery.dispatcher. Так же фасад отвечает за роутинг внешних запросов в сервисы template-registry, cancellation-service.
 
-Основное хранилище сервиса --- PostgreSQL. В нём хранятся notification event, снимок аудитории, dispatch request, outbox-записи и ключи идемпотентности. Transactional outbox используется для согласования записи события и подготовки публикации: доменное изменение и запись на публикацию фиксируются в одной транзакции, а отдельный relay публикует сообщение в Kafka.
+Основное хранилище сервиса --- PostgreSQL. В нём хранятся события со статусами, снапшоты аудитории, внешние запросы на доставку и outbox-записи. Transactional outbox используется для согласования записи события и подготовки публикации: доменное изменение и запись на публикацию фиксируются в одной транзакции, а отдельный поток в рамках того же процесса публикует сообщение в Kafka.
 
 Реляционная модель notification-facade приведена на рисунке~\ref{fig:data-facade-postgres-schema}.
 
@@ -88,7 +53,7 @@ Template Registry хранит шаблоны и их версии, выбира
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.76\textwidth]{inc/mongo-template-data.png}
-    \caption{Модель MongoDB-документа template-registry}
+    \caption{Пример модели MongoDB-документа template-registry}
     \label{fig:data-template-registry-mongo}
 \end{figure}
 

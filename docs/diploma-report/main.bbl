@@ -204,24 +204,32 @@
       \field{title}{Release It! Design and Deploy Production-Ready Software}
       \field{year}{2018}
     \endentry
-    \entry{mongodb_docs}{online}{}
-      \list{language}{1}{%
-        {english}%
+    \entry{kubernetes_in_action}{book}{}
+      \name{author}{1}{}{%
+        {{hash=1aebf48542b151f3ec8b8ad166a99bdc}{%
+           family={Luksa},
+           familyi={L\bibinitperiod},
+           given={Marko},
+           giveni={M\bibinitperiod}}}%
       }
+      \list{location}{1}{%
+        {Shelter Island}%
+      }
+      \list{publisher}{1}{%
+        {Manning Publications}%
+      }
+      \strng{namehash}{1aebf48542b151f3ec8b8ad166a99bdc}
+      \strng{fullhash}{1aebf48542b151f3ec8b8ad166a99bdc}
+      \strng{bibnamehash}{1aebf48542b151f3ec8b8ad166a99bdc}
+      \strng{authorbibnamehash}{1aebf48542b151f3ec8b8ad166a99bdc}
+      \strng{authornamehash}{1aebf48542b151f3ec8b8ad166a99bdc}
+      \strng{authorfullhash}{1aebf48542b151f3ec8b8ad166a99bdc}
       \field{sortinit}{8}
       \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{title}{MongoDB Manual}
-      \field{urlday}{13}
-      \field{urlmonth}{4}
-      \field{urlyear}{2026}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://www.mongodb.com/docs/manual/
-      \endverb
-      \verb{url}
-      \verb https://www.mongodb.com/docs/manual/
-      \endverb
+      \field{title}{Kubernetes in Action}
+      \field{year}{2017}
     \endentry
     \entry{spring_boot_docs}{online}{}
       \list{language}{1}{%

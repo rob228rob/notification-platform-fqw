@@ -29,7 +29,7 @@
 \contentsline {subsubsection}{\numberline {2.7.1}Маршрут событийного потока}{35}{subsubsection.2.7.1}%
 \contentsline {subsection}{\numberline {2.8}Механизмы надёжности на архитектурном уровне}{35}{subsection.2.8}%
 \contentsline {subsection}{\numberline {2.9}Отказоустойчивость}{35}{subsection.2.9}%
-\contentsline {subsection}{\numberline {2.10}Архитектура профиля получателя}{36}{subsection.2.10}%
+\contentsline {subsection}{\numberline {2.10}Архитектура профиля получателя}{37}{subsection.2.10}%
 \contentsline {subsection}{\numberline {2.11}Архитектура шаблонного контура}{37}{subsection.2.11}%
 \contentsline {subsection}{\numberline {2.12}Архитектура наблюдаемости}{37}{subsection.2.12}%
 \contentsline {subsection}{\numberline {2.13}Безопасность}{38}{subsection.2.13}%
@@ -37,23 +37,23 @@
 \contentsline {subsection}{\numberline {3.1}Обзор владения данными}{39}{subsection.3.1}%
 \contentsline {subsection}{\numberline {3.2}notification-facade}{39}{subsection.3.2}%
 \contentsline {subsection}{\numberline {3.3}template-registry}{41}{subsection.3.3}%
-\contentsline {subsection}{\numberline {3.4}profile-consent}{42}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.4}profile-consent}{43}{subsection.3.4}%
 \contentsline {subsection}{\numberline {3.5}delivery-dispatcher}{43}{subsection.3.5}%
-\contentsline {subsection}{\numberline {3.6}cancellation-service}{44}{subsection.3.6}%
-\contentsline {subsection}{\numberline {3.7}notification-mail-sender}{44}{subsection.3.7}%
-\contentsline {subsection}{\numberline {3.8}notification-sms-sender}{45}{subsection.3.8}%
-\contentsline {subsection}{\numberline {3.9}history-writer}{45}{subsection.3.9}%
-\contentsline {section}{\numberline {4}Развёртывание, эксплуатация и экспериментальная проверка}{47}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Требования к развёртыванию и стенд проверки}{47}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Развёртывание и эксплуатация k3d-стенда}{48}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Методика проверки}{49}{subsection.4.3}%
-\contentsline {subsection}{\numberline {4.4}Критерии успешности}{49}{subsection.4.4}%
-\contentsline {subsection}{\numberline {4.5}Проверка повторной и отказной обработки}{50}{subsection.4.5}%
-\contentsline {subsection}{\numberline {4.6}Проверенные сценарии}{51}{subsection.4.6}%
-\contentsline {subsection}{\numberline {4.7}Артефакты метрик}{52}{subsection.4.7}%
-\contentsline {subsection}{\numberline {4.8}Результаты нагрузочного прогона}{55}{subsection.4.8}%
-\contentsline {subsection}{\numberline {4.9}Интерпретация результатов}{56}{subsection.4.9}%
-\contentsline {structure}{\numberline {}ЗАКЛЮЧЕНИЕ}{58}{structure.4}%
-\contentsline {structure}{\numberline {}СПИСОК~ИСПОЛЬЗОВАННЫХ~ИСТОЧНИКОВ}{60}{structure.5}%
-\contentsline {section}{ПРИЛОЖЕНИЕ~А~{Репозиторий проекта}}{61}{structure.5}%
+\contentsline {subsection}{\numberline {3.6}cancellation-service}{45}{subsection.3.6}%
+\contentsline {subsection}{\numberline {3.7}notification-mail-sender}{46}{subsection.3.7}%
+\contentsline {subsection}{\numberline {3.8}notification-sms-sender}{46}{subsection.3.8}%
+\contentsline {subsection}{\numberline {3.9}history-writer}{47}{subsection.3.9}%
+\contentsline {section}{\numberline {4}Развёртывание и проверка на контейнерном стенде}{49}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Требования к развёртыванию и стенд проверки}{49}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Развёртывание k3d-стенда}{50}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Методика проверки}{51}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Критерии успешности}{51}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Проверка повторной и отказной обработки}{52}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Проверенные сценарии}{53}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.7}Артефакты метрик}{54}{subsection.4.7}%
+\contentsline {subsection}{\numberline {4.8}Результаты нагрузочного прогона}{57}{subsection.4.8}%
+\contentsline {subsection}{\numberline {4.9}Интерпретация результатов}{58}{subsection.4.9}%
+\contentsline {structure}{\numberline {}ЗАКЛЮЧЕНИЕ}{60}{structure.4}%
+\contentsline {structure}{\numberline {}СПИСОК~ИСПОЛЬЗОВАННЫХ~ИСТОЧНИКОВ}{62}{structure.5}%
+\contentsline {section}{ПРИЛОЖЕНИЕ~А~{Репозиторий проекта}}{63}{structure.5}%
 \contentsfinish 

@@ -3497,9 +3497,10 @@
     <bcf:citekey order="6" intorder="3">nygard_releaseit</bcf:citekey>
     <bcf:citekey order="7" intorder="1">kafka_docs</bcf:citekey>
     <bcf:citekey order="7" intorder="2">richardson_patterns</bcf:citekey>
-    <bcf:citekey order="8" intorder="1">mongodb_docs</bcf:citekey>
+    <bcf:citekey order="8" intorder="1">kubernetes_in_action</bcf:citekey>
     <bcf:citekey order="9" intorder="1">spring_boot_docs</bcf:citekey>
     <bcf:citekey order="9" intorder="2">kafka_docs</bcf:citekey>
+    <bcf:citekey order="10" intorder="1">kubernetes_in_action</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="none">

@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  10 MAY 2026 15:54
+This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  11 MAY 2026 08:16
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -1843,36 +1843,139 @@ Overfull \hbox (12.44144pt too wide) in paragraph at lines 17--38
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
+File: inc/dbdiagram/png/facade-postgres-schema.png Graphic file (type bmp)
+<inc/dbdiagram/png/facade-postgres-schema.png>
 [39
 
 
 
 
-]
-File: inc/dbdiagram/png/facade-postgres-schema.png Graphic file (type bmp)
-<inc/dbdiagram/png/facade-postgres-schema.png>
- [40]
+] [40]
+Overfull \hbox (10.74646pt too wide) in paragraph at lines 67--67
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 CreateNotificationEvent|  
+ []
+
+
+Overfull \hbox (13.99356pt too wide) in paragraph at lines 69--69
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 UpdateNotificationEvent|  
+ []
+
+
+Overfull \hbox (7.04823pt too wide) in paragraph at lines 73--74
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 Зафиксированная 
+ []
+
+
+Overfull \hbox (12.44144pt too wide) in paragraph at lines 63--78
+ [][] 
+ []
+
+[41]
 File: inc/mongo-template-data.png Graphic file (type bmp)
 <inc/mongo-template-data.png>
- [41] [42]
+
+Overfull \hbox (7.32845pt too wide) in paragraph at lines 109--109
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 Create/UpdateTemplate|  
+ []
+
+
+Overfull \hbox (12.44144pt too wide) in paragraph at lines 101--112
+ [][] 
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[42]
 File: inc/dbdiagram/png/profile-consent-postgres-schema.png Graphic file (type 
 bmp)
 <inc/dbdiagram/png/profile-consent-postgres-schema.png>
+
+Overfull \hbox (0.71701pt too wide) in paragraph at lines 139--139
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 CheckRecipientChannel|  
+ []
+
+
+Overfull \hbox (12.38382pt too wide) in paragraph at lines 143--143
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 BatchGetRecipientProfiles|  
+ []
+
+
+Overfull \hbox (12.44861pt too wide) in paragraph at lines 135--146
+ [][] 
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[43]
 File: inc/dbdiagram/png/dispatcher-postgres-schema.png Graphic file (type bmp)
 <inc/dbdiagram/png/dispatcher-postgres-schema.png>
- [43] [44]
+ [44]
+Overfull \hbox (16.27464pt too wide) in paragraph at lines 179--179
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 notification.mail.dispatches|  
+ []
+
+
+Overfull \hbox (13.69406pt too wide) in paragraph at lines 181--181
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 notification.sms.dispatches|  
+ []
+
+
+Overfull \hbox (12.44144pt too wide) in paragraph at lines 171--184
+ [][] 
+ []
+
+
+Overfull \hbox (12.44861pt too wide) in paragraph at lines 198--207
+ [][] 
+ []
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[45]
+Overfull \hbox (16.27464pt too wide) in paragraph at lines 225--225
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 notification.mail.dispatches|  
+ []
+
+
+Overfull \hbox (12.44144pt too wide) in paragraph at lines 221--232
+ [][] 
+ []
+
+[46]
+Overfull \hbox (13.69406pt too wide) in paragraph at lines 250--250
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 notification.sms.dispatches|  
+ []
+
+
+Overfull \hbox (12.44144pt too wide) in paragraph at lines 246--255
+ [][] 
+ []
+
 File: inc/dbdiagram/png/history-clickhouse-schema.png Graphic file (type bmp)
 <inc/dbdiagram/png/history-clickhouse-schema.png>
-) [45] [46]
+[47]
+Overfull \hbox (35.06232pt too wide) in paragraph at lines 286--286
+[]|\TU/TimesNewRoman(0)/m/n/11.66681 GetRecipientDeliverySummary|  
+ []
+
+
+Overfull \hbox (12.44861pt too wide) in paragraph at lines 278--289
+ [][] 
+ []
+
+) [48]
 \openout2 = `contents/5-deployment-testing.aux'.
 
- (./contents/5-deployment-testing.tex
-[47
+ (./contents/5-deployment-testing.tex [49
 
 
 
 
-] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+]
+(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2020/03/24 1.8d listings language file
 )
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
@@ -1880,36 +1983,36 @@ File: lstlang1.sty 2020/03/24 1.8d listings language file
 )
 Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
 nput line 51.
- [48] [49]
+ [50] [51]
 Overfull \hbox (3.05002pt too wide) in paragraph at lines 115--130
  [][] 
  []
 
-[50] [51]
+[52] [53]
 File: inc/server_rps.png Graphic file (type bmp)
 <inc/server_rps.png>
- [52]
+ [54]
 File: inc/grpc_p50_lat.png Graphic file (type bmp)
 <inc/grpc_p50_lat.png>
 File: inc/kafka_avg_latency.png Graphic file (type bmp)
 <inc/kafka_avg_latency.png>
- [53]
+ [55]
 File: inc/kafka_consume_rps.png Graphic file (type bmp)
 <inc/kafka_consume_rps.png>
- [54]
+ [56]
 LaTeX Font Info:    Calculating math sizes for size <12.77509> on input line 24
 5.
- [55] [56]) [57]
+ [57] [58]) [59]
 \openout2 = `contents/7-conclusion.aux'.
 
- (./contents/7-conclusion.tex [58
+ (./contents/7-conclusion.tex [60
 
 
 
 
 
 ])
-[59] [60
+[61] [62
 
 
 
@@ -1920,7 +2023,7 @@ LaTeX Font Info:    Calculating math sizes for size <12.77509> on input line 24
  (./contents/8-appendix-repository-qr.tex
 File: inc/QR_diploma_batoyan.png Graphic file (type bmp)
 <inc/QR_diploma_batoyan.png>
-) [61
+) [63
 
 
 ]
@@ -1935,12 +2038,12 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 43241 strings out of 478025
- 870523 string characters out of 5841685
- 2091557 words of memory out of 5000000
- 62475 multiletter control sequences out of 15000+600000
+ 43351 strings out of 478025
+ 873582 string characters out of 5841685
+ 2093870 words of memory out of 5000000
+ 62585 multiletter control sequences out of 15000+600000
  530868 words of font info for 158 fonts, out of 8000000 for 9000
  682 hyphenation exceptions out of 8191
  138i,11n,134p,2324b,5506s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.xdv (61 pages, 873580 bytes).
+Output written on main.xdv (63 pages, 928900 bytes).
