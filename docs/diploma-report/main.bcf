@@ -3486,15 +3486,13 @@
     <bcf:citekey order="2" intorder="1">newman_microservices</bcf:citekey>
     <bcf:citekey order="2" intorder="2">richardson_patterns</bcf:citekey>
     <bcf:citekey order="3" intorder="1">grpc_docs</bcf:citekey>
-    <bcf:citekey order="3" intorder="2">kafka_docs</bcf:citekey>
-    <bcf:citekey order="3" intorder="3">kafka_in_action</bcf:citekey>
+    <bcf:citekey order="3" intorder="2">kafka_in_action</bcf:citekey>
     <bcf:citekey order="4" intorder="1">newman_microservices</bcf:citekey>
-    <bcf:citekey order="5" intorder="1">newman_microservices</bcf:citekey>
-    <bcf:citekey order="5" intorder="2">richardson_patterns</bcf:citekey>
-    <bcf:citekey order="5" intorder="3">kleppmann_ddia</bcf:citekey>
-    <bcf:citekey order="6" intorder="1">grpc_docs</bcf:citekey>
-    <bcf:citekey order="6" intorder="2">kafka_docs</bcf:citekey>
-    <bcf:citekey order="6" intorder="3">nygard_releaseit</bcf:citekey>
+    <bcf:citekey order="4" intorder="2">kleppmann_ddia</bcf:citekey>
+    <bcf:citekey order="5" intorder="1">grpc_docs</bcf:citekey>
+    <bcf:citekey order="5" intorder="2">kafka_docs</bcf:citekey>
+    <bcf:citekey order="5" intorder="3">nygard_releaseit</bcf:citekey>
+    <bcf:citekey order="6" intorder="1">richardson_patterns</bcf:citekey>
     <bcf:citekey order="7" intorder="1">kafka_docs</bcf:citekey>
     <bcf:citekey order="7" intorder="2">richardson_patterns</bcf:citekey>
     <bcf:citekey order="8" intorder="1">kubernetes_in_action</bcf:citekey>

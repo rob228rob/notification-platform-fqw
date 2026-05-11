@@ -45,7 +45,7 @@
 
 \newglossaryentry{redis_deduplication}{
     name={дедупликация через Redis},
-    description={техническое подавление повторной обработки sender-команд через атомарную запись TTL-ключа в Redis}
+    description={техническое подавление повторной обработки команд канальной отправки через атомарную запись ключа с политикой TTL в Redis}
 }
 
 \newglossaryentry{retry_term}{
@@ -58,9 +58,9 @@
     description={переназначение доставки в альтернативный канал связи после окончательной ошибки или исчерпания повторов в исходном канале}
 }
 
-\newglossaryentry{cancellation_mark}{
-    name={отметка отмены},
-    description={TTL-ключ в Redis, фиксирующий отмену dispatch или delivery и используемый sender-сервисами перед фактической отправкой}
+\newglossaryentry{cancellation_status}{
+    name={статус отмены},
+    description={запись в Redis с политикой TTL, фиксирующая отмену запуска или канальной доставки и используемая сервисами канальной отправки перед фактической отправкой}
 }
 
 \newglossaryentry{history_writer}{
