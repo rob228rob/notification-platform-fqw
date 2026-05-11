@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  11 MAY 2026 11:06
+This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  11 MAY 2026 19:38
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -1856,40 +1856,40 @@ Overfull \hbox (12.44144pt too wide) in paragraph at lines 28--43
 [40]
 File: inc/mongo-template-data.png Graphic file (type bmp)
 <inc/mongo-template-data.png>
- [41]
-Overfull \hbox (12.44144pt too wide) in paragraph at lines 66--77
+
+Overfull \hbox (12.44144pt too wide) in paragraph at lines 64--75
  [][] 
  []
 
-[42]
+[41]
 File: inc/dbdiagram/png/profile-consent-postgres-schema.png Graphic file (type 
 bmp)
 <inc/dbdiagram/png/profile-consent-postgres-schema.png>
 
-Overfull \hbox (12.44861pt too wide) in paragraph at lines 100--111
+Overfull \hbox (12.44861pt too wide) in paragraph at lines 98--109
  [][] 
  []
 
-[43]
+[42]
 File: inc/dbdiagram/png/dispatcher-postgres-schema.png Graphic file (type bmp)
 <inc/dbdiagram/png/dispatcher-postgres-schema.png>
- [44]
-Overfull \hbox (12.44861pt too wide) in paragraph at lines 163--172
+ [43]
+Overfull \hbox (12.44861pt too wide) in paragraph at lines 161--170
  [][] 
  []
 
-[45] [46]
+[44] [45]
 File: inc/dbdiagram/png/history-clickhouse-schema.png Graphic file (type bmp)
 <inc/dbdiagram/png/history-clickhouse-schema.png>
- [47]
-Overfull \hbox (12.44861pt too wide) in paragraph at lines 243--254
+ [46]
+Overfull \hbox (12.44861pt too wide) in paragraph at lines 241--252
  [][] 
  []
 
-) [48]
+) [47]
 \openout2 = `contents/5-deployment-testing.aux'.
 
- (./contents/5-deployment-testing.tex [49
+ (./contents/5-deployment-testing.tex [48
 
 
 
@@ -1902,37 +1902,37 @@ File: lstlang1.sty 2020/03/24 1.8d listings language file
 File: lstlang1.sty 2020/03/24 1.8d listings language file
 )
 Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
-nput line 51.
- [50] [51]
-Overfull \hbox (3.05002pt too wide) in paragraph at lines 115--130
+nput line 47.
+ [49] [50]
+Overfull \hbox (3.05002pt too wide) in paragraph at lines 120--135
  [][] 
  []
 
-[52] [53]
+[51] [52]
 File: inc/server_rps.png Graphic file (type bmp)
 <inc/server_rps.png>
- [54]
+ [53]
 File: inc/grpc_p50_lat.png Graphic file (type bmp)
 <inc/grpc_p50_lat.png>
 File: inc/kafka_avg_latency.png Graphic file (type bmp)
 <inc/kafka_avg_latency.png>
- [55]
+ [54]
 File: inc/kafka_consume_rps.png Graphic file (type bmp)
 <inc/kafka_consume_rps.png>
- [56]
-LaTeX Font Info:    Calculating math sizes for size <12.77509> on input line 24
-5.
- [57] [58]) [59]
+ [55]
+LaTeX Font Info:    Calculating math sizes for size <12.77509> on input line 25
+0.
+ [56] [57]) [58]
 \openout2 = `contents/7-conclusion.aux'.
 
- (./contents/7-conclusion.tex [60
+ (./contents/7-conclusion.tex [59
 
 
 
 
 
 ])
-[61] [62
+[60] [61
 
 
 
@@ -1943,7 +1943,7 @@ LaTeX Font Info:    Calculating math sizes for size <12.77509> on input line 24
  (./contents/8-appendix-repository-qr.tex
 File: inc/QR_diploma_batoyan.png Graphic file (type bmp)
 <inc/QR_diploma_batoyan.png>
-) [63
+) [62
 
 
 ]
@@ -1958,12 +1958,12 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 43383 strings out of 478025
- 874125 string characters out of 5841685
- 2094653 words of memory out of 5000000
- 62617 multiletter control sequences out of 15000+600000
+ 43388 strings out of 478025
+ 874190 string characters out of 5841685
+ 2119691 words of memory out of 5000000
+ 62622 multiletter control sequences out of 15000+600000
  530868 words of font info for 158 fonts, out of 8000000 for 9000
  682 hyphenation exceptions out of 8191
  138i,11n,134p,2324b,5506s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.xdv (63 pages, 907452 bytes).
+Output written on main.xdv (62 pages, 905796 bytes).

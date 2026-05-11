@@ -6,8 +6,6 @@
 
 Стенд разворачивался на Linux-узле с ресурсами 4~vCPU и 8~ГБ оперативной памяти. Для воспроизведения контура требуются Docker Engine как runtime для k3d, утилиты kubectl и k3d, JDK~21 для сборки jar-артефактов и git для получения актуального состояния репозитория. Измерения получены не на выделенном кластере с жёстким разделением ресурсов между инфраструктурными и прикладными сервисами, а в локальном k3d-окружении, где сервисы, брокер, базы данных и средства наблюдаемости конкурировали за общий набор ресурсов хоста.
 
-Порты, публикуемые конфигурацией .k8s/k3d-config.yaml, резервируются на балансировщике k3d: порт~3000 используется для доступа к Grafana, а порт~9095 остаётся доступным для внешней публикации сервисов при необходимости отдельного маршрута доступа.
-
 Ключевые параметры стенда приведены в таблице~\ref{tab:load-stand-config}.
 
 \begin{table}[H]
@@ -29,8 +27,6 @@
         Инструменты развёртывания & k3d, kubectl, git, JDK~21 \\
         \hline
         Оркестрация стенда & k3d + kubectl apply -k .k8s \\
-        \hline
-        Внешние порты стенда & 3000, 9095 \\
         \hline
         Число уникальных пользователей & 10000 подготовленных получателей \\
         \hline
@@ -59,7 +55,16 @@ kubectl apply -k .k8s
 kubectl get pods -n notification-platform
 \end{lstlisting}
 
-Файл .k8s/kustomization.yaml объединяет namespace, инфраструктурные сервисы и deployments прикладных сервисов. Job custom-loader создаётся в состоянии suspend: true; это позволяет развернуть систему без мгновенного старта нагрузочного прогона и запускать генератор отдельно при проведении испытаний. Для операционного контроля достаточно набора команд kubectl get pods, kubectl describe pod, kubectl logs и просмотра Grafana dashboard, который получает данные из Prometheus.
+Файл .k8s/kustomization.yaml объединяет namespace, инфраструктурные сервисы и deployments прикладных сервисов. Job custom-loader создаётся в состоянии suspend: true; это позволяет развернуть систему без мгновенного старта нагрузочного прогона и запускать генератор отдельно при проведении испытаний.
+
+Базовый набор команд операционного контроля приведён в листинге~\ref{lst:k3d-observe-commands}.
+\begin{lstlisting}[language=bash,caption={Команды контроля состояния k3d-стенда},label={lst:k3d-observe-commands}]
+kubectl get pods -n notification-platform
+kubectl describe pod <pod-name> -n notification-platform
+kubectl logs <pod-name> -n notification-platform
+\end{lstlisting}
+
+Для просмотра метрик используется Grafana dashboard, получающий данные из Prometheus.
 
 \subsection{Методика проверки}
 
