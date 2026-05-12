@@ -1,11 +1,14 @@
 name: build_test_vm_deploy
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   workflow_dispatch:
   pull_request:
     branches: ["master"]
   push:
-    branches: ["master"]
+    branches: ["**"]
 
 jobs:
   test:
@@ -61,20 +64,33 @@ jobs:
                   totals[key] += value
                   by_service[service][key] += value
 
+          is_green = totals["failures"] == 0 and totals["errors"] == 0
+          title_icon = "✅" if is_green else "❌"
+          skipped_icon = "🟡" if totals["skipped"] else "🟢"
+
           lines = [
-              "## Test summary",
+              f"# {title_icon} Сводка тестов",
               "",
-              f"JUnit report files: **{len(reports)}**",
-              f"Total tests: **{totals['tests']}**",
-              f"Failures: **{totals['failures']}**, errors: **{totals['errors']}**, skipped: **{totals['skipped']}**",
+              "> ✅ без ошибок · 🟡 есть пропущенные тесты · ❌ есть падения",
               "",
-              "| Service | Tests | Failures | Errors | Skipped |",
-              "|---|---:|---:|---:|---:|",
+              "| Показатель | Значение |",
+              "|---|---:|",
+              f"| 🧪 Всего тестов | **{totals['tests']}** |",
+              f"| 📄 JUnit XML-отчётов | **{len(reports)}** |",
+              f"| ❌ Падений | **{totals['failures']}** |",
+              f"| 🔥 Ошибок | **{totals['errors']}** |",
+              f"| {skipped_icon} Пропущено | **{totals['skipped']}** |",
+              "",
+              "## Разрез по сервисам",
+              "",
+              "| Статус | Сервис | Тесты | Падения | Ошибки | Пропущено |",
+              "|---|---|---:|---:|---:|---:|",
           ]
 
           for service, values in sorted(by_service.items()):
+              service_icon = "❌" if values["failures"] or values["errors"] else ("🟡" if values["skipped"] else "✅")
               lines.append(
-                  f"| `{service}` | {values['tests']} | {values['failures']} | {values['errors']} | {values['skipped']} |"
+                  f"| {service_icon} | `{service}` | {values['tests']} | {values['failures']} | {values['errors']} | {values['skipped']} |"
               )
 
           summary = "\n".join(lines) + "\n"
@@ -106,7 +122,7 @@ jobs:
 
   deploy:
     needs: test
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: deploy stage
