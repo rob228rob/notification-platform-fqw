@@ -1,6 +1,8 @@
 package ru.batoyan.vkr.notification.templates.usecase;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -222,6 +224,63 @@ class MongoTemplateRegistryUseCaseTest {
         assertThat(response.getTemplatesCount()).isEqualTo(1);
         assertThat(response.getPage()).isZero();
         assertThat(response.getSize()).isEqualTo(20);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "Ivan,Hello Ivan,Body Ivan",
+            "Maria,Hello Maria,Body Maria",
+            "Alex,Hello Alex,Body Alex",
+            "Recipient,Hello Recipient,Body Recipient",
+            "TestUser,Hello TestUser,Body TestUser",
+            "Client,Hello Client,Body Client",
+            "TenantA,Hello TenantA,Body TenantA",
+            "User-01,Hello User-01,Body User-01",
+            "Email,Hello Email,Body Email",
+            "Sms,Hello Sms,Body Sms"
+    })
+    void renderPreviewShouldSubstitutePayloadValues(String name, String expectedSubject, String expectedBody) {
+        var repository = mock(TemplateMongoRepository.class);
+        var useCase = new MongoTemplateRegistryUseCase(repository, new TemplateRenderService(List.of(new SimpleTemplateRenderer())));
+        when(repository.findByClientIdAndTemplateId("client-1", "tpl-render"))
+                .thenReturn(Optional.of(templateDocument("tpl-render", 1, Channel.CHANNEL_EMAIL)));
+
+        var preview = useCase.renderPreview("client-1", RenderPreviewRequest.newBuilder()
+                .setTemplateId("tpl-render")
+                .setChannel(Channel.CHANNEL_EMAIL)
+                .putPayload("name", name)
+                .build());
+
+        assertThat(preview.getSubject()).isEqualTo(expectedSubject);
+        assertThat(preview.getBody()).isEqualTo(expectedBody);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "-10,0,0,20",
+            "-1,1,0,1",
+            "0,0,0,20",
+            "0,1,0,1",
+            "1,10,1,10",
+            "2,50,2,50",
+            "3,100,3,100",
+            "4,101,4,100",
+            "5,1000,5,100",
+            "10,20,10,20"
+    })
+    void listTemplatesShouldNormalizePageRequest(int page, int size, int expectedPage, int expectedSize) {
+        var repository = mock(TemplateMongoRepository.class);
+        var useCase = new MongoTemplateRegistryUseCase(repository, new TemplateRenderService(List.of(new SimpleTemplateRenderer())));
+        when(repository.findByClientId(eq("client-1"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        var response = useCase.listTemplates("client-1", ru.notification.templates.proto.v1.ListTemplatesRequest.newBuilder()
+                .setPage(page)
+                .setSize(size)
+                .build());
+
+        assertThat(response.getPage()).isEqualTo(expectedPage);
+        assertThat(response.getSize()).isEqualTo(expectedSize);
     }
 
     private static TemplateChannelContent emailContent(String subject, String body) {

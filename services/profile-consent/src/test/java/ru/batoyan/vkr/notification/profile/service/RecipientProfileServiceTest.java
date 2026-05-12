@@ -9,6 +9,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import ru.batoyan.vkr.notification.profile.model.ChannelConsent;
 import ru.batoyan.vkr.notification.profile.model.RecipientProfileDomain;
 import ru.batoyan.vkr.notification.profile.repository.RecipientProfileRepository;
@@ -115,6 +117,49 @@ class RecipientProfileServiceTest {
                 .hasMessageContaining("profile storage unavailable");
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "true,CHANNEL_EMAIL,true,false,user@example.test,true,ALLOWED,user@example.test",
+            "true,CHANNEL_SMS,true,false,+10000000000,true,ALLOWED,+10000000000",
+            "true,CHANNEL_EMAIL,false,false,user@example.test,false,CHANNEL_DISABLED,user@example.test",
+            "true,CHANNEL_SMS,false,false,+10000000000,false,CHANNEL_DISABLED,+10000000000",
+            "true,CHANNEL_EMAIL,true,true,user@example.test,false,CHANNEL_BLACKLISTED,user@example.test",
+            "true,CHANNEL_SMS,true,true,+10000000000,false,CHANNEL_BLACKLISTED,+10000000000",
+            "true,CHANNEL_EMAIL,true,false,'',false,DESTINATION_MISSING,''",
+            "true,CHANNEL_SMS,true,false,'',false,DESTINATION_MISSING,''",
+            "true,CHANNEL_EMAIL,true,false,' ',false,DESTINATION_MISSING,''",
+            "true,CHANNEL_SMS,true,false,' ',false,DESTINATION_MISSING,''",
+            "false,CHANNEL_EMAIL,true,false,user@example.test,false,PROFILE_INACTIVE,''",
+            "false,CHANNEL_SMS,true,false,+10000000000,false,PROFILE_INACTIVE,''",
+            "true,CHANNEL_EMAIL,false,true,user@example.test,false,CHANNEL_DISABLED,user@example.test",
+            "true,CHANNEL_SMS,false,true,+10000000000,false,CHANNEL_DISABLED,+10000000000",
+            "true,CHANNEL_EMAIL,true,false,user2@example.test,true,ALLOWED,user2@example.test",
+            "true,CHANNEL_SMS,true,false,+19999999999,true,ALLOWED,+19999999999",
+            "true,CHANNEL_EMAIL,true,false,recipient@example.test,true,ALLOWED,recipient@example.test",
+            "true,CHANNEL_SMS,true,false,+15555555555,true,ALLOWED,+15555555555",
+            "true,CHANNEL_EMAIL,false,false,'',false,CHANNEL_DISABLED,''",
+            "true,CHANNEL_SMS,false,false,'',false,CHANNEL_DISABLED,''"
+    })
+    void shouldEvaluateChannelConsentMatrix(
+            boolean active,
+            Channel channel,
+            boolean enabled,
+            boolean blacklisted,
+            String destination,
+            boolean expectedAllowed,
+            CHECK_REASON_CODE expectedReason,
+            String expectedDestination
+    ) {
+        var consent = new ChannelConsent(channel, "tenant-a", enabled, blacklisted, destination);
+        var service = new RecipientProfileService(repositoryWith(profileWith(active, channel, consent)));
+
+        var result = service.checkRecipientChannel("recipient-1", channel, "tenant-a");
+
+        assertThat(result.allowed()).isEqualTo(expectedAllowed);
+        assertThat(result.reasonCode()).isEqualTo(expectedReason);
+        assertThat(result.destination()).isEqualTo(expectedDestination);
+    }
+
     private static RecipientProfileDomain activeProfile() {
         return activeProfile(true);
     }
@@ -130,6 +175,10 @@ class RecipientProfileServiceTest {
 
     private static RecipientProfileDomain profileWith(Channel channel, ChannelConsent consent) {
         return new RecipientProfileDomain("recipient-1", true, Channel.CHANNEL_EMAIL, Map.of(channel, consent), Instant.now());
+    }
+
+    private static RecipientProfileDomain profileWith(boolean active, Channel channel, ChannelConsent consent) {
+        return new RecipientProfileDomain("recipient-1", active, Channel.CHANNEL_EMAIL, Map.of(channel, consent), Instant.now());
     }
 
     private static RecipientProfileRepository repositoryWith(RecipientProfileDomain profile) {

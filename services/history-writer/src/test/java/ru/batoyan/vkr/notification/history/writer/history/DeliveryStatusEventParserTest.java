@@ -12,6 +12,8 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class DeliveryStatusEventParserTest {
 
@@ -153,6 +155,125 @@ class DeliveryStatusEventParserTest {
         var record = ClickHouseDeliveryHistoryRecord.fromEvent(event, new ObjectMapper());
 
         assertThat(record.isFinal()).isFalse();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "MAIL_DELIVERY_STATUS_SENT,true",
+            "MAIL_DELIVERY_STATUS_FAILED,true",
+            "MAIL_DELIVERY_STATUS_CANCELED,true",
+            "MAIL_DELIVERY_STATUS_SKIPPED,true",
+            "SMS_DELIVERY_STATUS_SENT,true",
+            "SMS_DELIVERY_STATUS_FAILED,true",
+            "SMS_DELIVERY_STATUS_CANCELED,true",
+            "SMS_DELIVERY_STATUS_SKIPPED,true",
+            "DELIVERY_STATUS_SENT,true",
+            "DELIVERY_STATUS_FAILED,true",
+            "DELIVERY_STATUS_CANCELED,true",
+            "DELIVERY_STATUS_SKIPPED,true",
+            "MAIL_DELIVERY_STATUS_RETRY,false",
+            "SMS_DELIVERY_STATUS_RETRY,false",
+            "DELIVERY_STATUS_RETRY,false",
+            "MAIL_DELIVERY_STATUS_PENDING,false",
+            "SMS_DELIVERY_STATUS_PENDING,false",
+            "DELIVERY_STATUS_PENDING,false",
+            "UNKNOWN,false",
+            "'',false"
+    })
+    void clickHouseRecordShouldClassifyFinalStatuses(String status, boolean expectedFinal) {
+        var event = new DeliveryStatusEvent(
+                10L,
+                "delivery",
+                "delivery-10",
+                "DeliveryStatusChanged",
+                Map.of("status", status),
+                Map.of(),
+                OffsetDateTime.parse("2026-05-12T10:00:00Z"),
+                "topic",
+                0,
+                1L
+        );
+
+        var record = ClickHouseDeliveryHistoryRecord.fromEvent(event, new ObjectMapper());
+
+        assertThat(record.isFinal()).isEqualTo(expectedFinal);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "email,user@example.test,user@example.test",
+            "phone,+10000000000,+10000000000",
+            "destination,recipient@example.test,recipient@example.test",
+            "provider,mailgun,mailgun",
+            "reason_code,TIMEOUT,TIMEOUT",
+            "error_code,NETWORK,NETWORK",
+            "error_message,provider timeout,provider timeout",
+            "reason_message,blocked by policy,blocked by policy",
+            "template_id,welcome-template,welcome-template",
+            "correlation_id,corr-1,corr-1",
+            "correlationId,corr-2,corr-2",
+            "idempotency_key,idem-1,idem-1",
+            "provider_message_id,provider-1,provider-1",
+            "channel,CHANNEL_EMAIL,CHANNEL_EMAIL",
+            "previous_status,MAIL_DELIVERY_STATUS_RETRY,MAIL_DELIVERY_STATUS_RETRY"
+    })
+    void clickHouseRecordShouldKeepPayloadAliasesInSerializedPayload(String field, String value, String expected) {
+        var event = new DeliveryStatusEvent(
+                11L,
+                "delivery",
+                "delivery-11",
+                "DeliveryStatusChanged",
+                Map.of(field, value, "status", "MAIL_DELIVERY_STATUS_SENT"),
+                Map.of(),
+                OffsetDateTime.parse("2026-05-12T10:00:00Z"),
+                "topic",
+                0,
+                1L
+        );
+
+        var record = ClickHouseDeliveryHistoryRecord.fromEvent(event, new ObjectMapper());
+
+        assertThat(record.payloadJson()).contains(expected);
+        assertThat(record.payloadHash()).hasSize(64);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "attempt_no,1,1",
+            "attempt_no,2,2",
+            "attempt_no,3,3",
+            "max_attempts,1,1",
+            "max_attempts,5,5",
+            "template_version,1,1",
+            "template_version,12,12",
+            "priority,0,0",
+            "priority,10,10",
+            "latency_ms,123,123"
+    })
+    void clickHouseRecordShouldMapNumericPayloadFields(String field, String value, long expected) {
+        var event = new DeliveryStatusEvent(
+                12L,
+                "delivery",
+                "delivery-12",
+                "DeliveryStatusChanged",
+                Map.of(field, value, "status", "MAIL_DELIVERY_STATUS_SENT"),
+                Map.of(),
+                OffsetDateTime.parse("2026-05-12T10:00:00Z"),
+                "topic",
+                0,
+                1L
+        );
+
+        var record = ClickHouseDeliveryHistoryRecord.fromEvent(event, new ObjectMapper());
+
+        switch (field) {
+            case "attempt_no" -> assertThat(record.attemptNo()).isEqualTo((int) expected);
+            case "max_attempts" -> assertThat(record.maxAttempts()).isEqualTo((int) expected);
+            case "template_version" -> assertThat(record.templateVersion()).isEqualTo((int) expected);
+            case "priority" -> assertThat(record.priority()).isEqualTo((int) expected);
+            case "latency_ms" -> assertThat(record.latencyMs()).isEqualTo(expected);
+            default -> throw new IllegalArgumentException(field);
+        }
     }
 
     private static String envelopeJson() {

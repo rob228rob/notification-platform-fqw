@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.kafka.core.KafkaTemplate;
 import ru.batoyan.vkr.notification.scheduler.delivery.config.SchedulerDeliveryProperties;
 import ru.batoyan.vkr.notification.scheduler.delivery.scheduling.KafkaEnvelope;
@@ -115,6 +117,54 @@ class DeliveryDispatcherServiceTest {
         verify(fixture.kafkaTemplate).send(eq("notification.sms.delivery-statuses"), eq("dispatch-1:recipient-1:CHANNEL_SMS"), anyString());
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "CHANNEL_EMAIL|CHANNEL_SMS,CHANNEL_EMAIL,CHANNEL_SMS",
+            "CHANNEL_EMAIL|CHANNEL_SMS,CHANNEL_SMS,CHANNEL_EMAIL",
+            "CHANNEL_EMAIL|CHANNEL_SMS|CHANNEL_PUSH,CHANNEL_EMAIL|CHANNEL_SMS,CHANNEL_PUSH",
+            "CHANNEL_EMAIL|CHANNEL_SMS|CHANNEL_PUSH,CHANNEL_PUSH,CHANNEL_EMAIL",
+            "CHANNEL_SMS|CHANNEL_EMAIL,CHANNEL_EMAIL,CHANNEL_SMS",
+            "CHANNEL_SMS|CHANNEL_EMAIL,CHANNEL_SMS,CHANNEL_EMAIL",
+            "CHANNEL_EMAIL|CHANNEL_SMS,CHANNEL_EMAIL|CHANNEL_SMS,",
+            "CHANNEL_EMAIL,,CHANNEL_EMAIL",
+            "CHANNEL_SMS,,CHANNEL_SMS",
+            "CHANNEL_PUSH,,CHANNEL_PUSH",
+            "CHANNEL_EMAIL|CHANNEL_SMS|CHANNEL_PUSH,CHANNEL_EMAIL,CHANNEL_SMS",
+            "CHANNEL_EMAIL|CHANNEL_SMS|CHANNEL_PUSH,CHANNEL_SMS,CHANNEL_EMAIL",
+            "CHANNEL_EMAIL|CHANNEL_SMS|CHANNEL_PUSH,CHANNEL_EMAIL|CHANNEL_PUSH,CHANNEL_SMS",
+            "CHANNEL_EMAIL|CHANNEL_SMS|CHANNEL_PUSH,CHANNEL_SMS|CHANNEL_PUSH,CHANNEL_EMAIL",
+            "CHANNEL_EMAIL|CHANNEL_SMS|CHANNEL_PUSH,CHANNEL_EMAIL|CHANNEL_SMS|CHANNEL_PUSH,",
+            "CHANNEL_EMAIL|CHANNEL_SMS,CHANNEL_UNKNOWN,CHANNEL_EMAIL",
+            "CHANNEL_EMAIL|CHANNEL_SMS,CHANNEL_UNKNOWN|CHANNEL_EMAIL,CHANNEL_SMS",
+            "CHANNEL_SMS|CHANNEL_PUSH,CHANNEL_EMAIL,CHANNEL_SMS",
+            "CHANNEL_SMS|CHANNEL_PUSH,CHANNEL_SMS|CHANNEL_EMAIL,CHANNEL_PUSH",
+            "CHANNEL_SMS|CHANNEL_PUSH,CHANNEL_SMS|CHANNEL_PUSH,"
+    })
+    void nextFallbackChannelShouldSelectFirstUnvisitedChannel(String candidates, String previous, String expected) {
+        var result = DeliveryDispatcherService.nextFallbackChannel(split(candidates), split(previous));
+
+        assertThat(result).isEqualTo(emptyToNull(expected));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "CHANNEL_EMAIL,CHANNEL_SMS,CHANNEL_EMAIL|CHANNEL_SMS",
+            "CHANNEL_EMAIL|CHANNEL_SMS,CHANNEL_EMAIL,CHANNEL_EMAIL|CHANNEL_SMS",
+            "CHANNEL_SMS|CHANNEL_EMAIL,CHANNEL_PUSH,CHANNEL_SMS|CHANNEL_EMAIL|CHANNEL_PUSH",
+            "'',CHANNEL_EMAIL,CHANNEL_EMAIL",
+            "CHANNEL_EMAIL,'',CHANNEL_EMAIL",
+            "CHANNEL_EMAIL|CHANNEL_EMAIL,CHANNEL_SMS,CHANNEL_EMAIL|CHANNEL_SMS",
+            "CHANNEL_EMAIL|CHANNEL_SMS,CHANNEL_SMS,CHANNEL_EMAIL|CHANNEL_SMS",
+            "CHANNEL_PUSH|CHANNEL_SMS,CHANNEL_EMAIL,CHANNEL_PUSH|CHANNEL_SMS|CHANNEL_EMAIL",
+            "CHANNEL_PUSH|CHANNEL_SMS|CHANNEL_EMAIL,CHANNEL_EMAIL,CHANNEL_PUSH|CHANNEL_SMS|CHANNEL_EMAIL",
+            "CHANNEL_EMAIL|CHANNEL_UNKNOWN,CHANNEL_SMS,CHANNEL_EMAIL|CHANNEL_UNKNOWN|CHANNEL_SMS"
+    })
+    void mergePreviousChannelsShouldKeepOrderAndDeduplicate(String previous, String current, String expected) {
+        var result = DeliveryDispatcherService.mergePreviousChannels(split(previous), emptyToNull(current));
+
+        assertThat(result).containsExactlyElementsOf(split(expected));
+    }
+
     @SuppressWarnings("unchecked")
     private static final class Fixture {
         private final KafkaTemplate<String, String> kafkaTemplate = mock(KafkaTemplate.class);
@@ -169,5 +219,18 @@ class DeliveryDispatcherServiceTest {
                         .setDestination(destination)
                         .build())
                 .build();
+    }
+
+    private static List<String> split(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(value.split("\\|"))
+                .filter(item -> !item.isBlank())
+                .toList();
+    }
+
+    private static String emptyToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 }

@@ -1,6 +1,7 @@
 package ru.batoyan.vkr.notification.mail.delivery;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -18,6 +19,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -149,6 +153,56 @@ class MailDeliveryCommandConsumerTest {
         assertThat(result.failedDeliveryErrors()).containsEntry("delivery-2", "timeout");
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "CHANNEL_EMAIL,CHANNEL_EMAIL,CHANNEL_EMAIL",
+            "CHANNEL_SMS,CHANNEL_EMAIL,CHANNEL_SMS|CHANNEL_EMAIL",
+            "CHANNEL_PUSH,CHANNEL_EMAIL,CHANNEL_PUSH|CHANNEL_EMAIL",
+            "'',CHANNEL_EMAIL,CHANNEL_EMAIL",
+            "CHANNEL_EMAIL,'',CHANNEL_EMAIL",
+            "CHANNEL_EMAIL|CHANNEL_EMAIL,CHANNEL_EMAIL,CHANNEL_EMAIL",
+            "CHANNEL_EMAIL|CHANNEL_SMS,CHANNEL_EMAIL,CHANNEL_EMAIL|CHANNEL_SMS",
+            "CHANNEL_SMS|CHANNEL_EMAIL,CHANNEL_EMAIL,CHANNEL_SMS|CHANNEL_EMAIL",
+            "CHANNEL_SMS|CHANNEL_PUSH,CHANNEL_EMAIL,CHANNEL_SMS|CHANNEL_PUSH|CHANNEL_EMAIL",
+            "CHANNEL_PUSH|CHANNEL_SMS,CHANNEL_EMAIL,CHANNEL_PUSH|CHANNEL_SMS|CHANNEL_EMAIL",
+            "CHANNEL_EMAIL|CHANNEL_SMS,CHANNEL_SMS,CHANNEL_EMAIL|CHANNEL_SMS",
+            "CHANNEL_EMAIL|CHANNEL_PUSH,CHANNEL_SMS,CHANNEL_EMAIL|CHANNEL_PUSH|CHANNEL_SMS",
+            "CHANNEL_EMAIL|CHANNEL_SMS|CHANNEL_PUSH,CHANNEL_EMAIL,CHANNEL_EMAIL|CHANNEL_SMS|CHANNEL_PUSH",
+            "CHANNEL_UNKNOWN,CHANNEL_EMAIL,CHANNEL_UNKNOWN|CHANNEL_EMAIL",
+            "CHANNEL_EMAIL|CHANNEL_UNKNOWN,CHANNEL_EMAIL,CHANNEL_EMAIL|CHANNEL_UNKNOWN"
+    })
+    void fallbackPreviousChannelsShouldNormalizeVisitedChannels(String previous, String current, String expected) {
+        var result = MailDeliveryCommandConsumer.fallbackPreviousChannels(split(previous), emptyToNull(current));
+
+        assertThat(result).containsExactlyElementsOf(split(expected));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "CHANNEL_DISABLED",
+            "CHANNEL_BLACKLISTED",
+            "DESTINATION_MISSING",
+            "PROFILE_NOT_FOUND",
+            "PROFILE_INACTIVE",
+            "SMS_CHANNEL_MISSING",
+            "CHECK_REASON_CODE_UNSPECIFIED",
+            "ALLOWED"
+    })
+    void providerGuardShouldReturnProfileConsentReasonWhenMailIsDenied(CHECK_REASON_CODE reasonCode) {
+        var profileClient = mock(ProfileConsentClient.class);
+        when(profileClient.checkRecipientChannel("recipient-1", ru.notification.common.proto.v1.Channel.CHANNEL_EMAIL))
+                .thenReturn(CheckRecipientChannelResponse.newBuilder()
+                        .setAllowed(false)
+                        .setReasonCode(reasonCode)
+                        .build());
+        var guard = new MailProviderGuardService(profileClient, Runnable::run);
+
+        var result = guard.validateBatch(List.of(mailMessage("delivery-1", "recipient-1")));
+
+        assertThat(result.allowedMessages()).isEmpty();
+        assertThat(result.rejectedDeliveries()).containsEntry("delivery-1", reasonCode.name());
+    }
+
     @Test
     void shouldSendMailAndPublishSentStatusWhenCommandIsAllowed() throws Exception {
         var fixture = new ConsumerFixture();
@@ -228,6 +282,29 @@ class MailDeliveryCommandConsumerTest {
                 .containsExactly("CHANNEL_EMAIL");
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "",
+            " ",
+            "{broken",
+            "[]",
+            "\"{broken\"",
+            "42",
+            "false",
+            "{\"payload\":{}}",
+            "{\"aggregateId\":\"id\",\"payload\":{\"template_version\":\"bad\"}}",
+            "\"\\\"\\\\\\\"{broken\\\\\\\"\\\"\""
+    })
+    void shouldRejectInvalidMailCommandPayloadsBeforeExternalCalls(String rawMessage) {
+        var fixture = new ConsumerFixture();
+
+        assertThatThrownBy(() -> fixture.consumer.onMessage(rawMessage))
+                .isInstanceOf(RuntimeException.class);
+
+        verifyNoInteractions(fixture.dedupService, fixture.cancellationClient, fixture.mailGateway);
+        verify(fixture.kafkaTemplate, never()).send(anyString(), anyString(), anyString());
+    }
+
     private static MailGateway.MailMessage mailMessage(String deliveryId, String recipientId) {
         return new MailGateway.MailMessage(
                 deliveryId,
@@ -238,6 +315,19 @@ class MailDeliveryCommandConsumerTest {
                 1,
                 "{}"
         );
+    }
+
+    private static List<String> split(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(value.split("\\|"))
+                .filter(item -> !item.isBlank())
+                .toList();
+    }
+
+    private static String emptyToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
     @SuppressWarnings("unchecked")

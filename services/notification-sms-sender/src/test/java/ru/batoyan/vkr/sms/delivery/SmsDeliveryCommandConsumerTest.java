@@ -1,6 +1,7 @@
 package ru.batoyan.vkr.sms.delivery;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -17,6 +18,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -106,6 +109,29 @@ class SmsDeliveryCommandConsumerTest {
         assertThat(statusPayload)
                 .containsEntry("status", "SMS_DELIVERY_STATUS_FAILED")
                 .containsEntry("error_message", "sms gateway timeout");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "",
+            " ",
+            "{broken",
+            "[]",
+            "\"{broken\"",
+            "42",
+            "true",
+            "{\"payload\":{}}",
+            "{\"aggregateId\":\"id\",\"payload\":{\"template_version\":\"bad\"}}",
+            "\"\\\"\\\\\\\"{broken\\\\\\\"\\\"\""
+    })
+    void shouldRejectInvalidSmsCommandPayloadsBeforeExternalCalls(String rawMessage) {
+        var fixture = new ConsumerFixture();
+
+        assertThatThrownBy(() -> fixture.consumer.onMessage(rawMessage))
+                .isInstanceOf(RuntimeException.class);
+
+        verifyNoInteractions(fixture.dedupService, fixture.cancellationClient, fixture.smsGateway);
+        verify(fixture.kafkaTemplate, never()).send(anyString(), anyString(), anyString());
     }
 
     @SuppressWarnings("unchecked")

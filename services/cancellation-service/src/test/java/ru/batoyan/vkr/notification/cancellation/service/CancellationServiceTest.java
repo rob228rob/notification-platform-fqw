@@ -8,6 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import ru.batoyan.vkr.notification.cancellation.model.CancellationRecord;
 import ru.batoyan.vkr.notification.cancellation.repository.CancellationRepository;
 
@@ -95,6 +97,89 @@ class CancellationServiceTest {
         assertThatThrownBy(() -> service.isDeliveryAllowed("dispatch-1"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("redis unavailable");
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "dispatch-1,event-1,client-1,client requested,operator-a",
+            "dispatch-2,event-2,client-1,duplicate request,operator-b",
+            "dispatch-3,event-3,client-2,timeout,system",
+            "dispatch-4,event-4,client-2,manual stop,operator-c",
+            "dispatch-5,event-5,client-3,recipient blocked,profile-consent",
+            "dispatch-6,event-6,client-3,empty audience,facade",
+            "dispatch-7,event-7,client-4,reroute cancelled,dispatcher",
+            "dispatch-8,event-8,client-4,tenant disabled,operator-d",
+            "dispatch-9,event-9,client-5,test cancellation,tester",
+            "dispatch-10,event-10,client-5,scheduled cancellation,scheduler"
+    })
+    void shouldPreserveCancellationRecordFields(
+            String dispatchId,
+            String eventId,
+            String clientId,
+            String reason,
+            String requestedBy
+    ) {
+        var service = new CancellationService(new InMemoryCancellationRepository());
+
+        var result = service.cancelDispatch(dispatchId, eventId, clientId, reason, requestedBy);
+
+        assertThat(result.record().dispatchId()).isEqualTo(dispatchId);
+        assertThat(result.record().eventId()).isEqualTo(eventId);
+        assertThat(result.record().clientId()).isEqualTo(clientId);
+        assertThat(result.record().reason()).isEqualTo(reason);
+        assertThat(result.record().requestedBy()).isEqualTo(requestedBy);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "dispatch-1,,client-1,reason,operator",
+            "dispatch-2,event-2,,reason,operator",
+            "dispatch-3,event-3,client-3,,operator",
+            "dispatch-4,event-4,client-4,reason,",
+            "dispatch-5,,,reason,",
+            "dispatch-6,event-6,,,operator",
+            "dispatch-7,,client-7,,",
+            "dispatch-8,,,,",
+            "dispatch-9,event-9,client-9,manual,",
+            "dispatch-10,,client-10,,system"
+    })
+    void shouldNormalizeNullableOptionalCancellationFields(
+            String dispatchId,
+            String eventId,
+            String clientId,
+            String reason,
+            String requestedBy
+    ) {
+        var service = new CancellationService(new InMemoryCancellationRepository());
+
+        var result = service.cancelDispatch(dispatchId, eventId, clientId, reason, requestedBy);
+
+        assertThat(result.record().eventId()).isEqualTo(eventId == null ? "" : eventId);
+        assertThat(result.record().clientId()).isEqualTo(clientId == null ? "" : clientId);
+        assertThat(result.record().reason()).isEqualTo(reason == null ? "" : reason);
+        assertThat(result.record().requestedBy()).isEqualTo(requestedBy == null ? "" : requestedBy);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "dispatch-a,event-a,client-a",
+            "dispatch-b,event-b,client-b",
+            "dispatch-c,event-c,client-c",
+            "dispatch-d,event-d,client-d",
+            "dispatch-e,event-e,client-e",
+            "dispatch-f,event-f,client-f",
+            "dispatch-g,event-g,client-g",
+            "dispatch-h,event-h,client-h",
+            "dispatch-i,event-i,client-i",
+            "dispatch-j,event-j,client-j"
+    })
+    void shouldFindCancellationAndDisallowDeliveryForStoredDispatches(String dispatchId, String eventId, String clientId) {
+        var service = new CancellationService(new InMemoryCancellationRepository());
+
+        service.cancelDispatch(dispatchId, eventId, clientId, "reason", "operator");
+
+        assertThat(service.findCancellation(dispatchId)).isPresent();
+        assertThat(service.isDeliveryAllowed(dispatchId)).isFalse();
     }
 
     private static final class InMemoryCancellationRepository implements CancellationRepository {

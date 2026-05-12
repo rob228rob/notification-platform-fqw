@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import ru.batoyan.vkr.sms.kafka.policy.ProfileConsentClient;
 import ru.notification.common.proto.v1.Channel;
 import ru.notification.profile.proto.v1.CHECK_REASON_CODE;
@@ -115,6 +117,54 @@ class SmsProviderGuardServiceTest {
         assertThat(message.idempotencyKey()).isEqualTo("delivery-1");
         assertThat(message.recipientId()).isEqualTo("recipient-1");
         assertThat(message.phone()).isEqualTo("+10000000000");
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "CHANNEL_DISABLED",
+            "CHANNEL_BLACKLISTED",
+            "DESTINATION_MISSING",
+            "PROFILE_NOT_FOUND",
+            "PROFILE_INACTIVE",
+            "SMS_CHANNEL_MISSING",
+            "CHECK_REASON_CODE_UNSPECIFIED",
+            "ALLOWED"
+    })
+    void shouldReturnProfileConsentReasonWhenSmsIsDenied(CHECK_REASON_CODE reasonCode) {
+        var profileClient = mock(ProfileConsentClient.class);
+        when(profileClient.checkRecipientChannel("recipient-1", Channel.CHANNEL_SMS))
+                .thenReturn(CheckRecipientChannelResponse.newBuilder()
+                        .setAllowed(false)
+                        .setReasonCode(reasonCode)
+                        .build());
+        var guard = new SmsProviderGuardService(profileClient, Runnable::run);
+
+        var result = guard.validateBatch(List.of(smsMessage("delivery-1", "recipient-1", "+10000000000")));
+
+        assertThat(result.allowedMessages()).isEmpty();
+        assertThat(result.rejectedDeliveries()).containsEntry("delivery-1", reasonCode.name());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "delivery-1,recipient-1,+10000000000",
+            "delivery-2,recipient-2,+10000000001",
+            "delivery-3,recipient-3,+10000000002",
+            "delivery-4,recipient-4,+10000000003",
+            "delivery-5,recipient-5,+10000000004",
+            "delivery-6,recipient-6,+10000000005",
+            "delivery-7,recipient-7,+10000000006",
+            "delivery-8,recipient-8,+10000000007",
+            "delivery-9,recipient-9,+10000000008",
+            "delivery-10,recipient-10,+10000000009"
+    })
+    void shouldPreserveParameterizedSmsMessageFields(String deliveryId, String recipientId, String phone) {
+        var message = smsMessage(deliveryId, recipientId, phone);
+
+        assertThat(message.deliveryId()).isEqualTo(deliveryId);
+        assertThat(message.idempotencyKey()).isEqualTo(deliveryId);
+        assertThat(message.recipientId()).isEqualTo(recipientId);
+        assertThat(message.phone()).isEqualTo(phone);
     }
 
     private static SmsGateway.SmsMessage smsMessage(String deliveryId, String recipientId, String phone) {
