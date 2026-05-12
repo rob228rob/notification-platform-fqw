@@ -4,7 +4,104 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Allow Gradle wrapper execution
+        run: chmod +x ./gradlew
+
+      - name: Run unit and component tests
+        run: ./gradlew clean test
+
+      - name: Publish test count summary
+        if: always()
+        shell: python
+        run: |
+          import os
+          import xml.etree.ElementTree as ET
+          from collections import defaultdict
+          from pathlib import Path
+
+          reports = sorted(Path(".").glob("**/build/test-results/test/TEST-*.xml"))
+          totals = {"tests": 0, "failures": 0, "errors": 0, "skipped": 0}
+          by_service = defaultdict(lambda: {"tests": 0, "failures": 0, "errors": 0, "skipped": 0})
+
+          for report in reports:
+              root = ET.parse(report).getroot()
+              current = {
+                  "tests": int(root.attrib.get("tests", 0)),
+                  "failures": int(root.attrib.get("failures", 0)),
+                  "errors": int(root.attrib.get("errors", 0)),
+                  "skipped": int(root.attrib.get("skipped", 0)),
+              }
+              parts = report.parts
+              service = parts[parts.index("services") + 1] if "services" in parts else "root"
+              for key, value in current.items():
+                  totals[key] += value
+                  by_service[service][key] += value
+
+          lines = [
+              "## Test summary",
+              "",
+              f"JUnit report files: **{len(reports)}**",
+              f"Total tests: **{totals['tests']}**",
+              f"Failures: **{totals['failures']}**, errors: **{totals['errors']}**, skipped: **{totals['skipped']}**",
+              "",
+              "| Service | Tests | Failures | Errors | Skipped |",
+              "|---|---:|---:|---:|---:|",
+          ]
+
+          for service, values in sorted(by_service.items()):
+              lines.append(
+                  f"| `{service}` | {values['tests']} | {values['failures']} | {values['errors']} | {values['skipped']} |"
+              )
+
+          summary = "\n".join(lines) + "\n"
+          print(summary)
+
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary_path:
+              with open(summary_path, "a", encoding="utf-8") as output:
+                  output.write(summary)
+
+      - name: Publish JUnit report check
+        if: always()
+        uses: dorny/test-reporter@v2
+        with:
+          name: JUnit tests
+          path: "**/build/test-results/test/TEST-*.xml"
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            build/reports/tests/**
+            **/build/reports/tests/**
+            **/build/test-results/test/**
+
   deploy-k3d:
+    needs: test
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
