@@ -1,4 +1,4 @@
-name: Deploy on VM
+name: build_test_vm_deploy
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -42,7 +42,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Pull & deploy on VM
+      - name: deploy stage
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VM_SSH_HOST }}

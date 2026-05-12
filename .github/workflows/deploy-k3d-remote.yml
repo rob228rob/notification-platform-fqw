@@ -1,4 +1,4 @@
-name: Deploy k3d on VM
+name: k3d_vm_deploy
 
 on:
   workflow_dispatch:
