@@ -34,8 +34,8 @@ jobs:
       - name: Allow Gradle wrapper execution
         run: chmod +x ./gradlew
 
-      - name: Run unit and component tests
-        run: ./gradlew clean test
+      - name: Run unit and component tests with coverage
+        run: ./gradlew clean test coverageReport --rerun-tasks
 
       - name: Publish test count summary
         if: always()
@@ -101,6 +101,95 @@ jobs:
               with open(summary_path, "a", encoding="utf-8") as output:
                   output.write(summary)
 
+      - name: Publish coverage summary
+        if: always()
+        shell: python
+        run: |
+          import os
+          import xml.etree.ElementTree as ET
+          from collections import defaultdict
+          from pathlib import Path
+
+          reports = sorted(Path(".").glob("**/build/reports/jacoco/test/jacocoTestReport.xml"))
+          counters = ("INSTRUCTION", "LINE", "BRANCH", "METHOD", "CLASS")
+          totals = {name: {"missed": 0, "covered": 0} for name in counters}
+          by_module = defaultdict(lambda: {name: {"missed": 0, "covered": 0} for name in counters})
+
+          for report in reports:
+              root = ET.parse(report).getroot()
+              parts = report.parts
+              if "services" in parts:
+                  module = parts[parts.index("services") + 1]
+              elif "libs" in parts:
+                  module = f"libs:{parts[parts.index('libs') + 1]}"
+              else:
+                  module = "root"
+
+              for counter in root.findall("counter"):
+                  counter_type = counter.attrib.get("type")
+                  if counter_type not in totals:
+                      continue
+                  missed = int(counter.attrib.get("missed", 0))
+                  covered = int(counter.attrib.get("covered", 0))
+                  totals[counter_type]["missed"] += missed
+                  totals[counter_type]["covered"] += covered
+                  by_module[module][counter_type]["missed"] += missed
+                  by_module[module][counter_type]["covered"] += covered
+
+          def percent(value):
+              total = value["missed"] + value["covered"]
+              if total == 0:
+                  return "n/a"
+              return f"{value['covered'] * 100 / total:.2f}%"
+
+          def status_icon(value):
+              total = value["missed"] + value["covered"]
+              if total == 0:
+                  return "⚪"
+              ratio = value["covered"] / total
+              if ratio >= 0.70:
+                  return "🟢"
+              if ratio >= 0.40:
+                  return "🟡"
+              return "🔴"
+
+          lines = [
+              "",
+              "# 📊 Покрытие тестами",
+              "",
+              f"> Найдено JaCoCo XML-отчётов: **{len(reports)}**",
+              "",
+              "| Метрика | Покрытие | Covered | Missed |",
+              "|---|---:|---:|---:|",
+          ]
+
+          for name in counters:
+              value = totals[name]
+              lines.append(
+                  f"| {status_icon(value)} `{name}` | **{percent(value)}** | {value['covered']} | {value['missed']} |"
+              )
+
+          lines.extend([
+              "",
+              "## Разрез по модулям",
+              "",
+              "| Модуль | Инструкции | Строки | Ветвления | Методы |",
+              "|---|---:|---:|---:|---:|",
+          ])
+
+          for module, values in sorted(by_module.items()):
+              lines.append(
+                  f"| `{module}` | {percent(values['INSTRUCTION'])} | {percent(values['LINE'])} | {percent(values['BRANCH'])} | {percent(values['METHOD'])} |"
+              )
+
+          summary = "\n".join(lines) + "\n"
+          print(summary)
+
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary_path:
+              with open(summary_path, "a", encoding="utf-8") as output:
+                  output.write(summary)
+
       - name: Publish JUnit report check
         if: always()
         uses: dorny/test-reporter@v2
@@ -119,6 +208,16 @@ jobs:
             build/reports/tests/**
             **/build/reports/tests/**
             **/build/test-results/test/**
+            **/build/reports/jacoco/**
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            build/reports/jacoco/**
+            **/build/reports/jacoco/**
 
   deploy:
     needs: test

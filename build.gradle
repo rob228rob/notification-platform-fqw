@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'jacoco'
 }
 
 group = 'ru.batoyan.vkr'
@@ -16,4 +17,76 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+tasks.named("test") {
+    finalizedBy tasks.named("jacocoTestReport")
+}
+
+tasks.named("jacocoTestReport") {
+    dependsOn tasks.named("test")
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+}
+
+subprojects {
+    afterEvaluate { project ->
+        if (!project.path.startsWith(":services:") || !project.plugins.hasPlugin("java")) {
+            return
+        }
+
+        if (!project.plugins.hasPlugin("jacoco")) {
+            project.apply plugin: "jacoco"
+        }
+
+        project.jacoco {
+            toolVersion = "0.8.12"
+        }
+
+        def jacocoReportTask = project.tasks.findByName("jacocoTestReport") != null
+                ? project.tasks.named("jacocoTestReport")
+                : project.tasks.register("jacocoTestReport", org.gradle.testing.jacoco.tasks.JacocoReport)
+
+        jacocoReportTask.configure {
+            dependsOn project.tasks.withType(Test)
+            executionData.setFrom(project.fileTree(project.layout.buildDirectory).include("jacoco/*.exec"))
+            sourceDirectories.setFrom(project.files(project.sourceSets.main.allSource.srcDirs))
+            classDirectories.setFrom(project.files(project.sourceSets.main.output))
+            reports {
+                xml.required = true
+                html.required = true
+                csv.required = false
+            }
+        }
+
+        project.plugins.withId("jacoco") {
+            project.tasks.withType(Test).configureEach { testTask ->
+                useJUnitPlatform()
+                def jacocoExtension = testTask.extensions.findByName("jacoco")
+                if (jacocoExtension != null) {
+                    jacocoExtension.destinationFile = project.layout.buildDirectory.file("jacoco/${testTask.name}.exec").get().asFile
+                }
+            }
+        }
+    }
+}
+
+tasks.register("coverageReport") {
+    group = "verification"
+    description = "Runs JaCoCo reports for all Java subprojects."
+}
+
+gradle.projectsEvaluated {
+    tasks.named("coverageReport") {
+        dependsOn subprojects
+                .findAll { project -> project.path.startsWith(":services:") }
+                .collect { project -> "${project.path}:jacocoTestReport" }
+    }
 }
