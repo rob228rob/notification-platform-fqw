@@ -1,249 +1,245 @@
-﻿workspace "Платформа мультиканальной доставки уведомлений" "C4-модель отказоустойчивой распределённой платформы гарантированной доставки уведомлений" {
+workspace "Платформа уведомлений" "Русская чёрно-белая версия архитектурных диаграмм для презентации" {
 
-    ////////////////////////////////////////////////////////
-    // М О Д Е Л Ь
-    ////////////////////////////////////////////////////////
+    !identifiers hierarchical
+
     model {
-
-        ////////////////////////////////////////////////////////
-        // Л Ю Д И
-        ////////////////////////////////////////////////////////
-        user = person "Клиент" "Пользователь веб/мобильных сервисов компании, получает уведомления."
-        // operator = person "Оператор" "Работает в бизнес-системе, настраивает кампании и анализирует доставку."
-
-        ////////////////////////////////////////////////////////
-        // В Н Е Ш Н И Е  С И С Т Е М Ы
-        ////////////////////////////////////////////////////////
-
-        crm = softwareSystem "CRM / Профиль и согласия" "Источник истины по профилю клиента, контактам и согласиям." {
+        clientSystem = softwareSystem "Клиентская система" "Источник команд" {
             tags "External"
         }
 
-        decisionEngine = softwareSystem "Система персонализации" "Платформа персонализации, выбирающая аудиторию, канал и параметры для рекалмных доставок" {
+        emailProvider = softwareSystem "Почтовый провайдер" "Внешний канал" {
             tags "External"
         }
 
-        apiGateway = softwareSystem "API Gateway" "Инфраструктурный API Gateway. Терминирует внешний трафик и маршрутизирует запросы в сервисы платформы." {
+        smsProvider = softwareSystem "SMS-провайдер" "Внешний канал" {
             tags "External"
         }
 
-        // monitoring = softwareSystem "Мониторинг и логирование" "Системы сбора метрик, логов и алёртов по платформе уведомлений." {
-         //   tags "External"
-        //}
+        platform = softwareSystem "Платформа уведомлений" "Контур обработки уведомлений" {
+            facade = container "notification-facade" "Командный фасад" "Java, Spring Boot, gRPC"
+            templateRegistry = container "template-registry" "Шаблоны" "Java, Spring Boot, gRPC"
+            profileConsent = container "profile-consent" "Профиль и согласия" "Java, Spring Boot, gRPC"
+            cancellationService = container "cancellation-service" "Отмена доставки" "Java, Spring Boot, gRPC"
+            deliveryDispatcher = container "delivery-dispatcher" "Маршрутизация" "Java, Spring Boot, Kafka"
+            mailSender = container "notification-mail-sender" "Почтовая отправка" "Java, Spring Boot, Kafka"
+            smsSender = container "notification-sms-sender" "SMS-отправка" "Java, Spring Boot, Kafka"
+            historyWriter = container "history-writer" "История статусов" "Java, Spring Boot, gRPC, Kafka"
 
-       // smsProvider = softwareSystem "SMS-провайдер" "Внешний SMS-агрегатор: принимает SMS и возвращает статусы доставки и входящие сообщения" {
-       //     tags "External"
-       // }
+            facadeDb = container "PostgreSQL фасада" "События и публикации" "PostgreSQL" {
+                tags "Database"
+            }
 
-        emailProvider = softwareSystem "Провайдер канала связи" "Выбранный провайдер: отправляет уведомления и возвращает статусы доставки" {
-            tags "External"
+            dispatcherDb = container "PostgreSQL диспетчера" "Планирование" "PostgreSQL" {
+                tags "Database"
+            }
+
+            historyDb = container "ClickHouse истории" "Статусы доставки" "ClickHouse" {
+                tags "Database"
+            }
+
+            templateMongo = container "MongoDB шаблонов" "Версии шаблонов" "MongoDB" {
+                tags "Database"
+            }
+
+            profileDb = container "PostgreSQL профилей" "Профили и каналы" "PostgreSQL" {
+                tags "Database"
+            }
+
+            cancellationRedis = container "Redis отмены" "Ключи TTL" "Redis" {
+                tags "Database"
+            }
+
+            mailDedupRedis = container "Redis email" "Дедупликация" "Redis" {
+                tags "Database"
+            }
+
+            smsDedupRedis = container "Redis SMS" "Дедупликация" "Redis" {
+                tags "Database"
+            }
+
+            kafka = container "Kafka" "Событийная шина" "Apache Kafka" {
+                tags "MessageBus"
+            }
+
+            prometheus = container "Prometheus" "Метрики" "Prometheus"
+            grafana = container "Grafana" "Дашборды" "Grafana"
         }
 
-        ////////////////////////////////////////////////////////
-        // О С Н О В Н А Я  С И С Т Е М А
-        ////////////////////////////////////////////////////////
+        clientSystem -> platform.facade "команды" "gRPC"
 
-        platform = softwareSystem "Платформа мультиканальной доставки уведомлений" "Событийная платформа гарантированной мультиканальной доставки уведомлений." {
+        platform.facade -> platform.templateRegistry "шаблон" "gRPC"
+        platform.facade -> platform.cancellationService "отмена" "gRPC"
+        platform.facade -> platform.facadeDb "события" "JDBC"
+        platform.facade -> platform.kafka "запуск" "Kafka"
 
-            // Периметр / входной слой
-            // Оркестрация и планирование
-            orchestrator = container "Notification Facade" "Валидирует запросы, обеспечивает идемпотентность/маршрутизацию и публикует задачи на доставку." "Java, Spring Boot, Kubernetes"
-            scheduler = container "Scheduler Delivery" "Выполняет плановые и отложенные отправки с учетом окна «не беспокоить»." "Java, Spring Boot, Kubernetes"
-            schedulerDeliveryDb = container "Scheduler Delivery DB" "Хранилище расписаний, триггеров и состояния отложенных/периодических отправок." "PostgreSQL" {
-                tags "Database"
-            }
+        platform.templateRegistry -> platform.templateMongo "шаблоны" "MongoDB"
+        platform.profileConsent -> platform.profileDb "профили" "JDBC"
+        platform.cancellationService -> platform.cancellationRedis "отмена" "Redis"
 
-            // Конфигурация платформы
-            platformConfigDb = container "Platform Config DB" "Хранит инициаторов, каналы, лимиты и политики платформы." "PostgreSQL" {
-                tags "Database"
-            }
-            templateRegistry = container "Template Registry" "Сервис хранения и выдачи шаблонов уведомлений для каналов доставки." "Java, Spring Boot, Kubernetes"
-            templateDb = container "Template DB" "База шаблонов уведомлений, версий шаблонов и параметров рендеринга." "PostgreSQL" {
-                tags "Database"
-            }
+        platform.kafka -> platform.deliveryDispatcher "запросы" "Kafka"
+        platform.deliveryDispatcher -> platform.dispatcherDb "задачи" "JDBC"
+        platform.deliveryDispatcher -> platform.profileConsent "профиль" "gRPC"
+        platform.deliveryDispatcher -> platform.kafka "команды" "Kafka"
 
-            // Контакты и кэш (TEMP disabled)
-            // contactCache = container "Contact Cache Service" "Локальная витрина контактных данных и флагов согласий (id, email, phone, consent-flags), использующая ContactDb и Redis." "Java, Spring Boot, Kubernetes"
+        platform.kafka -> platform.mailSender "почта" "Kafka"
+        platform.kafka -> platform.smsSender "SMS" "Kafka"
+        platform.mailSender -> platform.cancellationService "проверка" "gRPC"
+        platform.smsSender -> platform.cancellationService "проверка" "gRPC"
+        platform.mailSender -> platform.mailDedupRedis "дедупликация" "Redis"
+        platform.smsSender -> platform.smsDedupRedis "дедупликация" "Redis"
+        platform.mailSender -> emailProvider "почта" "SMTP/API"
+        platform.smsSender -> smsProvider "SMS" "API"
+        platform.mailSender -> platform.kafka "статус" "Kafka"
+        platform.smsSender -> platform.kafka "статус" "Kafka"
 
-            // contactDb = container "Contact DB" "Локальная витрина контактов и согласий, реплицируемая из CRM (ETL/CDC)." "PostgreSQL" {
-            //     tags "Database"
-            // }
+        platform.kafka -> platform.historyWriter "статусы" "Kafka"
+        platform.historyWriter -> platform.historyDb "история" "JDBC"
 
-            // redisCache = container "Redis Cache" "Кэш горячих данных профиля и согласий, загружаемых из CRM и используемых ContactCache и воркерами для быстрой проверки." "Redis"
-
-            // Очереди / события
-            kafka = container "Apache Kafka" "Асинхронная шина для команд доставки, результатов и DLQ." "Apache Kafka"
-
-            // Канальные воркеры (диспатчеры)
-           //  smsDispatcher = container "SMS Channel Dispatcher" "Консьюмер SMS-очередей: читает задачи, через ContactCache проверяет контакты и согласия, отправляет SMS в провайдера, публикует результаты доставки в Kafka." "Java, Spring Boot, Kubernetes"
-            emailSender = container "Channel Sender" "Читает задачи на доставку и отправляет сообщения через провайдера." "Java, Spring Boot, Kubernetes"
-            channelSenderDb = container "Channel Sender DB" "Хранит состояние отправителя, попытки и технические статусы." "PostgreSQL" {
-                tags "Database"
-            }
-
-            // Callback-обработчики
-            callbackHandlers = container "Callback Handlers" "Принимает callback-и провайдера и публикует события доставки/отписок." "Java, Kubernetes"
-
-            // История доставок
-            deliveryLogWriter = container "Delivery History Writer" "Агрегирует события доставки и пишет историю для отчетности." "Java, Kubernetes"
-
-            deliveryLogDb = container "History Log DB" "Хранение истории уведомлений и их статусов по каналам" "PostgreSQL" {
-                tags "Database"
-            }
-
-            // Админка
-            //adminUi = container "Admin UI" "Веб-интерфейс операторов для просмотра истории уведомлений, DLQ, метрик и базовой конфигурации платформы." "Web SPA (React/Vue)"
-        }
-
-        ////////////////////////////////////////////////////////
-        // С В Я З И  (К О Н Т Е К С Т)
-        ////////////////////////////////////////////////////////ф
-
-        // Люди <-> внешние системы
-       // operator -> crm "Работает с клиентами, настройкой кампаний и анализом откликов" "Web UI"
-        // Клиент получает уведомления через провайдеров (ниже)
-        user -> platform "Отзывает согласие на обработку данных"
-        user -> emailProvider "Отписывается от канала связи"
-        // Внешние системы <-> платформа (на уровне систем)
-        crm -> platform "Отправляет транзакционные уведомления" "GRPC/PROTO"
-        decisionEngine -> platform "Отправляет маркетинговые уведомления" "GRPC/PROTO или Kafka"
-
-       // platform -> crm "Использует CRM как источник истины по профилю и согласиям" "ETL / REST / события"
-       //  platform -> monitoring "Публикует метрики и логи по работе платформы" "metrics/logs"
-
-       // platform -> smsProvider "Отправляет SMS" "HTTPS API"
-        // smsProvider -> platform "Возвращает статусы доставки и входящие сообщения" "HTTPS callbacks"
-
-        platform -> emailProvider "Отправляет уведомление по выбранному каналу связи" "HTTPS/SMTP"
-        emailProvider -> platform "Возвращает статусы доставки" "HTTPS callbacks"
-
-        // smsProvider -> user "Доставляет SMS"
-        // emailProvider -> user "Доставляет уведомления"
-
-        // Оператор и админка
-       // operator -> adminUi "Просматривает историю уведомлений и конфигурацию" "HTTPS"
-       // operator -> apiGateway "Просматривает историю уведомлений и конфигурацию" "HTTPS"
-        ////////////////////////////////////////////////////////
-        // В Н У Т Р Е Н Н И Е  С В Я З И  П Л А Т Ф О Р М Ы
-        ////////////////////////////////////////////////////////
-
-        // Вход в платформу по API
-        crm -> apiGateway "Создаёт транзакционные/маркетинговые уведомления" "GRPC/PROTO"
-        decisionEngine -> apiGateway "Создаёт маркетинговые уведомления" "GRPC/PROTO"
-
-        // Админка -> платформа
-        //adminUi -> apiGateway "Запрашивает историю, DLQ, конфигурацию" "GRPC/PROTO"
-
-        // API Gateway к внутренним сервисам
-        apiGateway -> orchestrator "Передаёт команды на доставку уведомлений (без контактов)" "GRPC/PROTO"
-       // apiGateway -> scheduler "Регистрирует отложенные и периодические уведомления" "GRPC/PROTO"
-       kafka -> scheduler "Получает задачи на отложенные и плановые сообщения"
-       scheduler -> kafka "Инициирует отправку в соответствии с расписанием"
-       scheduler -> schedulerDeliveryDb "Читает/пишет расписания и состояние задач" "JDBC"
-
-       // apiGateway -> deliveryLogWriter "Запрашивает историю доставок для отображения в админке" "GRPC/PROTO"
-
-        // Планирование
-        // scheduler -> orchestrator "Активирует отложенные/плановые уведомления" "GRPC/PROTO"
-
-        // Оркестратор: бизнес-решения без ПДн
-        orchestrator -> platformConfigDb "Читает настройки платформы, лимиты и политики" "JDBC"
-        orchestrator -> templateRegistry "Запрашивает шаблоны уведомлений для формирования отправки" "GRPC/PROTO"
-        orchestrator -> kafka "Публикует задачи на отправку по каналам (sms-out/email-out), без контактов и ПДн" "KAFKA"
-        templateRegistry -> templateDb "Читает/пишет шаблоны и версии" "JDBC"
-
-        // Локальная витрина контактов и согласий (TEMP disabled)
-        // contactCache -> contactDb "Читает/обновляет витрину контактов и согласий" "JDBC"
-        // contactCache -> redisCache "Использует кэш контактов и согласий для быстрых запросов" "GET/SET"
-
-        // Репликация из CRM в витрину и Redis (TEMP disabled)
-        // crm -> contactDb "Реплицирует контактные данные и согласия (ETL)" "Streaming"
-        // crm -> redisCache "Обновляет кэш контактов и согласий" "Streaming"
-
-        // Очереди каналов
-      //  kafka -> smsDispatcher "Поставляет задачи SMS (sms-out)" "Kafka consumers"
-        kafka -> emailSender "Поставляет задачи на отправку email" "Kafka consumers"
-
-        // Воркеры: контакты, согласия, отправка, результаты
-      //  smsDispatcher -> contactCache "Получает контактные данные и флаги согласий для SMS" "GRPC/PROTO"
-        // emailSender -> contactCache "Получает контактные данные и флаги согласий" "GRPC/PROTO"
-        emailSender -> channelSenderDb "Читает/пишет служебные данные отправки" "JDBC"
-
-      //  smsDispatcher -> smsProvider "Отправляет SMS" "HTTPS API"
-        emailSender -> emailProvider "Отправляет уведомление провайдеру" "HTTPS/SMTP"
-        emailProvider -> user "Доставляет уведомление конечному пользователю"
-       // user -> emailProvider "Отказы от рассылок и отзывы согласий"
-
-        // Результаты доставки от воркеров → Kafka
-        // smsDispatcher -> kafka "Публикует результаты попыток доставки SMS" "KAFKA (delivery-results)"
-      //  emailSender -> kafka "Публикует результаты попыток доставки выбранного канала связи" "KAFKA (delivery-results)"
-
-        // Callback-обработчики: асинхронные статусы и отписки
-       // smsProvider -> callbackHandlers "Присылает статусы доставки и входящие сообщения (STOP)" "HTTPS callbacks"
-        emailProvider -> callbackHandlers "Присылает статусы доставки и отписки" "HTTPS callbacks"
-
-        callbackHandlers -> kafka "Публикует события о финальных статусах доставки и отписках" "KAFKA"
-        callbackHandlers -> crm "Фиксирует изменения согласий в CRM" "GRPC/PROTO"
-
-        kafka -> deliveryLogWriter "Поставляет результаты доставок и события отписок" "Kafka consumers"
-        deliveryLogWriter -> deliveryLogDb "Пишет историю уведомлений и статусы по каналам" "JDBC"
-
-        // История может по необходимости агрегироваться обратно в CRM
-        deliveryLogWriter -> crm "Передаёт агрегированные статусы и отчёты по кампании" "GRPC/PROTO"
-
-        // Метрики и логи
-       // apiGateway      -> monitoring "Публикует метрики и логи" "metrics/logs"
-    //    orchestrator    -> monitoring "Публикует метрики и логи" "metrics/logs"
-      //  scheduler       -> monitoring "Метрики задач по расписанию" "metrics/logs"
-        //smsDispatcher   -> monitoring "Метрики канала SMS" "metrics/logs"
-        //emailSender -> monitoring "Метрики канала e-mail" "metrics/logs"
-        //deliveryLogWriter -> monitoring "Метрики истории доставок" "metrics/logs"
+        platform.prometheus -> platform.facade "метрики" "HTTP"
+        platform.prometheus -> platform.templateRegistry "метрики" "HTTP"
+        platform.prometheus -> platform.profileConsent "метрики" "HTTP"
+        platform.prometheus -> platform.cancellationService "метрики" "HTTP"
+        platform.prometheus -> platform.deliveryDispatcher "метрики" "HTTP"
+        platform.prometheus -> platform.mailSender "метрики" "HTTP"
+        platform.prometheus -> platform.smsSender "метрики" "HTTP"
+        platform.prometheus -> platform.historyWriter "метрики" "HTTP"
+        platform.grafana -> platform.prometheus "запросы" "PromQL"
     }
 
-    ////////////////////////////////////////////////////////
-    // П Р Е Д С Т А В Л Е Н И Я (VIEWS)
-    ////////////////////////////////////////////////////////
     views {
-
-        // Контекст системы
-        systemContext platform "SystemContext" "Контекст платформы мультиканальной доставки уведомлений." {
+        systemContext platform "RU_SystemContextBW" "Контекст платформы" {
             include *
+            exclude platform.prometheus
+            exclude platform.grafana
             autolayout lr
         }
 
-        // Контейнеры внутри платформы
-        container platform "Containers" "Контейнерная диаграмма платформы." {
-            include *
+        container platform "RU_ServicesBW" "Состав сервисов" {
+            include platform.facade
+            include platform.templateRegistry
+            include platform.profileConsent
+            include platform.cancellationService
+            include platform.deliveryDispatcher
+            include platform.mailSender
+            include platform.smsSender
+            include platform.historyWriter
+            include platform.kafka
+            autolayout lr
+        }
+
+        container platform "RU_InboundBW" "Входной контур" {
+            include clientSystem
+            include platform.facade
+            include platform.templateRegistry
+            include platform.templateMongo
+            include platform.facadeDb
+            include platform.kafka
+            include platform.cancellationService
+            include platform.cancellationRedis
+            autolayout lr
+        }
+
+        container platform "RU_KafkaBW" "Kafka-контур" {
+            include platform.facade
+            include platform.kafka
+            include platform.deliveryDispatcher
+            include platform.mailSender
+            include platform.smsSender
+            include platform.historyWriter
+            autolayout lr
+        }
+
+        container platform "RU_EmailBW" "Почтовая обработка" {
+            include platform.kafka
+            include platform.mailSender
+            include platform.mailDedupRedis
+            include platform.cancellationService
+            include platform.cancellationRedis
+            include emailProvider
+            autolayout lr
+        }
+
+        container platform "RU_RoutingBW" "Маршрутизация" {
+            include platform.kafka
+            include platform.deliveryDispatcher
+            include platform.dispatcherDb
+            include platform.profileConsent
+            include platform.profileDb
+            autolayout lr
+        }
+
+        dynamic platform "RU_ProcessBW" "Основной поток" {
+            clientSystem -> platform.facade "команда"
+            platform.facade -> platform.kafka "запуск"
+            platform.kafka -> platform.deliveryDispatcher "запрос"
+            platform.deliveryDispatcher -> platform.profileConsent "профиль"
+            platform.deliveryDispatcher -> platform.kafka "команда"
+            platform.kafka -> platform.mailSender "почта"
+            platform.mailSender -> platform.cancellationService "отмена"
+            platform.mailSender -> emailProvider "отправка"
+            platform.mailSender -> platform.kafka "статус"
+            platform.kafka -> platform.historyWriter "статус"
+            platform.historyWriter -> platform.historyDb "запись"
+            autolayout lr
+        }
+
+        dynamic platform "RU_DelayedBW" "Отложенная доставка" {
+            clientSystem -> platform.facade "запуск"
+            platform.facade -> platform.kafka "запрос"
+            platform.kafka -> platform.deliveryDispatcher "получение"
+            platform.deliveryDispatcher -> platform.dispatcherDb "задача"
+            platform.deliveryDispatcher -> platform.kafka "команда"
+            platform.kafka -> platform.mailSender "почта"
+            platform.mailSender -> platform.kafka "статус"
+            platform.kafka -> platform.historyWriter "статус"
             autolayout lr
         }
 
         styles {
             element "Person" {
                 shape person
-                background "#08427b"
-                color "#ffffff"
+                background "#ffffff"
+                color "#000000"
+                stroke "#000000"
             }
 
             element "Software System" {
                 shape roundedbox
-                background "#1168bd"
-                color "#ffffff"
+                background "#ffffff"
+                color "#000000"
+                stroke "#000000"
             }
 
             element "Container" {
-                shape hexagon
-                background "#438dd5"
-                color "#ffffff"
+                shape roundedbox
+                background "#ffffff"
+                color "#000000"
+                stroke "#000000"
             }
 
             element "Database" {
                 shape cylinder
+                background "#ffffff"
+                color "#000000"
+                stroke "#000000"
+            }
+
+            element "MessageBus" {
+                shape pipe
+                background "#ffffff"
+                color "#000000"
+                stroke "#000000"
             }
 
             element "External" {
-                background "#999999"
-                color "#ffffff"
-                border dashed
+                background "#ffffff"
+                color "#000000"
+                stroke "#000000"
+            }
+
+            relationship "Relationship" {
+                color "#000000"
+                thickness 2
             }
         }
     }
