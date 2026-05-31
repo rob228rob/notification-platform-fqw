@@ -268,7 +268,7 @@ jobs:
             cd ~/own_apps/notification-platform-fqw
             git pull --ff-only
             cd deploy
-            docker compose up -d --remove-orphans
+            docker compose -f structurizr/docker-compose.structurizr.yml -f networks/docker-compose.networks.yml up -d --remove-orphans
 
 #  pull:
 #    runs-on: ubuntu-latest
