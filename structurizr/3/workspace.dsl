@@ -16,6 +16,9 @@ workspace "Платформа уведомлений" "Актуальная ар
         }
 
         platform = softwareSystem "Платформа уведомлений" "Контур обработки уведомлений" {
+            !docs docs
+            !adrs decisions
+
             facade = container "notification-facade" "Командный фасад" "Java/gRPC"
             templateRegistry = container "template-registry" "Шаблоны" "Java/gRPC"
             profileConsent = container "profile-consent" "Профиль и согласия" "Java/gRPC"
@@ -208,6 +211,20 @@ workspace "Платформа уведомлений" "Актуальная ар
             autolayout lr
         }
 
+        container platform "ObservabilityFlow" "Наблюдаемость" {
+            include platform.prometheus
+            include platform.grafana
+            include platform.facade
+            include platform.templateRegistry
+            include platform.profileConsent
+            include platform.cancellationService
+            include platform.deliveryDispatcher
+            include platform.mailSender
+            include platform.smsSender
+            include platform.historyWriter
+            autolayout lr
+        }
+
         dynamic platform "CreateEventFlow" "Создание события" {
             clientSystem -> platform.facade "команда"
             platform.facade -> platform.templateRegistry "шаблон"
@@ -357,5 +374,9 @@ workspace "Платформа уведомлений" "Актуальная ар
                 fontSize 20
             }
         }
+    }
+
+    configuration {
+        scope softwaresystem
     }
 }

@@ -5,7 +5,7 @@ Compose-файл: `deploy/structurizr/docker-compose.structurizr.yml`.
 Сервис запускает Structurizr Lite в режиме `local` и монтирует корень репозитория в контейнер:
 
 ```text
-../../:/usr/local/structurizr
+../../structurizr:/usr/local/structurizr
 ```
 
 Поэтому контейнер видит файлы:

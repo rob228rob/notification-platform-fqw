@@ -9,3 +9,9 @@ services:
       - ../../structurizr:/usr/local/structurizr
     networks:
       - shared
+      - nginx_proxy
+
+networks:
+  nginx_proxy:
+    external: true
+    name: tg-chat-history-analyser_default
