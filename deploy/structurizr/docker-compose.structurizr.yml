@@ -6,6 +6,6 @@ services:
     ports:
       - "8088:8080"
     volumes:
-      - ../../:/usr/local/structurizr
+      - ../../structurizr:/usr/local/structurizr
     networks:
       - shared
