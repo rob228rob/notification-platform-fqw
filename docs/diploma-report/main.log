@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  12 MAY 2026 22:05
+This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022/Debian) (preloaded format=xelatex 2026.3.24)  20 MAY 2026 15:11
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -1745,12 +1745,12 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 \openout2 = `contents/0-abstract.aux'.
 
 
-(./contents/0-abstract.tex [2
+(./contents/0-abstract.tex) [2
 
 
 
 
-]) [3] (./main.toc [4
+] [3] (./main.toc [4
 
 
 
@@ -1773,16 +1773,15 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 
 
 
-] [10] [11]) [12]
+] [10]) [11]
 \openout2 = `contents/2-system-analysis.aux'.
 
-
-(./contents/2-system-analysis.tex [13
-
+ (./contents/2-system-analysis.tex [12
 
 
 
-] [14]
+
+] [13]
 LaTeX Font Info:    Calculating math sizes for size <11.66681> on input line 60
 .
 
@@ -1790,19 +1789,19 @@ Overfull \hbox (3.05719pt too wide) in paragraph at lines 60--73
  [][] 
  []
 
-[15] [16] [17] [18] [19] [20]
+[14] [15] [16] [17] [18] [19]
 Overfull \hbox (3.05719pt too wide) in paragraph at lines 194--207
  [][] 
  []
 
-[21] [22]) [23]
+[20] [21]) [22]
 \openout2 = `contents/3-architecture.aux'.
 
  (./contents/3-architecture.tex
 File: inc/arch-090526/0905arch_SystemContextCurrent.png Graphic file (type bmp)
 
 <inc/arch-090526/0905arch_SystemContextCurrent.png>
- [24
+ [23
 
 
 
@@ -1811,35 +1810,35 @@ File: inc/arch-090526/0905arch_SystemContextCurrent.png Graphic file (type bmp)
 File: inc/arch-090526/0905arch_ContainersDataOwnership.png Graphic file (type b
 mp)
 <inc/arch-090526/0905arch_ContainersDataOwnership.png>
- [25] [26] [27]
+ [24] [25] [26]
 File: inc/arch-090526/0905arch_InboundCommandFlow.png Graphic file (type bmp)
 <inc/arch-090526/0905arch_InboundCommandFlow.png>
- [28]
+ [27]
 File: inc/arch-090526/0905arch_ServicesPresentation.png Graphic file (type bmp)
 
 <inc/arch-090526/0905arch_ServicesPresentation.png>
 
-[29]
+[28]
 File: inc/arch-090526/0905arch_DispatchRoutingFlow.png Graphic file (type bmp)
 <inc/arch-090526/0905arch_DispatchRoutingFlow.png>
- [30]
+ [29]
 File: inc/arch-090526/0905arch_EmailNotificationProcessingFlow.png Graphic file
  (type bmp)
 <inc/arch-090526/0905arch_EmailNotificationProcessingFlow.png>
- [31]
+ [30]
 File: inc/statuses-protobuf.png Graphic file (type bmp)
 <inc/statuses-protobuf.png>
- [32] [33]
+ [31] [32]
 File: inc/status-model.png Graphic file (type bmp)
 <inc/status-model.png>
- [34] [35] [36] [37] [38]) [39]
+ [33] [34] [35] [36] [37]) [38]
 \openout2 = `contents/4-implementation.aux'.
 
 
 (./contents/4-implementation.tex
 File: inc/dbdiagram/png/facade-postgres-schema.png Graphic file (type bmp)
 <inc/dbdiagram/png/facade-postgres-schema.png>
- [40
+ [39
 
 
 
@@ -1854,7 +1853,7 @@ Overfull \hbox (12.44144pt too wide) in paragraph at lines 28--43
  [][] 
  []
 
-[41]
+[40]
 File: inc/mongo-template-data.png Graphic file (type bmp)
 <inc/mongo-template-data.png>
 
@@ -1862,7 +1861,7 @@ Overfull \hbox (12.44144pt too wide) in paragraph at lines 64--75
  [][] 
  []
 
-[42]
+[41]
 File: inc/dbdiagram/png/profile-consent-postgres-schema.png Graphic file (type 
 bmp)
 <inc/dbdiagram/png/profile-consent-postgres-schema.png>
@@ -1871,31 +1870,31 @@ Overfull \hbox (12.44861pt too wide) in paragraph at lines 98--109
  [][] 
  []
 
-[43]
+[42]
 File: inc/dbdiagram/png/dispatcher-postgres-schema.png Graphic file (type bmp)
 <inc/dbdiagram/png/dispatcher-postgres-schema.png>
- [44]
+ [43]
 Overfull \hbox (12.44861pt too wide) in paragraph at lines 161--170
  [][] 
  []
 
-[45] [46]
+[44] [45]
 File: inc/dbdiagram/png/history-clickhouse-schema.png Graphic file (type bmp)
 <inc/dbdiagram/png/history-clickhouse-schema.png>
- [47]
+ [46]
 Overfull \hbox (12.44861pt too wide) in paragraph at lines 241--252
  [][] 
  []
 
-) [48]
+) [47]
 \openout2 = `contents/5-deployment-testing.aux'.
 
- (./contents/5-deployment-testing.tex [49
+ (./contents/5-deployment-testing.tex [48
 
 
 
 
-] [50] [51]
+] [49] [50]
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2020/03/24 1.8d listings language file
 )
@@ -1904,36 +1903,36 @@ File: lstlang1.sty 2020/03/24 1.8d listings language file
 )
 Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
 nput line 86.
- [52] [53]
-Overfull \hbox (3.05002pt too wide) in paragraph at lines 159--174
+ [51]
+Overfull \hbox (3.05002pt too wide) in paragraph at lines 132--147
  [][] 
  []
 
-[54] [55]
+[52] [53]
 File: inc/server_rps.png Graphic file (type bmp)
 <inc/server_rps.png>
- [56]
+ [54]
 File: inc/grpc_p50_lat.png Graphic file (type bmp)
 <inc/grpc_p50_lat.png>
 File: inc/kafka_avg_latency.png Graphic file (type bmp)
 <inc/kafka_avg_latency.png>
- [57]
+ [55]
 File: inc/kafka_consume_rps.png Graphic file (type bmp)
 <inc/kafka_consume_rps.png>
- [58]
-LaTeX Font Info:    Calculating math sizes for size <12.77509> on input line 28
-9.
- [59] [60]) [61]
+ [56]
+LaTeX Font Info:    Calculating math sizes for size <12.77509> on input line 26
+4.
+ [57] [58]) [59]
 \openout2 = `contents/7-conclusion.aux'.
 
- (./contents/7-conclusion.tex [62
+ (./contents/7-conclusion.tex [60
 
 
 
 
 
 ])
-[63] [64
+[61] [62
 
 
 
@@ -1944,7 +1943,7 @@ LaTeX Font Info:    Calculating math sizes for size <12.77509> on input line 28
  (./contents/8-appendix-repository-qr.tex
 File: inc/QR_diploma_batoyan.png Graphic file (type bmp)
 <inc/QR_diploma_batoyan.png>
-) [65
+) [63
 
 
 ]
@@ -1959,12 +1958,12 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 43356 strings out of 478025
- 873368 string characters out of 5841685
- 2119281 words of memory out of 5000000
- 62590 multiletter control sequences out of 15000+600000
+ 43354 strings out of 478025
+ 873335 string characters out of 5841685
+ 2119194 words of memory out of 5000000
+ 62588 multiletter control sequences out of 15000+600000
  530868 words of font info for 158 fonts, out of 8000000 for 9000
  682 hyphenation exceptions out of 8191
  138i,11n,134p,2324b,5506s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.xdv (65 pages, 963788 bytes).
+Output written on main.xdv (63 pages, 927472 bytes).

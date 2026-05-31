@@ -288,6 +288,7 @@ workspace "Платформа уведомлений" "Актуальная ар
                 background "#ffffff"
                 color "#000000"
                 stroke "#000000"
+                fontSize 26
             }
 
             element "Software System" {
@@ -295,6 +296,7 @@ workspace "Платформа уведомлений" "Актуальная ар
                 background "#ffffff"
                 color "#000000"
                 stroke "#000000"
+                fontSize 30
             }
 
             element "Container" {
@@ -302,6 +304,7 @@ workspace "Платформа уведомлений" "Актуальная ар
                 background "#ffffff"
                 color "#000000"
                 stroke "#000000"
+                fontSize 28
             }
 
             element "Database" {
@@ -309,24 +312,28 @@ workspace "Платформа уведомлений" "Актуальная ар
                 background "#ffffff"
                 color "#000000"
                 stroke "#000000"
+                fontSize 26
             }
 
             element "RedisStore" {
                 background "#ffffff"
                 color "#000000"
                 stroke "#000000"
+                fontSize 26
             }
 
             element "ClickHouseStore" {
                 background "#ffffff"
                 color "#000000"
                 stroke "#000000"
+                fontSize 26
             }
 
             element "MongoStore" {
                 background "#ffffff"
                 color "#000000"
                 stroke "#000000"
+                fontSize 26
             }
 
             element "MessageBus" {
@@ -334,17 +341,20 @@ workspace "Платформа уведомлений" "Актуальная ар
                 background "#ffffff"
                 color "#000000"
                 stroke "#000000"
+                fontSize 26
             }
 
             element "External" {
                 background "#ffffff"
                 color "#000000"
                 stroke "#000000"
+                fontSize 26
             }
 
             relationship "Relationship" {
                 color "#000000"
                 thickness 2
+                fontSize 20
             }
         }
     }
