@@ -16,14 +16,14 @@ workspace "Платформа уведомлений" "Актуальная ар
         }
 
         platform = softwareSystem "Платформа уведомлений" "Контур обработки уведомлений" {
-            facade = container "notification-facade" "Командный фасад" "Java, Spring Boot, gRPC"
-            templateRegistry = container "template-registry" "Шаблоны" "Java, Spring Boot, gRPC"
-            profileConsent = container "profile-consent" "Профиль и согласия" "Java, Spring Boot, gRPC"
-            cancellationService = container "cancellation-service" "Отмена доставки" "Java, Spring Boot, gRPC"
-            deliveryDispatcher = container "delivery-dispatcher" "Маршрутизация" "Java, Spring Boot, Kafka"
-            mailSender = container "notification-mail-sender" "Почтовая отправка" "Java, Spring Boot, Kafka"
-            smsSender = container "notification-sms-sender" "SMS-отправка" "Java, Spring Boot, Kafka"
-            historyWriter = container "history-writer" "История статусов" "Java, Spring Boot, gRPC, Kafka"
+            facade = container "notification-facade" "Командный фасад" "Java/gRPC"
+            templateRegistry = container "template-registry" "Шаблоны" "Java/gRPC"
+            profileConsent = container "profile-consent" "Профиль и согласия" "Java/gRPC"
+            cancellationService = container "cancellation-service" "Отмена доставки" "Java/gRPC"
+            deliveryDispatcher = container "delivery-dispatcher" "Маршрутизация" "Java/Kafka"
+            mailSender = container "notification-mail-sender" "Почтовая отправка" "Java/Kafka"
+            smsSender = container "notification-sms-sender" "SMS-отправка" "Java/Kafka"
+            historyWriter = container "history-writer" "История статусов" "Java/gRPC/Kafka"
 
             facadeDb = container "PostgreSQL фасада" "События и публикации" "PostgreSQL" {
                 tags "Database"
