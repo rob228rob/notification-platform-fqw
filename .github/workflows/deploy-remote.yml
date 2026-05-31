@@ -265,9 +265,15 @@ jobs:
           username: ${{ secrets.VM_SSH_USERNAME }}
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
+            set -e
             cd ~/own_apps/notification-platform-fqw
+            docker builder prune -af || true
+            docker image prune -af || true
+            docker container prune -f || true
             git pull --ff-only
             cd deploy
+            docker compose -f structurizr/docker-compose.structurizr.yml -f networks/docker-compose.networks.yml pull
+            docker rm -f structurizr-lite || true
             docker compose -f structurizr/docker-compose.structurizr.yml -f networks/docker-compose.networks.yml up -d --remove-orphans
 
 #  pull:
