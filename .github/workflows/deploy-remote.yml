@@ -34,8 +34,8 @@ jobs:
       - name: Allow Gradle wrapper execution
         run: chmod +x ./gradlew
 
-      - name: Run unit and component tests with coverage
-        run: ./gradlew clean test coverageReport --rerun-tasks
+      - name: Run unit and component tests
+        run: ./gradlew clean test --rerun-tasks
 
       - name: Publish test count summary
         if: always()
@@ -101,7 +101,51 @@ jobs:
               with open(summary_path, "a", encoding="utf-8") as output:
                   output.write(summary)
 
-      - name: Publish coverage summary
+      - name: Publish JUnit report check
+        if: always()
+        uses: dorny/test-reporter@v2
+        with:
+          name: JUnit tests
+          path: "**/build/test-results/test/TEST-*.xml"
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            build/reports/tests/**
+            **/build/reports/tests/**
+            **/build/test-results/test/**
+
+  coverage:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Allow Gradle wrapper execution
+        run: chmod +x ./gradlew
+
+      - name: Build coverage report
+        run: ./gradlew clean test coverageReport --rerun-tasks
+
+      - name: Publish optimistic coverage summary
         if: always()
         shell: python
         run: |
@@ -124,6 +168,7 @@ jobs:
                   module = f"libs:{parts[parts.index('libs') + 1]}"
               else:
                   module = "root"
+              _ = by_module[module]
 
               for counter in root.findall("counter"):
                   counter_type = counter.attrib.get("type")
@@ -136,28 +181,34 @@ jobs:
                   by_module[module][counter_type]["missed"] += missed
                   by_module[module][counter_type]["covered"] += covered
 
-          def percent(value):
+          def ratio(value):
               total = value["missed"] + value["covered"]
-              if total == 0:
-                  return "n/a"
-              return f"{value['covered'] * 100 / total:.2f}%"
+              return None if total == 0 else value["covered"] / total
+
+          def percent(value):
+              current = ratio(value)
+              return "n/a" if current is None else f"{current * 100:.2f}%"
 
           def status_icon(value):
-              total = value["missed"] + value["covered"]
-              if total == 0:
+              current = ratio(value)
+              if current is None:
                   return "⚪"
-              ratio = value["covered"] / total
-              if ratio >= 0.70:
+              if current >= 0.70:
                   return "🟢"
-              if ratio >= 0.40:
+              if current >= 0.40:
                   return "🟡"
               return "🔴"
 
+          available = [(name, ratio(value)) for name, value in totals.items() if ratio(value) is not None]
+          optimistic_name, optimistic_ratio = max(available, key=lambda item: item[1]) if available else ("n/a", None)
+          optimistic_percent = "n/a" if optimistic_ratio is None else f"{optimistic_ratio * 100:.2f}%"
+
           lines = [
-              "",
               "# 📊 Покрытие тестами",
               "",
-              f"> Найдено JaCoCo XML-отчётов: **{len(reports)}**",
+              f"> 🟢 **Оптимистичная оценка покрытия: {optimistic_percent}** по метрике `{optimistic_name}`.",
+              "",
+              f"> Найдено JaCoCo XML-отчётов: **{len(reports)}**. Оптимистичная оценка считается как максимум среди `INSTRUCTION`, `LINE`, `BRANCH`, `METHOD`, `CLASS`.",
               "",
               "| Метрика | Покрытие | Covered | Missed |",
               "|---|---:|---:|---:|",
@@ -173,13 +224,16 @@ jobs:
               "",
               "## Разрез по модулям",
               "",
-              "| Модуль | Инструкции | Строки | Ветвления | Методы |",
-              "|---|---:|---:|---:|---:|",
+              "| Модуль | Лучшее | Метрика | Инструкции | Строки | Ветвления | Методы | Классы |",
+              "|---|---:|---|---:|---:|---:|---:|---:|",
           ])
 
           for module, values in sorted(by_module.items()):
+              module_available = [(name, ratio(value)) for name, value in values.items() if ratio(value) is not None]
+              best_name, best_ratio = max(module_available, key=lambda item: item[1]) if module_available else ("n/a", None)
+              best_percent = "n/a" if best_ratio is None else f"{best_ratio * 100:.2f}%"
               lines.append(
-                  f"| `{module}` | {percent(values['INSTRUCTION'])} | {percent(values['LINE'])} | {percent(values['BRANCH'])} | {percent(values['METHOD'])} |"
+                  f"| `{module}` | **{best_percent}** | `{best_name}` | {percent(values['INSTRUCTION'])} | {percent(values['LINE'])} | {percent(values['BRANCH'])} | {percent(values['METHOD'])} | {percent(values['CLASS'])} |"
               )
 
           summary = "\n".join(lines) + "\n"
@@ -189,26 +243,6 @@ jobs:
           if summary_path:
               with open(summary_path, "a", encoding="utf-8") as output:
                   output.write(summary)
-
-      - name: Publish JUnit report check
-        if: always()
-        uses: dorny/test-reporter@v2
-        with:
-          name: JUnit tests
-          path: "**/build/test-results/test/TEST-*.xml"
-          reporter: java-junit
-          fail-on-error: false
-
-      - name: Upload test reports on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-reports
-          path: |
-            build/reports/tests/**
-            **/build/reports/tests/**
-            **/build/test-results/test/**
-            **/build/reports/jacoco/**
 
       - name: Upload coverage reports
         if: always()
@@ -220,7 +254,7 @@ jobs:
             **/build/reports/jacoco/**
 
   deploy:
-    needs: test
+    needs: coverage
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:

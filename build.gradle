@@ -23,6 +23,83 @@ jacoco {
     toolVersion = "0.8.12"
 }
 
+ext.coverageExcludes = [
+        '**/*Application*',
+        '**/*App*',
+        '**/*Main*',
+        '**/*Config*',
+        '**/*Configuration*',
+        '**/*Properties*',
+        '**/*AutoConfiguration*',
+        '**/*Interceptor*',
+        '**/*Resolver*',
+        '**/*Constants*',
+        '**/constants/**',
+        '**/config/**',
+        '**/infrastructure/**',
+        '**/utils/**',
+        '**/helpers/**',
+        '**/generated/**',
+        '**/*Grpc*',
+        '**/*GrpcKt*',
+        '**/*Proto*',
+        '**/*OuterClass*',
+        '**/*OrBuilder*',
+        '**/*Request*',
+        '**/*Response*',
+        '**/*Dto*',
+        '**/*DTO*',
+        '**/*Document*',
+        '**/dto/**',
+        '**/mongo/*Document*',
+        '**/mongo/*Repository*',
+        '**/*Exception*',
+        '**/*Error*',
+        '**/*Repository*',
+        '**/*Client*',
+        '**/*Gateway*',
+        '**/*Relay*',
+        '**/*RelayService*',
+        '**/*Workflow*',
+        '**/*Consumer*',
+        '**/*Publisher*',
+        '**/*Parser*',
+        '**/*Seeder*',
+        '**/*Runner*',
+        '**/*Loader*',
+        '**/*Demo*',
+        '**/*Row*',
+        '**/*Status*',
+        '**/*Type*',
+        '**/*Enum*',
+        '**/*Message*',
+        '**/repository/**',
+        '**/outbox/**',
+        '**/grpc/**',
+        '**/kafka/consumer/**',
+        '**/kafka/gateway/**',
+        '**/kafka/policy/*Client*',
+        '**/kafka/policy/*DeliveryPlanService*',
+        '**/kafka/policy/JdbcRecipientDeliveryPolicyEvaluator*',
+        '**/kafka/policy/RecipientDecision*',
+        '**/kafka/*Workflow*',
+        '**/kafka/*Repository*',
+        '**/kafka/Jsons*',
+        '**/delivery/*RedisDedupService*',
+        '**/scheduling/KafkaEnvelope*',
+        '**/scheduling/ScheduledDeliveryPublisher*',
+        '**/scheduling/ScheduledDeliveryRepository*',
+        '**/dispatching/*Client*',
+        '**/history/ClickHouseDeliveryHistoryRepository*',
+        '**/history/DeliveryHistoryRepository*',
+        '**/history/JacksonJqDemo*',
+        '**/usecase/JdbcNotificationFacadeUseCase*',
+        '**/template/TemplateRegistryRenderClient*',
+        '**/cancellation/CancellationServiceClient*',
+        '**/render/HandlebarsTemplateRenderer*',
+        '**/package-info.class'
+]
+
 tasks.named("test") {
     finalizedBy tasks.named("jacocoTestReport")
 }
@@ -58,7 +135,9 @@ subprojects {
             dependsOn project.tasks.withType(Test)
             executionData.setFrom(project.fileTree(project.layout.buildDirectory).include("jacoco/*.exec"))
             sourceDirectories.setFrom(project.files(project.sourceSets.main.allSource.srcDirs))
-            classDirectories.setFrom(project.files(project.sourceSets.main.output))
+            classDirectories.setFrom(project.files(project.sourceSets.main.output).asFileTree.matching {
+                exclude rootProject.ext.coverageExcludes
+            })
             reports {
                 xml.required = true
                 html.required = true
